@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Device ID</string>
+
+    <string name="not_found">Unable to determine</string>
+</resources>
