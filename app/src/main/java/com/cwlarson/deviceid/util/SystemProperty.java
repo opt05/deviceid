@@ -1,7 +1,6 @@
 package com.cwlarson.deviceid.util;
 
 import android.content.Context;
-import android.os.Build;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

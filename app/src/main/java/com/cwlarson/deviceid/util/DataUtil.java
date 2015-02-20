@@ -10,24 +10,13 @@ import android.provider.Settings;
 import android.telephony.TelephonyManager;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.util.NoSuchPropertyException;
 import android.view.Display;
 import android.view.WindowManager;
 
 import com.cwlarson.deviceid.R;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class DataUtil {
 
@@ -57,7 +46,7 @@ public class DataUtil {
         return new String[]{
                 HEADER,
                 getIMEI(c),
-                getDeviceModel(),
+                getDeviceModel(c),
                 getAndroidID(c),
 
                 HEADER,
@@ -65,7 +54,7 @@ public class DataUtil {
                 getBluetoothMac(c),
 
                 HEADER,
-                getAndroidVersion(),
+                getAndroidVersion(c),
                 getDeviceBuildVersion(c),
 
                 HEADER,
@@ -73,30 +62,55 @@ public class DataUtil {
     }
 
     private String getAndroidID(Context context) {
-        String android_id = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
-        return android_id==null ? context.getResources().getString(R.string.not_found) : android_id;
+        String android_id="";
+        try {
+            android_id=Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
+        } catch (NullPointerException e){
+            e.printStackTrace();
+            Log.e(TAG, "Null in getAndroidID");
+        }
+        return android_id==null || android_id.equals("") ? context.getResources().getString(R.string.not_found) : android_id;
     }
 
     private String getIMEI(Context context) {
-        TelephonyManager telephonyManager = (TelephonyManager)context.getSystemService(Context.TELEPHONY_SERVICE);
-        return telephonyManager.getDeviceId();
+        String imei="";
+        try {
+            TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+            imei = telephonyManager.getDeviceId();
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+            Log.e(TAG, "Null in getIMEI");
+        }
+        return imei == null || imei.equals("") ? context.getResources().getString(R.string.not_found) : imei;
     }
 
     private String getWiFiMac(Context context) {
-        WifiManager mWifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
-        WifiInfo wifiInfo = mWifiManager.getConnectionInfo();
-        return wifiInfo == null ? context.getResources().getString(R.string.not_found) : wifiInfo.getMacAddress();
+        String wifiInfoMac = "";
+        try {
+            WifiManager mWifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+            WifiInfo wifiInfo = mWifiManager.getConnectionInfo();
+            wifiInfoMac=wifiInfo.getMacAddress();
+        } catch (NullPointerException e){
+            e.printStackTrace();
+            Log.e(TAG, "Null in getWiFiMac");
+        }
+        return wifiInfoMac == null || wifiInfoMac.equals("") ? context.getResources().getString(R.string.not_found) : wifiInfoMac;
     }
 
     private String getBluetoothMac(Context context) {
-        String macAddress;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR2) {
-            BluetoothManager bm = (BluetoothManager)context.getSystemService(Context.BLUETOOTH_SERVICE);
-            macAddress = bm.getAdapter().getAddress();
-        } else {
-            macAddress = BluetoothAdapter.getDefaultAdapter().getAddress();
+        String macAddress="";
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                BluetoothManager bm = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+                macAddress = bm.getAdapter().getAddress();
+            } else {
+                macAddress = BluetoothAdapter.getDefaultAdapter().getAddress();
+            }
+        } catch (NullPointerException e){
+            e.printStackTrace();
+            Log.e(TAG, "Null in getBluetoothMac");
         }
-        return macAddress == null ? context.getResources().getString(R.string.not_found) : macAddress;
+        return macAddress == null || macAddress.equals("")  ? context.getResources().getString(R.string.not_found) : macAddress;
     }
 
     enum Codenames {
@@ -169,24 +183,39 @@ public class DataUtil {
         }
     }
 
-    private String getAndroidVersion() {
-        String version = Build.VERSION.RELEASE;
-        String api = Integer.toString(Build.VERSION.SDK_INT);
-        String versionName = Codenames.getCodename().toString()==null ? "" : Codenames.getCodename().toString();
-        return  version+ " (" +api+") "+versionName;
+    private String getAndroidVersion(Context context) {
+        String version="",api="",versionName="";
+        try {
+            version = Build.VERSION.RELEASE;
+            api = Integer.toString(Build.VERSION.SDK_INT);
+            versionName = Codenames.getCodename().toString() == null ? "" : Codenames.getCodename().toString();
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+            Log.e(TAG, "Null in getAndroidVersion");
+        }
+        version=version+ " (" +api+") "+versionName;
+
+        return version.equals("") ? context.getResources().getString(R.string.not_found) : version;
     }
 
-    private String getDeviceModel(){
-        String deviceModel;
-        String manufacturer = (Build.MANUFACTURER == null || Build.MANUFACTURER.length()==0) ? "" : Build.MANUFACTURER;
-        String product = (Build.PRODUCT == null || Build.PRODUCT.length()==0) ? "" : Build.PRODUCT;
-        String model = (Build.MODEL == null || Build.MODEL.length()==0) ? "" : Build.MODEL;
-        if (model.startsWith(manufacturer)) {
-            deviceModel = model + " (" + product+")";
-        } else {
-            deviceModel = manufacturer + " " + model + " (" + product+")";
+    private String getDeviceModel(Context context){
+        String deviceModel="",manufacturer,product,model;
+        try {
+            manufacturer = (Build.MANUFACTURER == null || Build.MANUFACTURER.length() == 0) ? "" : Build.MANUFACTURER;
+            product = (Build.PRODUCT == null || Build.PRODUCT.length() == 0) ? "" : Build.PRODUCT;
+            model = (Build.MODEL == null || Build.MODEL.length() == 0) ? "" : Build.MODEL;
+            if (model.startsWith(manufacturer)) {
+                deviceModel = model + " (" + product + ")";
+            } else {
+                deviceModel = manufacturer + " " + model + " (" + product + ")";
+            }
+        } catch (NullPointerException e){
+            e.printStackTrace();
+            Log.e(TAG, "Null in getDeviceModel");
         }
-        return Character.isUpperCase(deviceModel.charAt(0)) ? deviceModel : Character.toUpperCase(deviceModel.charAt(0))+deviceModel.substring(1);
+        deviceModel=Character.isUpperCase(deviceModel.charAt(0)) ? deviceModel : Character.toUpperCase(deviceModel.charAt(0))+deviceModel.substring(1);
+
+        return deviceModel.equals("") ? context.getResources().getString(R.string.not_found) : deviceModel;
     }
 
     private String getDeviceBuildVersion(Context context) {
@@ -201,7 +230,7 @@ public class DataUtil {
         final DisplayMetrics metrics = new DisplayMetrics();
         WindowManager windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         Display display = windowManager.getDefaultDisplay();
-        Method mGetRawH = null, mGetRawW = null;
+        Method mGetRawH, mGetRawW;
 
         try {
             // For JellyBean 4.2 (API 17) and onward
@@ -218,12 +247,13 @@ public class DataUtil {
                     width = (Integer) mGetRawW.invoke(display);
                     height = (Integer) mGetRawH.invoke(display);
                 } catch (IllegalArgumentException | InvocationTargetException | IllegalAccessException e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
+                    Log.e(TAG, "IllefalArgumentException in getDeviceScreenDensity");
                 }
             }
         } catch (NoSuchMethodException e3) {
             e3.printStackTrace();
+            Log.e(TAG, "NoSuchMethodException in getDeviceScreenDensity");
         }
         String sizeInPixels = " ("+Integer.toString(height)+"x"+Integer.toString(width)+")";
 

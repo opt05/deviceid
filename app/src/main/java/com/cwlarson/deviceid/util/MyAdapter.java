@@ -10,7 +10,7 @@ import android.widget.TextView;
 import com.cwlarson.deviceid.R;
 
 public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-    private String TAG = "MyAdapter";
+    private final String TAG = "MyAdapter";
     public static final int VIEW_TYPE_HEADER  = 0;
     public static final int VIEW_TYPE_ITEM = 1;
     private String[][] mDataset;
@@ -104,6 +104,5 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         } else {
             return VIEW_TYPE_ITEM;
         }
-        //return position % 2;
     }
 }
