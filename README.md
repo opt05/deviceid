@@ -2,7 +2,7 @@
 
 ### License ###
 
-Licensed under the MIT License. For complete licensing information see LICENSE.md in this project.
+Licensed under the MIT License. For complete licensing information see [LICENSE.md](https://bitbucket.org/opt05/deviceid/src) in this project.
 
 ### What is this repository for? ###
 
