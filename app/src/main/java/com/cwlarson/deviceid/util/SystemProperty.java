@@ -12,6 +12,7 @@ public class SystemProperty {
         this.mContext = mContext;
     }
 
+    @SuppressWarnings("unchecked")
     public String getOrThrow(String key) throws NoSuchPropertyException {
         try {
             ClassLoader classLoader = mContext.getClassLoader();

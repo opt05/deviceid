@@ -6,4 +6,10 @@
     <color name="primary_text">#212121</color>
     <color name="secondary_text">#727272</color>
     <color name="divider_color">#B6B6B6</color>
+
+    <!-- main color for drawable-v21/my_ripple -->
+    <color name="my_color_highlight">#FFE99E63</color>
+    <!-- main color for drawable/my_ripple -->
+    <color name="my_color_highlight_press">#77E99E63</color>
+    <color name="my_color_highlight_focus">#CCE99E63</color>
 </resources>

@@ -3,9 +3,11 @@ package com.cwlarson.deviceid.util;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
+import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.telephony.TelephonyManager;
 import android.util.DisplayMetrics;
@@ -17,48 +19,59 @@ import com.cwlarson.deviceid.R;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 public class DataUtil {
 
     String TAG = DataUtil.this.toString();
     public static final String HEADER  = "I_AM_A_HEADER_FEAR_ME";
+    private static final String favItemKey = "FAV_ITEMS";
 
     //titles for listview
-    public String[] titles={
-            "Device",
-            "IMEI / MEID",
-            "Model Number",
-            "Android ID",
+    public ArrayList<String> titles = new ArrayList<>(Arrays.asList(
+        "Device",
+        "IMEI / MEID",
+        "Model Number",
+        "Android ID",
 
-            "Network",
-            "Wi-Fi MAC Address",
-            "Bluetooth MAC Address",
+        "Network",
+        "Wi-Fi MAC Address",
+        "Bluetooth MAC Address",
 
-            "Software",
-            "Android Version",
-            "Build Version",
+        "Software",
+        "Android Version",
+        "Build Version",
 
-            "Hardware",
-            "Screen Density"
-    };
+        "Hardware",
+        "Screen Density"
+    ));
+    //bodies for listview
+    public ArrayList<String> bodies(Context c){
+        return new ArrayList<>(Arrays.asList(
+        HEADER,
+        getIMEI(c),
+        getDeviceModel(c),
+        getAndroidID(c),
 
-    public String[] bodies(Context c) {
-        return new String[]{
-                HEADER,
-                getIMEI(c),
-                getDeviceModel(c),
-                getAndroidID(c),
+        HEADER,
+        getWiFiMac(c),
+        getBluetoothMac(c),
 
-                HEADER,
-                getWiFiMac(c),
-                getBluetoothMac(c),
+        HEADER,
+        getAndroidVersion(c),
+        getDeviceBuildVersion(c),
 
-                HEADER,
-                getAndroidVersion(c),
-                getDeviceBuildVersion(c),
-
-                HEADER,
-                getDeviceScreenDensity(c)};
+        HEADER,
+        getDeviceScreenDensity(c)));
+    }
+    //title for filtered listview
+    public ArrayList<String> filteredTitle(Context context,String headerText){
+        return new ArrayList<>(Arrays.asList(
+                context.getResources().getString(R.string.filter_title_beg)+" "+headerText,
+                HEADER));
     }
 
     private String getAndroidID(Context context) {
@@ -279,5 +292,44 @@ public class DataUtil {
             default:
                 return context.getResources().getString(R.string.not_found)+sizeInPixels;
         }
+    }
+
+    public void saveFavoriteItem(Context context,String itemID) {
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
+        Set<String> favoriteItem = sharedPref.getStringSet(favItemKey, new HashSet<String>());
+        Set<String> in = new HashSet<>(favoriteItem);
+        in.add(itemID);
+        sharedPref.edit().putStringSet(favItemKey, in).apply();
+        Log.i(TAG, "saveFavoriteItems = "+ getAllFavoriteItems(context));
+    }
+
+    private Set<String> getAllFavoriteItems(Context context) {
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
+        return sharedPref.getStringSet(favItemKey,new HashSet<String>());
+    }
+
+    public boolean isFavoriteItem(Context context,String itemID) {
+        Set<String> allFavs = getAllFavoriteItems(context);
+        for (String s:allFavs){
+            if (s.equals(itemID)){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void removeFavoriteItem(Context context,String itemID) {
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
+        Set<String> favoriteItemsList = sharedPref.getStringSet(favItemKey, new HashSet<String>());
+        Set<String> newFavoriteItemsList=new HashSet<>();
+        //Loop through to compare
+        for (String s:favoriteItemsList){
+            if (!s.equals(itemID)){
+                newFavoriteItemsList.add(s);
+                Log.i(TAG,"Item to delete: "+itemID);
+            }
+        }
+        sharedPref.edit().putStringSet(favItemKey,newFavoriteItemsList).apply();
+        Log.i(TAG, "removeFavoriteItems = "+ getAllFavoriteItems(context));
     }
 }

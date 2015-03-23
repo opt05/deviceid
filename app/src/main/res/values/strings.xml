@@ -2,4 +2,13 @@
     <string name="app_name">Device ID</string>
 
     <string name="not_found">Unable to determine</string>
+    <string name="copy_to_clipboard">Copied _ITEM_ to clipboard!</string>
+    <string name="copy_to_clipboard_replace">_ITEM_</string>
+    <string name="send_to">Share text to…</string>
+    <string name="filter_action">Filter list</string>
+    <string name="unfilter_action">Unfilter list</string>
+    <string name="filter_title_beg">Filter: </string>
+    <string name="filter_title_favorites">Favorites</string>
+    <string name="filter_title_search">Search</string>
+    <string name="menu_search">Search</string>
 </resources>
