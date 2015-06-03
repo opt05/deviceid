@@ -1,5 +1,7 @@
 package com.cwlarson.deviceid;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.ActionBarActivity;
@@ -23,6 +25,7 @@ public class MainActivity extends ActionBarActivity implements SearchView.OnQuer
     private MenuItem searchItem;
     private SearchView searchView;
     private final String TAG = MainActivity.this.getClass().toString();
+    public static final int MY_PERMISSIONS_REQUEST_READ_PHONE_STATE = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,7 +48,30 @@ public class MainActivity extends ActionBarActivity implements SearchView.OnQuer
         // specify an adapter (see also next example)
         RecyclerView.Adapter mAdapter = new MyAdapter(populateDataset());
         mRecyclerView.setAdapter(mAdapter);
+
+        //TODO Request permission for IMEI/MEID for Android M+
+        /*if (checkSelfPermission(Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.READ_PHONE_STATE}, MY_PERMISSIONS_REQUEST_READ_PHONE_STATE);
+        }*/
     }
+    //TODO Request permission for IMEI/MEID for Android M+
+    /*@Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_READ_PHONE_STATE: {
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // permission was granted, yay!
+                    RecyclerView.Adapter mAdapter = new MyAdapter(populateDataset());
+                    mRecyclerView.setAdapter(mAdapter);
+                } else {
+                    // permission denied, boo!
+                }
+            }
+
+            // other 'switch' lines to check for other
+            // permissions this app might request
+        }
+    }*/
 
     @Override
     public void onBackPressed() {
@@ -102,7 +128,7 @@ public class MainActivity extends ActionBarActivity implements SearchView.OnQuer
     private ArrayList<ArrayList<String>> populateDataset() {
         DataUtil mData = new DataUtil();
         ArrayList<String> titles = mData.titles;
-        ArrayList<String> bodies=mData.bodies(this);
+        ArrayList<String> bodies=mData.bodies(this, this);
 
         int rows = ((titles.size()>=bodies.size()) ? titles.size() : bodies.size());
 

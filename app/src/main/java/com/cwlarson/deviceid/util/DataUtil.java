@@ -1,9 +1,12 @@
 package com.cwlarson.deviceid.util;
 
+import android.Manifest;
+import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
@@ -15,6 +18,7 @@ import android.util.Log;
 import android.view.Display;
 import android.view.WindowManager;
 
+import com.cwlarson.deviceid.MainActivity;
 import com.cwlarson.deviceid.R;
 
 import java.lang.reflect.InvocationTargetException;
@@ -49,10 +53,10 @@ public class DataUtil {
         "Screen Density"
     ));
     //bodies for listview
-    public ArrayList<String> bodies(Context c){
+    public ArrayList<String> bodies(Context c, Activity a){
         return new ArrayList<>(Arrays.asList(
         HEADER,
-        getIMEI(c),
+        getIMEI(c,a),
         getDeviceModel(c),
         getAndroidID(c),
 
@@ -85,11 +89,16 @@ public class DataUtil {
         return android_id==null || android_id.equals("") ? context.getResources().getString(R.string.not_found) : android_id;
     }
 
-    private String getIMEI(Context context) {
+    private String getIMEI(Context context, Activity a) {
         String imei="";
         try {
-            TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-            imei = telephonyManager.getDeviceId();
+            //TODO Request permission for IMEI/MEID for Android M+
+            //if (a.checkSelfPermission(Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
+                TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+                imei = telephonyManager.getDeviceId();
+            /*} else {
+                imei = context.getResources().getString(R.string.phone_permission_denied);
+            }*/
         } catch (NullPointerException e) {
             e.printStackTrace();
             Log.e(TAG, "Null in getIMEI");
@@ -138,7 +147,8 @@ public class DataUtil {
         ICE_CREAM_SANDWICH, ICE_CREAM_SANDWICH_MR1,
         JELLY_BEAN, JELLY_BEAN_MR1, JELLY_BEAN_MR2,
         KITKAT, KITKAT_WATCH,
-        LOLLIPOP, LOLLIPOP_MR1;
+        LOLLIPOP, LOLLIPOP_MR1,
+        ANDROID_M;
 
         public static Codenames getCodename()
         {
@@ -188,6 +198,8 @@ public class DataUtil {
                     return LOLLIPOP;
                 case 22:
                     return LOLLIPOP_MR1;
+                case 23:
+                    return ANDROID_M;
                 case 1000:
                     return CUR_DEVELOPMENT;
                 default:

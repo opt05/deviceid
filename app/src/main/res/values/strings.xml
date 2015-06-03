@@ -11,4 +11,5 @@
     <string name="filter_title_favorites">Favorites</string>
     <string name="filter_title_search">Search</string>
     <string name="menu_search">Search</string>
+    <string name="phone_permission_denied">Please enable the Phone permission</string>
 </resources>
