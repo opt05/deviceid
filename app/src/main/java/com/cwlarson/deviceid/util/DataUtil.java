@@ -350,7 +350,7 @@ public class DataUtil {
         Log.i(TAG, "removeFavoriteItems = "+ getAllFavoriteItems(context));
     }
 
-    public void onClickAdapter(String itemTitle, Context context, Activity activity){
+    public void onClickAdapter(String itemTitle, Context context, final Activity activity){
         int i = titles.indexOf(itemTitle);
 
         switch (i) {
@@ -360,10 +360,15 @@ public class DataUtil {
                     if(ActivityCompat.shouldShowRequestPermissionRationale(activity,Manifest.permission.READ_PHONE_STATE)){
                         View view = activity.findViewById(R.id.main_activity_layout);
                         if(view !=null) {
-                            Snackbar.make(view,"TEST",Snackbar.LENGTH_LONG).show();
+                            Snackbar.make(view,context.getResources().getString(R.string.phone_permission_snackbar,context.getResources().getString(R.string.app_name)),Snackbar.LENGTH_INDEFINITE)
+                                    .setAction(R.string.phone_permission_snackbar_button, new View.OnClickListener() {
+                                        @Override
+                                        public void onClick(View view) {
+                                            ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.READ_PHONE_STATE}, MY_PERMISSIONS_REQUEST_READ_PHONE_STATE);
+                                        }
+                                    }).show();
                         }
                     }
-                    ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.READ_PHONE_STATE}, MY_PERMISSIONS_REQUEST_READ_PHONE_STATE);
                 }
                 break;
             default:

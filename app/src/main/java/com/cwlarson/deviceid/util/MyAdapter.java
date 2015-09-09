@@ -4,7 +4,9 @@ import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -14,14 +16,16 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.cwlarson.deviceid.MainActivity;
 import com.cwlarson.deviceid.R;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private final String TAG = "MyAdapter";
-    public static final int VIEW_TYPE_HEADER  = 0;
-    public static final int VIEW_TYPE_ITEM = 1;
+    public static final int VIEW_TYPE_HEADER  = 0, VIEW_TYPE_ITEM = 1;
     private boolean isFiltered = false;
     private Toast toast;
     private Context context;
@@ -36,14 +40,12 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     public class ViewHolderItem extends RecyclerView.ViewHolder {
         // each data item is just a string in this case
         public TextView mTextView,mTextViewBody;
-        public ImageButton mShareButton,mFavoriteButtonFalse, mFavoriteButtonTrue;
+        public ImageButton mMoreButton;
         public ViewHolderItem(View v) {
             super(v);
             this.mTextView = (TextView) v.findViewById(R.id.item_title);
             this.mTextViewBody = (TextView) v.findViewById(R.id.item_body);
-            this.mShareButton = (ImageButton) v.findViewById(R.id.item_share_button);
-            this.mFavoriteButtonFalse = (ImageButton) v.findViewById(R.id.item_favorite_button_false);
-            this.mFavoriteButtonTrue = (ImageButton) v.findViewById(R.id.item_favorite_button_true);
+            this.mMoreButton = (ImageButton) v.findViewById(R.id.item_more_button);
             context = v.getContext();
             // Single click of the recyclerview item
             v.setOnClickListener(new View.OnClickListener() {
@@ -57,44 +59,81 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             v.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
-                    ClipboardManager clipboard = (ClipboardManager) v.getContext().getSystemService(Context.CLIPBOARD_SERVICE);
-                    ClipData clip = ClipData.newPlainText(mTextView.getText(), mTextViewBody.getText());
-                    clipboard.setPrimaryClip(clip);
-                    //Prevents multiple times toast issue with the button
-                    if(toast != null) toast.cancel();
-                    toast = Toast.makeText(context,
-                            v.getContext().getResources().getString(R.string.copy_to_clipboard).replace(v.getContext().getResources().getString(R.string.copy_to_clipboard_replace),mTextView.getText()),
-                            Toast.LENGTH_SHORT);
-                    toast.show();
+                    AlertDialog.Builder builder = new AlertDialog.Builder(context);
+                    builder.setTitle(mTextView.getText().toString());
+                    builder.setMessage(mTextViewBody.getText().toString());
+                    builder.setPositiveButton(R.string.dialog_long_press_positive_button, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            mMoreButton.performClick();
+                            dialogInterface.dismiss();
+                        }
+                    });
+                    builder.setNegativeButton(R.string.dialog_long_press_negative_button, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            dialogInterface.cancel();
+                        }
+                    });
+                    MainActivity.dialog = builder.create();
+                    MainActivity.dialog.show();
                     return false;
                 }
             });
-            mShareButton.setOnClickListener(new View.OnClickListener() {
+            mMoreButton.setOnClickListener(new View.OnClickListener() {
                 @Override
-                public void onClick(View v) {
-                    Intent sendIntent = new Intent();
-                    sendIntent.setAction(Intent.ACTION_SEND);
-                    sendIntent.putExtra(Intent.EXTRA_TEXT, mTextViewBody.getText());
-                    sendIntent.setType("text/plain");
-                    v.getContext().startActivity(Intent.createChooser(sendIntent, v.getContext().getResources().getText(R.string.send_to)));
-                }
-            });
-            mFavoriteButtonFalse.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
+                public void onClick(View view) {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(context);
+                    builder.setTitle(mTextView.getText().toString());
+                    //Get menu list
+                    final List<String> list = new ArrayList<>();
+                    list.addAll(Arrays.asList(context.getResources().getStringArray(R.array.item_menu)));
+                    //Get favorite item
                     DataUtil dataUtil = new DataUtil();
-                    dataUtil.saveFavoriteItem(v.getContext(), mTextView.getText().toString());
-                    mFavoriteButtonFalse.setVisibility(View.GONE);
-                    mFavoriteButtonTrue.setVisibility(View.VISIBLE);
-                }
-            });
-            mFavoriteButtonTrue.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    DataUtil dataUtil = new DataUtil();
-                    dataUtil.removeFavoriteItem(v.getContext(), mTextView.getText().toString());
-                    mFavoriteButtonFalse.setVisibility(View.VISIBLE);
-                    mFavoriteButtonTrue.setVisibility(View.GONE);
+                    if (dataUtil.isFavoriteItem(context,mTextView.getText().toString())) {
+                        list.add(context.getResources().getString(R.string.item_menu_unfavorite));
+                    } else {
+                        list.add(context.getResources().getString(R.string.item_menu_favorite));
+                    }
+                    builder.setItems(list.toArray(new String[list.size()]), new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            switch (i) {
+                                case 0: //Share
+                                    Intent sendIntent = new Intent();
+                                    sendIntent.setAction(Intent.ACTION_SEND);
+                                    sendIntent.putExtra(Intent.EXTRA_TEXT, mTextViewBody.getText());
+                                    sendIntent.setType("text/plain");
+                                    context.startActivity(Intent.createChooser(sendIntent, context.getResources().getText(R.string.send_to)));
+                                    break;
+                                case 1: //Copy to clipboard
+                                    ClipboardManager clipboard = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+                                    ClipData clip = ClipData.newPlainText(mTextView.getText(), mTextViewBody.getText());
+                                    clipboard.setPrimaryClip(clip);
+                                    //Prevents multiple times toast issue with the button
+                                    if (toast != null) toast.cancel();
+                                    toast = Toast.makeText(context,
+                                            context.getResources().getString(R.string.copy_to_clipboard).replace(context.getResources().getString(R.string.copy_to_clipboard_replace), mTextView.getText()),
+                                            Toast.LENGTH_SHORT);
+                                    toast.show();
+                                    break;
+                                case 2: //Favorite item stuff
+                                    if(list.get(i).equals(context.getResources().getString(R.string.item_menu_favorite))){
+                                        // is not a favorite currently
+                                        DataUtil dataUtil = new DataUtil();
+                                        dataUtil.saveFavoriteItem(context, mTextView.getText().toString());
+                                    } else { // is a favorite
+                                        DataUtil dataUtil = new DataUtil();
+                                        dataUtil.removeFavoriteItem(context, mTextView.getText().toString());
+                                    }
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                    });
+                    MainActivity.dialog = builder.create();
+                    MainActivity.dialog.show();
                 }
             });
         }
@@ -152,15 +191,6 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 ((ViewHolderItem) holder).mTextViewBody.setText(visibleObjects.get(position).get(1));
             } catch (ArrayIndexOutOfBoundsException e) {
                 ((ViewHolderItem) holder).mTextViewBody.setText("");
-            }
-            //Set favorite star buttons
-            DataUtil dataUtil = new DataUtil();
-            if (dataUtil.isFavoriteItem(context,visibleObjects.get(position).get(0))) {
-                ((ViewHolderItem) holder).mFavoriteButtonTrue.setVisibility(View.VISIBLE);
-                ((ViewHolderItem) holder).mFavoriteButtonFalse.setVisibility(View.GONE);
-            } else {
-                ((ViewHolderItem) holder).mFavoriteButtonTrue.setVisibility(View.GONE);
-                ((ViewHolderItem) holder).mFavoriteButtonFalse.setVisibility(View.VISIBLE);
             }
 
         } else if (holder instanceof ViewHolderHeader) { //Header

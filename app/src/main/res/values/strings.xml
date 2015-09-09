@@ -12,4 +12,14 @@
     <string name="filter_title_search">Search</string>
     <string name="menu_search">Search</string>
     <string name="phone_permission_denied">Please enable the Phone permission</string>
+    <string name="phone_permission_snackbar">The phone permission is required for %s to display IMEI / MEID</string>
+    <string name="phone_permission_snackbar_button">OK</string>
+    <string-array name="item_menu">
+        <item>Share</item>
+        <item>Copy to clipboard</item>
+    </string-array>
+    <string name="item_menu_favorite">Favorite item</string>
+    <string name="item_menu_unfavorite">Unfavorite item</string>
+    <string name="dialog_long_press_positive_button">Actions</string>
+    <string name="dialog_long_press_negative_button">Cancel</string>
 </resources>

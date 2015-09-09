@@ -7,6 +7,7 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.MenuItemCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -29,6 +30,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     private SearchView searchView;
     private final String TAG = MainActivity.this.getClass().toString();
     public static final int MY_PERMISSIONS_REQUEST_READ_PHONE_STATE = 1;
+    public static AlertDialog dialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,6 +59,14 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
             ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.READ_PHONE_STATE}, MY_PERMISSIONS_REQUEST_READ_PHONE_STATE);
         }
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Prevents memory leaks of dialogs
+        if(dialog!=null) dialog.dismiss();
+    }
+
     // Request permission for IMEI/MEID for Android M+
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
