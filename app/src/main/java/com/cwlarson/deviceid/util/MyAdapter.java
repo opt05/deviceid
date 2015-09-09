@@ -1,5 +1,6 @@
 package com.cwlarson.deviceid.util;
 
+import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -24,6 +25,7 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private boolean isFiltered = false;
     private Toast toast;
     private Context context;
+    private Activity activity;
 
     private ArrayList<ArrayList<String>> visibleObjects;
     private ArrayList<ArrayList<String>> allObjects;
@@ -43,6 +45,15 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             this.mFavoriteButtonFalse = (ImageButton) v.findViewById(R.id.item_favorite_button_false);
             this.mFavoriteButtonTrue = (ImageButton) v.findViewById(R.id.item_favorite_button_true);
             context = v.getContext();
+            // Single click of the recyclerview item
+            v.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    DataUtil dataUtil = new DataUtil();
+                    dataUtil.onClickAdapter(mTextView.getText().toString(),context,activity);
+                }
+            });
+            // Long click of recyclerview item
             v.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
@@ -51,7 +62,7 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                     clipboard.setPrimaryClip(clip);
                     //Prevents multiple times toast issue with the button
                     if(toast != null) toast.cancel();
-                    toast = Toast.makeText(v.getContext(),
+                    toast = Toast.makeText(context,
                             v.getContext().getResources().getString(R.string.copy_to_clipboard).replace(v.getContext().getResources().getString(R.string.copy_to_clipboard_replace),mTextView.getText()),
                             Toast.LENGTH_SHORT);
                     toast.show();
@@ -99,9 +110,10 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     }
 
     // Provide a suitable constructor (depends on the kind of dataset)
-    public MyAdapter(ArrayList<ArrayList<String>> myDataset) {
+    public MyAdapter(ArrayList<ArrayList<String>> myDataset,Activity parentActivity) {
         allObjects = new ArrayList<>(myDataset);
         visibleObjects = new ArrayList<>(myDataset);
+        activity = parentActivity;
     }
 
     // Create new views (invoked by the layout manager)

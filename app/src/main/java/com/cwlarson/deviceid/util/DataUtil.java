@@ -12,13 +12,16 @@ import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
+import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.telephony.TelephonyManager;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
+import android.view.View;
 import android.view.WindowManager;
 
-import com.cwlarson.deviceid.MainActivity;
 import com.cwlarson.deviceid.R;
 
 import java.lang.reflect.InvocationTargetException;
@@ -33,6 +36,7 @@ public class DataUtil {
     String TAG = DataUtil.this.toString();
     public static final String HEADER  = "I_AM_A_HEADER_FEAR_ME";
     private static final String favItemKey = "FAV_ITEMS";
+    public static final int MY_PERMISSIONS_REQUEST_READ_PHONE_STATE = 1;
 
     //titles for listview
     public ArrayList<String> titles = new ArrayList<>(Arrays.asList(
@@ -92,13 +96,13 @@ public class DataUtil {
     private String getIMEI(Context context, Activity a) {
         String imei="";
         try {
-            //TODO Request permission for IMEI/MEID for Android M+
-            //if (a.checkSelfPermission(Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
+            // Request permission for IMEI/MEID for Android M+
+            if (ContextCompat.checkSelfPermission(a,Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
                 TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
                 imei = telephonyManager.getDeviceId();
-            /*} else {
+            } else {
                 imei = context.getResources().getString(R.string.phone_permission_denied);
-            }*/
+            }
         } catch (NullPointerException e) {
             e.printStackTrace();
             Log.e(TAG, "Null in getIMEI");
@@ -148,7 +152,7 @@ public class DataUtil {
         JELLY_BEAN, JELLY_BEAN_MR1, JELLY_BEAN_MR2,
         KITKAT, KITKAT_WATCH,
         LOLLIPOP, LOLLIPOP_MR1,
-        ANDROID_M;
+        MARSHMALLOW;
 
         public static Codenames getCodename()
         {
@@ -199,7 +203,7 @@ public class DataUtil {
                 case 22:
                     return LOLLIPOP_MR1;
                 case 23:
-                    return ANDROID_M;
+                    return MARSHMALLOW;
                 case 1000:
                     return CUR_DEVELOPMENT;
                 default:
@@ -213,7 +217,8 @@ public class DataUtil {
         try {
             version = Build.VERSION.RELEASE;
             api = Integer.toString(Build.VERSION.SDK_INT);
-            versionName = Codenames.getCodename().toString() == null ? "" : Codenames.getCodename().toString();
+            //noinspection ConstantConditions
+            versionName = (Codenames.getCodename() == null) ? "" : Codenames.getCodename().toString();
         } catch (NullPointerException e) {
             e.printStackTrace();
             Log.e(TAG, "Null in getAndroidVersion");
@@ -343,5 +348,26 @@ public class DataUtil {
         }
         sharedPref.edit().putStringSet(favItemKey,newFavoriteItemsList).apply();
         Log.i(TAG, "removeFavoriteItems = "+ getAllFavoriteItems(context));
+    }
+
+    public void onClickAdapter(String itemTitle, Context context, Activity activity){
+        int i = titles.indexOf(itemTitle);
+
+        switch (i) {
+            case 1:
+                // Request permission for IMEI/MEID for Android M+ again
+                if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+                    if(ActivityCompat.shouldShowRequestPermissionRationale(activity,Manifest.permission.READ_PHONE_STATE)){
+                        View view = activity.findViewById(R.id.main_activity_layout);
+                        if(view !=null) {
+                            Snackbar.make(view,"TEST",Snackbar.LENGTH_LONG).show();
+                        }
+                    }
+                    ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.READ_PHONE_STATE}, MY_PERMISSIONS_REQUEST_READ_PHONE_STATE);
+                }
+                break;
+            default:
+                break;
+        }
     }
 }

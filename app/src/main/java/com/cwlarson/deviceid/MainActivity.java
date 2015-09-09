@@ -3,8 +3,11 @@ package com.cwlarson.deviceid;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.MenuItemCompat;
-import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
@@ -19,7 +22,7 @@ import com.cwlarson.deviceid.util.MyAdapter;
 import java.util.ArrayList;
 
 
-public class MainActivity extends ActionBarActivity implements SearchView.OnQueryTextListener {
+public class MainActivity extends AppCompatActivity implements SearchView.OnQueryTextListener {
 
     private RecyclerView mRecyclerView;
     private MenuItem searchItem;
@@ -46,32 +49,32 @@ public class MainActivity extends ActionBarActivity implements SearchView.OnQuer
         mRecyclerView.addItemDecoration(new DividerItemDecoration(getApplicationContext()));
 
         // specify an adapter (see also next example)
-        RecyclerView.Adapter mAdapter = new MyAdapter(populateDataset());
+        RecyclerView.Adapter mAdapter = new MyAdapter(populateDataset(),this);
         mRecyclerView.setAdapter(mAdapter);
 
-        //TODO Request permission for IMEI/MEID for Android M+
-        /*if (checkSelfPermission(Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{Manifest.permission.READ_PHONE_STATE}, MY_PERMISSIONS_REQUEST_READ_PHONE_STATE);
-        }*/
+        // Request permission for IMEI/MEID for Android M+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.READ_PHONE_STATE}, MY_PERMISSIONS_REQUEST_READ_PHONE_STATE);
+        }
     }
-    //TODO Request permission for IMEI/MEID for Android M+
-    /*@Override
-    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+    // Request permission for IMEI/MEID for Android M+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
         switch (requestCode) {
             case MY_PERMISSIONS_REQUEST_READ_PHONE_STATE: {
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     // permission was granted, yay!
-                    RecyclerView.Adapter mAdapter = new MyAdapter(populateDataset());
+                    // Refresh View
+                    RecyclerView.Adapter mAdapter = new MyAdapter(populateDataset(),this);
                     mRecyclerView.setAdapter(mAdapter);
                 } else {
                     // permission denied, boo!
+                    // We do nothing (it is handled by the ViewAdapter)
+                    break;
                 }
             }
-
-            // other 'switch' lines to check for other
-            // permissions this app might request
         }
-    }*/
+    }
 
     @Override
     public void onBackPressed() {
