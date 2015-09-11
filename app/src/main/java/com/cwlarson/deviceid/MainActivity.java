@@ -1,8 +1,14 @@
 package com.cwlarson.deviceid;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.MenuItemCompat;
-import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.AlertDialog;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
@@ -17,12 +23,14 @@ import com.cwlarson.deviceid.util.MyAdapter;
 import java.util.ArrayList;
 
 
-public class MainActivity extends ActionBarActivity implements SearchView.OnQueryTextListener {
+public class MainActivity extends AppCompatActivity implements SearchView.OnQueryTextListener {
 
     private RecyclerView mRecyclerView;
     private MenuItem searchItem;
     private SearchView searchView;
     private final String TAG = MainActivity.this.getClass().toString();
+    public static final int MY_PERMISSIONS_REQUEST_READ_PHONE_STATE = 1;
+    public static AlertDialog dialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,8 +51,39 @@ public class MainActivity extends ActionBarActivity implements SearchView.OnQuer
         mRecyclerView.addItemDecoration(new DividerItemDecoration(getApplicationContext()));
 
         // specify an adapter (see also next example)
-        RecyclerView.Adapter mAdapter = new MyAdapter(populateDataset());
+        RecyclerView.Adapter mAdapter = new MyAdapter(populateDataset(),this);
         mRecyclerView.setAdapter(mAdapter);
+
+        // Request permission for IMEI/MEID for Android M+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.READ_PHONE_STATE}, MY_PERMISSIONS_REQUEST_READ_PHONE_STATE);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Prevents memory leaks of dialogs
+        if(dialog!=null) dialog.dismiss();
+    }
+
+    // Request permission for IMEI/MEID for Android M+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_READ_PHONE_STATE: {
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // permission was granted, yay!
+                    // Refresh View
+                    RecyclerView.Adapter mAdapter = new MyAdapter(populateDataset(),this);
+                    mRecyclerView.setAdapter(mAdapter);
+                } else {
+                    // permission denied, boo!
+                    // We do nothing (it is handled by the ViewAdapter)
+                    break;
+                }
+            }
+        }
     }
 
     @Override
@@ -102,7 +141,7 @@ public class MainActivity extends ActionBarActivity implements SearchView.OnQuer
     private ArrayList<ArrayList<String>> populateDataset() {
         DataUtil mData = new DataUtil();
         ArrayList<String> titles = mData.titles;
-        ArrayList<String> bodies=mData.bodies(this);
+        ArrayList<String> bodies=mData.bodies(this, this);
 
         int rows = ((titles.size()>=bodies.size()) ? titles.size() : bodies.size());
 

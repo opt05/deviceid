@@ -1,19 +1,29 @@
 package com.cwlarson.deviceid.util;
 
+import android.Manifest;
+import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
+import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.telephony.TelephonyManager;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
+import android.view.View;
 import android.view.WindowManager;
+import android.widget.Toast;
 
 import com.cwlarson.deviceid.R;
 
@@ -29,6 +39,8 @@ public class DataUtil {
     String TAG = DataUtil.this.toString();
     public static final String HEADER  = "I_AM_A_HEADER_FEAR_ME";
     private static final String favItemKey = "FAV_ITEMS";
+    public static final int MY_PERMISSIONS_REQUEST_READ_PHONE_STATE = 1;
+    Toast toast;
 
     //titles for listview
     public ArrayList<String> titles = new ArrayList<>(Arrays.asList(
@@ -49,10 +61,10 @@ public class DataUtil {
         "Screen Density"
     ));
     //bodies for listview
-    public ArrayList<String> bodies(Context c){
+    public ArrayList<String> bodies(Context c, Activity a){
         return new ArrayList<>(Arrays.asList(
         HEADER,
-        getIMEI(c),
+        getIMEI(c,a),
         getDeviceModel(c),
         getAndroidID(c),
 
@@ -80,19 +92,24 @@ public class DataUtil {
             android_id=Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
         } catch (NullPointerException e){
             e.printStackTrace();
-            Log.e(TAG, "Null in getAndroidID");
+            Log.w(TAG, "Null in getAndroidID");
         }
         return android_id==null || android_id.equals("") ? context.getResources().getString(R.string.not_found) : android_id;
     }
 
-    private String getIMEI(Context context) {
+    private String getIMEI(Context context, Activity a) {
         String imei="";
         try {
-            TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-            imei = telephonyManager.getDeviceId();
+            // Request permission for IMEI/MEID for Android M+
+            if (ContextCompat.checkSelfPermission(a,Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
+                TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+                imei = telephonyManager.getDeviceId();
+            } else {
+                imei = context.getResources().getString(R.string.phone_permission_denied);
+            }
         } catch (NullPointerException e) {
             e.printStackTrace();
-            Log.e(TAG, "Null in getIMEI");
+            Log.w(TAG, "Null in getIMEI");
         }
         return imei == null || imei.equals("") ? context.getResources().getString(R.string.not_found) : imei;
     }
@@ -105,7 +122,7 @@ public class DataUtil {
             wifiInfoMac=wifiInfo.getMacAddress();
         } catch (NullPointerException e){
             e.printStackTrace();
-            Log.e(TAG, "Null in getWiFiMac");
+            Log.w(TAG, "Null in getWiFiMac");
         }
         return wifiInfoMac == null || wifiInfoMac.equals("") ? context.getResources().getString(R.string.not_found) : wifiInfoMac;
     }
@@ -121,7 +138,7 @@ public class DataUtil {
             }
         } catch (NullPointerException e){
             e.printStackTrace();
-            Log.e(TAG, "Null in getBluetoothMac");
+            Log.w(TAG, "Null in getBluetoothMac");
         }
         return macAddress == null || macAddress.equals("")  ? context.getResources().getString(R.string.not_found) : macAddress;
     }
@@ -138,7 +155,8 @@ public class DataUtil {
         ICE_CREAM_SANDWICH, ICE_CREAM_SANDWICH_MR1,
         JELLY_BEAN, JELLY_BEAN_MR1, JELLY_BEAN_MR2,
         KITKAT, KITKAT_WATCH,
-        LOLLIPOP, LOLLIPOP_MR1;
+        LOLLIPOP, LOLLIPOP_MR1,
+        MARSHMALLOW;
 
         public static Codenames getCodename()
         {
@@ -188,6 +206,8 @@ public class DataUtil {
                     return LOLLIPOP;
                 case 22:
                     return LOLLIPOP_MR1;
+                case 23:
+                    return MARSHMALLOW;
                 case 1000:
                     return CUR_DEVELOPMENT;
                 default:
@@ -201,10 +221,11 @@ public class DataUtil {
         try {
             version = Build.VERSION.RELEASE;
             api = Integer.toString(Build.VERSION.SDK_INT);
-            versionName = Codenames.getCodename().toString() == null ? "" : Codenames.getCodename().toString();
+            //noinspection ConstantConditions
+            versionName = (Codenames.getCodename() == null) ? "" : Codenames.getCodename().toString();
         } catch (NullPointerException e) {
             e.printStackTrace();
-            Log.e(TAG, "Null in getAndroidVersion");
+            Log.w(TAG, "Null in getAndroidVersion");
         }
         version=version+ " (" +api+") "+versionName;
 
@@ -224,7 +245,7 @@ public class DataUtil {
             }
         } catch (NullPointerException e){
             e.printStackTrace();
-            Log.e(TAG, "Null in getDeviceModel");
+            Log.w(TAG, "Null in getDeviceModel");
         }
         deviceModel=Character.isUpperCase(deviceModel.charAt(0)) ? deviceModel : Character.toUpperCase(deviceModel.charAt(0))+deviceModel.substring(1);
 
@@ -331,5 +352,45 @@ public class DataUtil {
         }
         sharedPref.edit().putStringSet(favItemKey,newFavoriteItemsList).apply();
         Log.i(TAG, "removeFavoriteItems = "+ getAllFavoriteItems(context));
+    }
+    // Returns true if method already takes care of the click, false if the parent should
+    public Boolean onClickAdapter(String itemTitle, Context context, final Activity activity){
+        int i = titles.indexOf(itemTitle);
+
+        switch (i) {
+            case 1:
+                // Request permission for IMEI/MEID for Android M+ again
+                if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+                    if(ActivityCompat.shouldShowRequestPermissionRationale(activity,Manifest.permission.READ_PHONE_STATE)){
+                        View view = activity.findViewById(R.id.main_activity_layout);
+                        if(view !=null) {
+                            Snackbar.make(view,context.getResources().getString(R.string.phone_permission_snackbar,context.getResources().getString(R.string.app_name)),Snackbar.LENGTH_INDEFINITE)
+                                    .setAction(R.string.phone_permission_snackbar_button, new View.OnClickListener() {
+                                        @Override
+                                        public void onClick(View view) {
+                                            ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.READ_PHONE_STATE}, MY_PERMISSIONS_REQUEST_READ_PHONE_STATE);
+                                        }
+                                    }).show();
+                        }
+                    }
+                    return true;
+                } else {
+                    return false;
+                }
+            default:
+                return false;
+        }
+    }
+    //Copy to clipboard
+    public void copyToClipboard(Context context, String headerText, String bodyText){
+        ClipboardManager clipboard = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+        ClipData clip = ClipData.newPlainText(headerText, bodyText);
+        clipboard.setPrimaryClip(clip);
+        //Prevents multiple times toast issue with the button
+        if (toast != null) toast.cancel();
+        toast = Toast.makeText(context,
+                context.getResources().getString(R.string.copy_to_clipboard).replace(context.getResources().getString(R.string.copy_to_clipboard_replace), headerText),
+                Toast.LENGTH_SHORT);
+        toast.show();
     }
 }

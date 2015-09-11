@@ -15,55 +15,37 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:background="@android:color/transparent">
         <TextView
             android:id="@+id/item_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="18sp"
-            android:text="test"/>
+            android:textColor="@color/primary_text_material_light_default"
+            android:lines="1"
+            android:ellipsize="end"/>
         <TextView
             android:id="@+id/item_body"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="16sp"
-            android:textColor="@color/secondary_text"
-            android:text="test"/>
+            android:lines="1"
+            android:ellipsize="end"/>
     </LinearLayout>
     <LinearLayout
-        android:layout_width="20sp"
+        android:layout_width="wrap_content"
         android:layout_height="fill_parent"
         android:orientation="vertical">
         <ImageButton
-            android:id="@+id/item_share_button"
+            android:id="@+id/item_more_button"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/ic_share"
+            android:layout_height="fill_parent"
+            android:src="@drawable/ic_more_vert_black"
             android:background="@android:color/transparent"
             android:contentDescription="nothing"
-            android:layout_weight="1"
             android:scaleType="fitCenter"
-            android:tint="@color/secondary_text"/>
-        <ImageButton
-        android:id="@+id/item_favorite_button_false"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:src="@drawable/ic_star_outline"
-        android:background="@android:color/transparent"
-        android:contentDescription="star"
-        android:scaleType="fitCenter"
-        android:tint="@color/secondary_text"/>
-        <ImageButton
-            android:id="@+id/item_favorite_button_true"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:src="@drawable/ic_star_black"
-            android:background="@android:color/transparent"
-            android:contentDescription="star"
-            android:scaleType="fitCenter"
-            android:tint="@color/secondary_text"
-            android:visibility="gone"/>
+            android:paddingTop="7dp"
+            android:paddingBottom="7dp"/>
     </LinearLayout>
 </LinearLayout>
