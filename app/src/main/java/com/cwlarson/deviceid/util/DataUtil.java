@@ -4,6 +4,8 @@ import android.Manifest;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -21,6 +23,7 @@ import android.util.Log;
 import android.view.Display;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.Toast;
 
 import com.cwlarson.deviceid.R;
 
@@ -37,6 +40,7 @@ public class DataUtil {
     public static final String HEADER  = "I_AM_A_HEADER_FEAR_ME";
     private static final String favItemKey = "FAV_ITEMS";
     public static final int MY_PERMISSIONS_REQUEST_READ_PHONE_STATE = 1;
+    Toast toast;
 
     //titles for listview
     public ArrayList<String> titles = new ArrayList<>(Arrays.asList(
@@ -88,7 +92,7 @@ public class DataUtil {
             android_id=Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
         } catch (NullPointerException e){
             e.printStackTrace();
-            Log.e(TAG, "Null in getAndroidID");
+            Log.w(TAG, "Null in getAndroidID");
         }
         return android_id==null || android_id.equals("") ? context.getResources().getString(R.string.not_found) : android_id;
     }
@@ -105,7 +109,7 @@ public class DataUtil {
             }
         } catch (NullPointerException e) {
             e.printStackTrace();
-            Log.e(TAG, "Null in getIMEI");
+            Log.w(TAG, "Null in getIMEI");
         }
         return imei == null || imei.equals("") ? context.getResources().getString(R.string.not_found) : imei;
     }
@@ -118,7 +122,7 @@ public class DataUtil {
             wifiInfoMac=wifiInfo.getMacAddress();
         } catch (NullPointerException e){
             e.printStackTrace();
-            Log.e(TAG, "Null in getWiFiMac");
+            Log.w(TAG, "Null in getWiFiMac");
         }
         return wifiInfoMac == null || wifiInfoMac.equals("") ? context.getResources().getString(R.string.not_found) : wifiInfoMac;
     }
@@ -134,7 +138,7 @@ public class DataUtil {
             }
         } catch (NullPointerException e){
             e.printStackTrace();
-            Log.e(TAG, "Null in getBluetoothMac");
+            Log.w(TAG, "Null in getBluetoothMac");
         }
         return macAddress == null || macAddress.equals("")  ? context.getResources().getString(R.string.not_found) : macAddress;
     }
@@ -221,7 +225,7 @@ public class DataUtil {
             versionName = (Codenames.getCodename() == null) ? "" : Codenames.getCodename().toString();
         } catch (NullPointerException e) {
             e.printStackTrace();
-            Log.e(TAG, "Null in getAndroidVersion");
+            Log.w(TAG, "Null in getAndroidVersion");
         }
         version=version+ " (" +api+") "+versionName;
 
@@ -241,7 +245,7 @@ public class DataUtil {
             }
         } catch (NullPointerException e){
             e.printStackTrace();
-            Log.e(TAG, "Null in getDeviceModel");
+            Log.w(TAG, "Null in getDeviceModel");
         }
         deviceModel=Character.isUpperCase(deviceModel.charAt(0)) ? deviceModel : Character.toUpperCase(deviceModel.charAt(0))+deviceModel.substring(1);
 
@@ -349,8 +353,8 @@ public class DataUtil {
         sharedPref.edit().putStringSet(favItemKey,newFavoriteItemsList).apply();
         Log.i(TAG, "removeFavoriteItems = "+ getAllFavoriteItems(context));
     }
-
-    public void onClickAdapter(String itemTitle, Context context, final Activity activity){
+    // Returns true if method already takes care of the click, false if the parent should
+    public Boolean onClickAdapter(String itemTitle, Context context, final Activity activity){
         int i = titles.indexOf(itemTitle);
 
         switch (i) {
@@ -369,10 +373,24 @@ public class DataUtil {
                                     }).show();
                         }
                     }
+                    return true;
+                } else {
+                    return false;
                 }
-                break;
             default:
-                break;
+                return false;
         }
+    }
+    //Copy to clipboard
+    public void copyToClipboard(Context context, String headerText, String bodyText){
+        ClipboardManager clipboard = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+        ClipData clip = ClipData.newPlainText(headerText, bodyText);
+        clipboard.setPrimaryClip(clip);
+        //Prevents multiple times toast issue with the button
+        if (toast != null) toast.cancel();
+        toast = Toast.makeText(context,
+                context.getResources().getString(R.string.copy_to_clipboard).replace(context.getResources().getString(R.string.copy_to_clipboard_replace), headerText),
+                Toast.LENGTH_SHORT);
+        toast.show();
     }
 }

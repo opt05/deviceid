@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">Device ID</string>
-
     <string name="not_found">Unable to determine</string>
     <string name="copy_to_clipboard">Copied _ITEM_ to clipboard!</string>
     <string name="copy_to_clipboard_replace">_ITEM_</string>
@@ -13,6 +12,7 @@
     <string name="menu_search">Search</string>
     <string name="phone_permission_denied">Please enable the Phone permission</string>
     <string name="phone_permission_snackbar">The phone permission is required for %s to display IMEI / MEID</string>
+    <string name="snackbar_not_found_adapter">Unable to retrieve %s from this device</string>
     <string name="phone_permission_snackbar_button">OK</string>
     <string-array name="item_menu">
         <item>Share</item>

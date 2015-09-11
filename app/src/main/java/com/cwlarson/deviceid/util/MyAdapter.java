@@ -1,11 +1,10 @@
 package com.cwlarson.deviceid.util;
 
 import android.app.Activity;
-import android.content.ClipData;
-import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -27,7 +26,6 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private final String TAG = "MyAdapter";
     public static final int VIEW_TYPE_HEADER  = 0, VIEW_TYPE_ITEM = 1;
     private boolean isFiltered = false;
-    private Toast toast;
     private Context context;
     private Activity activity;
 
@@ -41,7 +39,7 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         // each data item is just a string in this case
         public TextView mTextView,mTextViewBody;
         public ImageButton mMoreButton;
-        public ViewHolderItem(View v) {
+        public ViewHolderItem(final View v) {
             super(v);
             this.mTextView = (TextView) v.findViewById(R.id.item_title);
             this.mTextViewBody = (TextView) v.findViewById(R.id.item_body);
@@ -50,15 +48,20 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             // Single click of the recyclerview item
             v.setOnClickListener(new View.OnClickListener() {
                 @Override
-                public void onClick(View view) {
+                public void onClick(View v) {
                     DataUtil dataUtil = new DataUtil();
-                    dataUtil.onClickAdapter(mTextView.getText().toString(),context,activity);
-                }
-            });
-            // Long click of recyclerview item
-            v.setOnLongClickListener(new View.OnLongClickListener() {
-                @Override
-                public boolean onLongClick(View v) {
+                    Boolean shouldWeClick = dataUtil.onClickAdapter(mTextView.getText().toString(),context,activity);
+                    if(shouldWeClick) return;
+                    // This isn't a valid body so we shouldn't do anything and inform the user
+                    if (mTextViewBody.getText().toString().equals(context.getResources().getString(R.string.not_found))) {
+                        View view = activity.findViewById(R.id.main_activity_layout);
+                        //Fallback if view in unavailable for snackbar
+                        if(view==null)
+                            Toast.makeText(context,activity.getResources().getString(R.string.snackbar_not_found_adapter,mTextView.getText().toString()),Toast.LENGTH_LONG).show();
+                        else
+                            Snackbar.make(activity.findViewById(R.id.main_activity_layout), activity.getResources().getString(R.string.snackbar_not_found_adapter,mTextView.getText().toString()), Snackbar.LENGTH_LONG).show();
+                        return;
+                    }
                     AlertDialog.Builder builder = new AlertDialog.Builder(context);
                     builder.setTitle(mTextView.getText().toString());
                     builder.setMessage(mTextViewBody.getText().toString());
@@ -77,9 +80,22 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                     });
                     MainActivity.dialog = builder.create();
                     MainActivity.dialog.show();
+                }
+            });
+            // Long click of recyclerview item
+            v.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    // This isn't a valid body so we shouldn't do anything and inform the user
+                    if (!mTextViewBody.getText().toString().equals(context.getResources().getString(R.string.not_found))) {
+                        DataUtil dataUtil = new DataUtil();
+                        dataUtil.copyToClipboard(context,mTextView.getText().toString(),mTextViewBody.getText().toString());
+                        return true;
+                    }
                     return false;
                 }
             });
+
             mMoreButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
@@ -89,7 +105,7 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                     final List<String> list = new ArrayList<>();
                     list.addAll(Arrays.asList(context.getResources().getStringArray(R.array.item_menu)));
                     //Get favorite item
-                    DataUtil dataUtil = new DataUtil();
+                    final DataUtil dataUtil = new DataUtil();
                     if (dataUtil.isFavoriteItem(context,mTextView.getText().toString())) {
                         list.add(context.getResources().getString(R.string.item_menu_unfavorite));
                     } else {
@@ -107,15 +123,7 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                                     context.startActivity(Intent.createChooser(sendIntent, context.getResources().getText(R.string.send_to)));
                                     break;
                                 case 1: //Copy to clipboard
-                                    ClipboardManager clipboard = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
-                                    ClipData clip = ClipData.newPlainText(mTextView.getText(), mTextViewBody.getText());
-                                    clipboard.setPrimaryClip(clip);
-                                    //Prevents multiple times toast issue with the button
-                                    if (toast != null) toast.cancel();
-                                    toast = Toast.makeText(context,
-                                            context.getResources().getString(R.string.copy_to_clipboard).replace(context.getResources().getString(R.string.copy_to_clipboard_replace), mTextView.getText()),
-                                            Toast.LENGTH_SHORT);
-                                    toast.show();
+                                    dataUtil.copyToClipboard(context,mTextView.getText().toString(),mTextViewBody.getText().toString());
                                     break;
                                 case 2: //Favorite item stuff
                                     if(list.get(i).equals(context.getResources().getString(R.string.item_menu_favorite))){
@@ -189,6 +197,11 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             }
             try { //Body
                 ((ViewHolderItem) holder).mTextViewBody.setText(visibleObjects.get(position).get(1));
+                // Hide the more button if it is unavailable
+                if(((ViewHolderItem) holder).mTextViewBody.getText().toString().equals(context.getResources().getString(R.string.not_found))||((ViewHolderItem) holder).mTextViewBody.getText().toString().equals(context.getResources().getString(R.string.phone_permission_denied)))
+                    ((ViewHolderItem) holder).mMoreButton.setVisibility(View.GONE);
+                else
+                    ((ViewHolderItem) holder).mMoreButton.setVisibility(View.VISIBLE);
             } catch (ArrayIndexOutOfBoundsException e) {
                 ((ViewHolderItem) holder).mTextViewBody.setText("");
             }
