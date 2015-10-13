@@ -2,7 +2,6 @@ package com.cwlarson.deviceid.util;
 
 import android.content.Context;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 public class SystemProperty {
@@ -19,7 +18,7 @@ public class SystemProperty {
             Class SystemProperties = classLoader.loadClass("android.os.SystemProperties");
             Method methodGet = SystemProperties.getMethod("get", String.class);
             return (String) methodGet.invoke(SystemProperties, key);
-        } catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+        } catch (Exception e) {
             throw new NoSuchPropertyException(e);
         }
     }

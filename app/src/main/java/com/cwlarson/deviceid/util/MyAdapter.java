@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -13,7 +12,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.cwlarson.deviceid.MainActivity;
 import com.cwlarson.deviceid.R;
@@ -24,13 +22,13 @@ import java.util.List;
 
 public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private final String TAG = "MyAdapter";
-    public static final int VIEW_TYPE_HEADER  = 0, VIEW_TYPE_ITEM = 1;
     private boolean isFiltered = false;
     private Context context;
     private Activity activity;
 
-    private ArrayList<ArrayList<String>> visibleObjects;
-    private ArrayList<ArrayList<String>> allObjects;
+    private List<List<String>> visibleObjects = new ArrayList<>();
+    private List<List<String>> allObjects = new ArrayList<>();
+    private TextView mNoItemsTextView;
 
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
@@ -49,50 +47,20 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             v.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    DataUtil dataUtil = new DataUtil();
-                    Boolean shouldWeClick = dataUtil.onClickAdapter(mTextView.getText().toString(),context,activity);
-                    if(shouldWeClick) return;
-                    // This isn't a valid body so we shouldn't do anything and inform the user
-                    if (mTextViewBody.getText().toString().equals(context.getResources().getString(R.string.not_found))) {
-                        View view = activity.findViewById(R.id.main_activity_layout);
-                        //Fallback if view in unavailable for snackbar
-                        if(view==null)
-                            Toast.makeText(context,activity.getResources().getString(R.string.snackbar_not_found_adapter,mTextView.getText().toString()),Toast.LENGTH_LONG).show();
-                        else
-                            Snackbar.make(activity.findViewById(R.id.main_activity_layout), activity.getResources().getString(R.string.snackbar_not_found_adapter,mTextView.getText().toString()), Snackbar.LENGTH_LONG).show();
-                        return;
-                    }
-                    AlertDialog.Builder builder = new AlertDialog.Builder(context);
-                    builder.setTitle(mTextView.getText().toString());
-                    builder.setMessage(mTextViewBody.getText().toString());
-                    builder.setPositiveButton(R.string.dialog_long_press_positive_button, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            mMoreButton.performClick();
-                            dialogInterface.dismiss();
-                        }
-                    });
-                    builder.setNegativeButton(R.string.dialog_long_press_negative_button, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            dialogInterface.cancel();
-                        }
-                    });
-                    MainActivity.dialog = builder.create();
-                    MainActivity.dialog.show();
+                    new DataUtil(activity).onClickAdapter(mTextView.getText().toString(), mTextViewBody.getText().toString(), mMoreButton);
                 }
             });
             // Long click of recyclerview item
             v.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
-                    // This isn't a valid body so we shouldn't do anything and inform the user
-                    if (!mTextViewBody.getText().toString().equals(context.getResources().getString(R.string.not_found))) {
-                        DataUtil dataUtil = new DataUtil();
-                        dataUtil.copyToClipboard(context,mTextView.getText().toString(),mTextViewBody.getText().toString());
-                        return true;
-                    }
-                    return false;
+                // This isn't a valid body so we shouldn't do anything and inform the user
+                if (!mTextViewBody.getText().toString().equals(context.getResources().getString(R.string.not_found))) {
+                    DataUtil dataUtil = new DataUtil(activity);
+                    dataUtil.copyToClipboard(mTextView.getText().toString(),mTextViewBody.getText().toString());
+                    return true;
+                }
+                return false;
                 }
             });
 
@@ -105,8 +73,8 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                     final List<String> list = new ArrayList<>();
                     list.addAll(Arrays.asList(context.getResources().getStringArray(R.array.item_menu)));
                     //Get favorite item
-                    final DataUtil dataUtil = new DataUtil();
-                    if (dataUtil.isFavoriteItem(context,mTextView.getText().toString())) {
+                    final DataUtil dataUtil = new DataUtil(activity);
+                    if (dataUtil.isFavoriteItem(mTextView.getText().toString())) {
                         list.add(context.getResources().getString(R.string.item_menu_unfavorite));
                     } else {
                         list.add(context.getResources().getString(R.string.item_menu_favorite));
@@ -123,16 +91,16 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                                     context.startActivity(Intent.createChooser(sendIntent, context.getResources().getText(R.string.send_to)));
                                     break;
                                 case 1: //Copy to clipboard
-                                    dataUtil.copyToClipboard(context,mTextView.getText().toString(),mTextViewBody.getText().toString());
+                                    dataUtil.copyToClipboard(mTextView.getText().toString(),mTextViewBody.getText().toString());
                                     break;
                                 case 2: //Favorite item stuff
                                     if(list.get(i).equals(context.getResources().getString(R.string.item_menu_favorite))){
                                         // is not a favorite currently
-                                        DataUtil dataUtil = new DataUtil();
-                                        dataUtil.saveFavoriteItem(context, mTextView.getText().toString());
+                                        DataUtil dataUtil = new DataUtil(activity);
+                                        dataUtil.saveFavoriteItem(mTextView.getText().toString());
                                     } else { // is a favorite
-                                        DataUtil dataUtil = new DataUtil();
-                                        dataUtil.removeFavoriteItem(context, mTextView.getText().toString());
+                                        DataUtil dataUtil = new DataUtil(activity);
+                                        dataUtil.removeFavoriteItem(mTextView.getText().toString());
                                     }
                                     break;
                                 default:
@@ -157,31 +125,24 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     }
 
     // Provide a suitable constructor (depends on the kind of dataset)
-    public MyAdapter(ArrayList<ArrayList<String>> myDataset,Activity parentActivity) {
-        allObjects = new ArrayList<>(myDataset);
-        visibleObjects = new ArrayList<>(myDataset);
+    public MyAdapter(Activity parentActivity, TextView noItemsTextView) {
         activity = parentActivity;
+        mNoItemsTextView = noItemsTextView;
+        setNoItemsTextViewVisible();
+    }
+
+    public void addItem(List<String> yourObject) {
+        allObjects.add(yourObject);
+        visibleObjects.add(yourObject);
+        setNoItemsTextViewVisible();
+        notifyItemInserted(allObjects.size() - 1);
     }
 
     // Create new views (invoked by the layout manager)
     @Override
-    public RecyclerView.ViewHolder onCreateViewHolder(final ViewGroup parent,
-                                                   int viewType) {
-        if (viewType==VIEW_TYPE_ITEM) {
-            // create a new view
-            View v = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.my_text_view, parent, false);
-            v.setTag(Integer.toString(VIEW_TYPE_ITEM));
+    public RecyclerView.ViewHolder onCreateViewHolder(final ViewGroup parent, int viewType) {
+            View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.my_text_view, parent, false);
             return new ViewHolderItem(v);
-        } else if (viewType==VIEW_TYPE_HEADER) {
-            // create a new view
-            View v = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.my_text_view_header, parent, false);
-            v.setTag(Integer.toString(VIEW_TYPE_HEADER));
-            return new ViewHolderHeader(v);
-        } else {
-            throw new RuntimeException("Could not inflate layout");
-        }
     }
 
     // Replace the contents of a view (invoked by the layout manager)
@@ -223,48 +184,46 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         return visibleObjects.size();
     }
 
-    @Override
-    public int getItemViewType(int position) {
-        if (visibleObjects.get(position).get(1).equals(DataUtil.HEADER)){
-            return VIEW_TYPE_HEADER;
-        } else {
-            return VIEW_TYPE_ITEM;
-        }
-    }
-
     public void flushFilter(){
-        visibleObjects = new ArrayList<>(allObjects);
+        visibleObjects.clear(); //Clear the list
+        visibleObjects.addAll(allObjects);
         isFiltered=false;
+        setNoItemsTextViewVisible();
         notifyDataSetChanged();
     }
 
     public void setFilterFavorite() {
         visibleObjects.clear(); //Clear the list
-        DataUtil dataUtil = new DataUtil();
-        visibleObjects.add(dataUtil.filteredTitle(context,context.getResources().getString(R.string.filter_title_favorites))); //Add title to filtered list
-        for (ArrayList<String> item:allObjects) {
-            if (dataUtil.isFavoriteItem(context, item.get(0))) {
+        DataUtil dataUtil = new DataUtil(activity);
+        for (List<String> item:allObjects) {
+            if (dataUtil.isFavoriteItem(item.get(0))) {
                 Log.v(TAG, "Showing favorite: "+item.get(0));
                 visibleObjects.add(item);
             }
         }
         isFiltered=true;
+        setNoItemsTextViewVisible();
         notifyDataSetChanged();
+    }
+
+    private void setNoItemsTextViewVisible() {
+        if (getItemCount()<=0)
+            mNoItemsTextView.setVisibility(View.VISIBLE);
+        else
+            mNoItemsTextView.setVisibility(View.GONE);
     }
 
     public void setSearch(String queryText) {
         visibleObjects.clear(); //Clear the list
-        DataUtil dataUtil = new DataUtil();
-        visibleObjects.add(dataUtil.filteredTitle(context,context.getResources().getString(R.string.filter_title_search))); //Add title to filtered list
-        for (ArrayList<String> item:allObjects) {
+        for (List<String> item:allObjects) {
             if ((item.get(0).toLowerCase().contains(queryText) ||
-                    item.get(1).toLowerCase().contains(queryText))
-                    && !item.get(1).equals(DataUtil.HEADER)) {
+                    item.get(1).toLowerCase().contains(queryText))) {
                 Log.v(TAG, "Showing search: "+item.get(0));
                 visibleObjects.add(item);
             }
         }
         isFiltered=true;
+        setNoItemsTextViewVisible();
         notifyDataSetChanged();
     }
 

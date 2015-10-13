@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.cwlarson.deviceid" >
-    <!-- To read IMEI -->
+    <!-- To read IMEI & Voicemail number -->
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <!-- To read Wifi Mac -->
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
