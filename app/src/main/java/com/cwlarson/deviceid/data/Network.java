@@ -1,6 +1,5 @@
 package com.cwlarson.deviceid.data;
 
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
@@ -15,13 +14,17 @@ import com.cwlarson.deviceid.R;
 import com.cwlarson.deviceid.util.MyAdapter;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
+import java.math.BigInteger;
+import java.net.InetAddress;
+import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Network {
-    String TAG = "Network";
-    private Activity activity;
-    private Context context;
-    private WifiInfo mWifiConnectionInfo;
+    private final String TAG = "Network";
+    private final Activity activity;
+    private final Context context;
+    private final WifiInfo mWifiConnectionInfo;
 
     public Network(Activity activity){
         this.activity=activity;
@@ -30,283 +33,364 @@ public class Network {
     }
 
     public void setNetworkTiles(MyAdapter mAdapter){
-        mAdapter.addItem(Arrays.asList("Bluetooth Hostname", getBluetoothHostname()));
-        mAdapter.addItem(Arrays.asList("Bluetooth MAC Address", getBluetoothMac()));
-        mAdapter.addItem(Arrays.asList("Cellular Network", getCellNetworkName()));
-        mAdapter.addItem(Arrays.asList("Cellular Type", getCellNetworkType()));
-        mAdapter.addItem(Arrays.asList("Phone Number", getPhoneNumber()));
-        mAdapter.addItem(Arrays.asList("Sim Country", getSimCountry()));
-        mAdapter.addItem(Arrays.asList("Sim Operator Name", getSimOperatorName()));
-        mAdapter.addItem(Arrays.asList("Sim Serial", getSimSerial()));
-        mAdapter.addItem(Arrays.asList("Sim State", getSimState()));
-        mAdapter.addItem(Arrays.asList("Voicemail Number", getVoicemailNumber()));
-        mAdapter.addItem(Arrays.asList("Wi-Fi BSSID", getWifiBSSID()));
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) mAdapter.addItem(Arrays.asList("Wi-Fi Frequency", getWifiFrequency()));
-        mAdapter.addItem(Arrays.asList("Wi-Fi Hidden SSID", getWifiHiddenSSID()));
-        mAdapter.addItem(Arrays.asList("Wi-Fi Hostname", getWifiHostname()));
-        mAdapter.addItem(Arrays.asList("Wi-Fi IP Address", getWifiIpAddress()));
-        mAdapter.addItem(Arrays.asList("Wi-Fi Link Speed", getWifiLinkSpeed()));
-        mAdapter.addItem(Arrays.asList("Wi-Fi MAC Address", getWifiMac()));
-        mAdapter.addItem(Arrays.asList("Wi-Fi Network ID", getWifiNetworkID()));
-        mAdapter.addItem(Arrays.asList("Wi-Fi RSSI", getWifiRSSI()));
-        mAdapter.addItem(Arrays.asList("Wi-Fi SSID", getWifiSSID()));
+        List<Item> items = new ArrayList<>();
+        items.add(getWifiMac());
+        items.add(getWifiBSSID());
+        items.add(getWifiSSID());
+        items.add(getWifiFrequency());
+        items.add(getWifiHiddenSSID());
+        items.add(getWifiIpAddress());
+        items.add(getWifiLinkSpeed());
+        items.add(getWifiNetworkID());
+        items.add(getWifiRSSI());
+        items.add(getWifiHostname());
+        items.add(getBluetoothMac());
+        items.add(getBluetoothHostname());
+        items.add(getSimSerial());
+        items.add(getSimOperatorName());
+        items.add(getSimCountry());
+        items.add(getSimState());
+        items.add(getPhoneNumber());
+        items.add(getVoicemailNumber());
+        items.add(getCellNetworkName());
+        items.add(getCellNetworkType());
+        mAdapter.addAll(items);
     }
 
-    private String getWifiMac(){
-        String wifiInfoMac = "";
-        try {
-            wifiInfoMac = mWifiConnectionInfo.getMacAddress();
-        } catch (NullPointerException e){
-            e.printStackTrace();
-            Log.w(TAG, "Null in getWiFiMac");
+    private Item getWifiMac(){
+        String network = "";
+        if(Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            try {
+                network = mWifiConnectionInfo.getMacAddress();
+            } catch (NullPointerException e) {
+                e.printStackTrace();
+                Log.w(TAG, "Null in getWiFiMac");
+            }
+        } else {
+            /*
+             * Marshmallow has started to depreciate this method
+             * http://developer.android.com/about/versions/marshmallow/android-6.0-changes.html#behavior-hardware-id
+            */
+            network=context.getResources().getString(R.string.no_longer_possible,"6.0");
         }
-        return wifiInfoMac == null || wifiInfoMac.equals("") ? context.getResources().getString(R.string.not_found) : wifiInfoMac;
+        Item item = new Item(context);
+        item.setTitle("Wi-Fi MAC Address");
+        item.setSubTitle(network);
+        return item;
     }
 
-    private String getWifiBSSID(){
-        String wifiInfoMac = "";
+    private Item getWifiBSSID(){
+        String network = "";
         try {
-            wifiInfoMac = mWifiConnectionInfo.getBSSID();
+            network = mWifiConnectionInfo.getBSSID();
         } catch (NullPointerException e){
             e.printStackTrace();
             Log.w(TAG, "Null in getWiFiBSSID");
         }
-        return wifiInfoMac == null || wifiInfoMac.equals("") ? context.getResources().getString(R.string.not_found) : wifiInfoMac;
+        Item item = new Item(context);
+        item.setTitle("Wi-Fi BSSID");
+        item.setSubTitle(network);
+        return item;
     }
 
-    private String getWifiSSID(){
-        String wifiInfoMac = "";
+    private Item getWifiSSID(){
+        String network = "";
         try {
-            wifiInfoMac = mWifiConnectionInfo.getSSID();
+            network = mWifiConnectionInfo.getSSID();
         } catch (NullPointerException e){
             e.printStackTrace();
             Log.w(TAG, "Null in getWiFiSSID");
         }
-        return wifiInfoMac == null || wifiInfoMac.equals("") ? context.getResources().getString(R.string.not_found) : wifiInfoMac;
+        Item item = new Item(context);
+        item.setTitle("Wi-Fi SSID");
+        item.setSubTitle(network);
+        return item;
+    }
+    
+    private Item getWifiFrequency(){
+        String network = "";
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            try {
+                network = Integer.toString(mWifiConnectionInfo.getFrequency());
+            } catch (NullPointerException e) {
+                e.printStackTrace();
+                Log.w(TAG, "Null in getWiFiMac");
+            }
+        } else {
+            network = context.getResources().getString(R.string.not_found);
+        }
+        Item item = new Item(context);
+        item.setTitle("Wi-Fi Frequency");
+        item.setSubTitle(network);
+        return item;
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private String getWifiFrequency(){
-        String wifiInfoMac = "";
+    private Item getWifiHiddenSSID(){
+        String network = "";
         try {
-            wifiInfoMac = Integer.toString(mWifiConnectionInfo.getFrequency());
+            network = Boolean.toString(mWifiConnectionInfo.getHiddenSSID());
         } catch (NullPointerException e){
             e.printStackTrace();
             Log.w(TAG, "Null in getWiFiMac");
         }
-        return wifiInfoMac.equals("") ? context.getResources().getString(R.string.not_found) : wifiInfoMac;
+        Item item = new Item(context);
+        item.setTitle("Wi-Fi Hidden SSID");
+        item.setSubTitle(network);
+        return item;
     }
 
-    private String getWifiHiddenSSID(){
-        String wifiInfoMac = "";
+    private Item getWifiIpAddress(){
+        String network = "";
         try {
-            wifiInfoMac = Boolean.toString(mWifiConnectionInfo.getHiddenSSID());
+            int ipAddress = mWifiConnectionInfo.getIpAddress();
+            // Convert little-endian to big-endianif needed
+            if (ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN)) ipAddress = Integer.reverseBytes(ipAddress);
+            byte[] ipByteArray = BigInteger.valueOf(ipAddress).toByteArray();
+            network = InetAddress.getByAddress(ipByteArray).getHostAddress();
+        } catch (Exception e){
+            Log.w(TAG, "Exception in getWiFiMac");
+        }
+        Item item = new Item(context);
+        item.setTitle("Wi-Fi IP Address");
+        item.setSubTitle(network);
+        return item;
+    }
+
+    private Item getWifiLinkSpeed(){
+        String network= "";
+        try {
+            network = Integer.toString(mWifiConnectionInfo.getLinkSpeed());
         } catch (NullPointerException e){
             e.printStackTrace();
             Log.w(TAG, "Null in getWiFiMac");
         }
-        return wifiInfoMac.equals("") ? context.getResources().getString(R.string.not_found) : wifiInfoMac;
+        Item item = new Item(context);
+        item.setTitle("Wi-Fi Link Speed");
+        item.setSubTitle(network);
+        return item;
     }
 
-    private String getWifiIpAddress(){
-        String wifiInfoMac = "";
+    private Item getWifiNetworkID(){
+        String network = "";
         try {
-            wifiInfoMac = Integer.toString(mWifiConnectionInfo.getIpAddress());
+            network = Integer.toString(mWifiConnectionInfo.getNetworkId());
         } catch (NullPointerException e){
             e.printStackTrace();
             Log.w(TAG, "Null in getWiFiMac");
         }
-        return wifiInfoMac.equals("") ? context.getResources().getString(R.string.not_found) : wifiInfoMac;
+        Item item = new Item(context);
+        item.setTitle("Wi-Fi Network ID");
+        item.setSubTitle(network);
+        return item;
     }
 
-    private String getWifiLinkSpeed(){
-        String wifiInfoMac = "";
+    private Item getWifiRSSI(){
+        String network = "";
         try {
-            wifiInfoMac = Integer.toString(mWifiConnectionInfo.getLinkSpeed());
+            network = Integer.toString(mWifiConnectionInfo.getRssi());
         } catch (NullPointerException e){
             e.printStackTrace();
             Log.w(TAG, "Null in getWiFiMac");
         }
-        return wifiInfoMac.equals("") ? context.getResources().getString(R.string.not_found) : wifiInfoMac;
+        Item item = new Item(context);
+        item.setTitle("Wi-Fi RSSI");
+        item.setSubTitle(network);
+        return item;
     }
 
-    private String getWifiNetworkID(){
-        String wifiInfoMac = "";
-        try {
-            wifiInfoMac = Integer.toString(mWifiConnectionInfo.getNetworkId());
-        } catch (NullPointerException e){
-            e.printStackTrace();
-            Log.w(TAG, "Null in getWiFiMac");
-        }
-        return wifiInfoMac.equals("") ? context.getResources().getString(R.string.not_found) : wifiInfoMac;
-    }
-
-    private String getWifiRSSI(){
-        String wifiInfoMac = "";
-        try {
-            wifiInfoMac = Integer.toString(mWifiConnectionInfo.getRssi());
-        } catch (NullPointerException e){
-            e.printStackTrace();
-            Log.w(TAG, "Null in getWiFiMac");
-        }
-        return wifiInfoMac.equals("") ? context.getResources().getString(R.string.not_found) : wifiInfoMac;
-    }
-
-    private String getWifiHostname(){
-        String wifiInfoMac = "";
+    private Item getWifiHostname(){
+        String network = "";
         try {
             Method getString = Build.class.getDeclaredMethod("getString", String.class);
             getString.setAccessible(true);
-            wifiInfoMac = getString.invoke(null,"net.hostname").toString();
+            network = getString.invoke(null,"net.hostname").toString();
         } catch (Exception e){
             e.printStackTrace();
             Log.w(TAG, "Null in getWiFiMac");
         }
-        return wifiInfoMac == null || wifiInfoMac.equals("") ? context.getResources().getString(R.string.not_found) : wifiInfoMac;
+        Item item = new Item(context);
+        item.setTitle("Wi-Fi Hostname");
+        item.setSubTitle(network);
+        return item;
     }
 
-    private String getBluetoothMac() {
-        String macAddress="";
-        try {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR2) {
-                BluetoothManager bm = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-                macAddress = bm.getAdapter().getAddress();
-            } else {
-                macAddress = BluetoothAdapter.getDefaultAdapter().getAddress();
+    private Item getBluetoothMac() {
+        String network="";
+        if(Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            try {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                    BluetoothManager bm = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+                    network = bm.getAdapter().getAddress();
+                } else {
+                    network = BluetoothAdapter.getDefaultAdapter().getAddress();
+                }
+            } catch (NullPointerException e){
+                e.printStackTrace();
+                Log.w(TAG, "Null in getBluetoothMac");
             }
-        } catch (NullPointerException e){
-            e.printStackTrace();
-            Log.w(TAG, "Null in getBluetoothMac");
+        } else {
+            /*
+             * Marshmallow has started to depreciate this method
+             * http://developer.android.com/about/versions/marshmallow/android-6.0-changes.html#behavior-hardware-id
+            */
+            network=context.getResources().getString(R.string.no_longer_possible,"6.0");
         }
-        return macAddress == null || macAddress.equals("")  ? context.getResources().getString(R.string.not_found) : macAddress;
+        Item item = new Item(context);
+        item.setTitle("Bluetooth MAC Address");
+        item.setSubTitle(network);
+        return item;
     }
 
-    private String getBluetoothHostname() {
-        String macAddress="";
+    private Item getBluetoothHostname() {
+        String network="";
         try {
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR2) {
                 BluetoothManager bm = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-                macAddress = bm.getAdapter().getName();
+                network = bm.getAdapter().getName();
             } else {
-                macAddress = BluetoothAdapter.getDefaultAdapter().getName();
+                network = BluetoothAdapter.getDefaultAdapter().getName();
             }
         } catch (NullPointerException e){
             e.printStackTrace();
             Log.w(TAG, "Null in getBluetoothHostname");
         }
-        return macAddress == null || macAddress.equals("")  ? context.getResources().getString(R.string.not_found) : macAddress;
+        Item item = new Item(context);
+        item.setTitle("Bluetooth Hostname");
+        item.setSubTitle(network);
+        return item;
     }
 
-    private String getSimSerial() {
-        String sim="";
+    private Item getSimSerial() {
+        String network="";
         try {
             TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-            sim= telephonyManager.getSimSerialNumber();
+            network= telephonyManager.getSimSerialNumber();
         } catch (NullPointerException | SecurityException e){
             e.printStackTrace();
             Log.w(TAG, "Null in getBluetoothHostname");
         }
-        return sim == null || sim.equals("") ? context.getResources().getString(R.string.not_found) : sim;
+        Item item = new Item(context);
+        item.setTitle("Sim Serial");
+        item.setSubTitle(network);
+        return item;
     }
 
-    private String getSimOperatorName() {
-        String sim="";
+    private Item getSimOperatorName() {
+        String network="";
         try {
             TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-            sim= telephonyManager.getSimOperatorName();
+            network= telephonyManager.getSimOperatorName();
         } catch (NullPointerException e){
             e.printStackTrace();
             Log.w(TAG, "Null in getBluetoothHostname");
         }
-        return sim == null || sim.equals("") ? context.getResources().getString(R.string.not_found) : sim;
+        Item item = new Item(context);
+        item.setTitle("Sim Operator Name");
+        item.setSubTitle(network);
+        return item;
     }
 
-    private String getSimCountry() {
-        String sim="";
+    private Item getSimCountry() {
+        String network="";
         try {
             TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-            sim= telephonyManager.getSimCountryIso();
+            network= telephonyManager.getSimCountryIso();
         } catch (NullPointerException e){
             e.printStackTrace();
             Log.w(TAG, "Null in getBluetoothHostname");
         }
-        return sim == null || sim.equals("") ? context.getResources().getString(R.string.not_found) : sim;
+        Item item = new Item(context);
+        item.setTitle("Sim Country");
+        item.setSubTitle(network);
+        return item;
     }
 
-    private String getSimState() {
-        String sim="";
+    private Item getSimState() {
+        String network="";
         try {
             TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
             switch(telephonyManager.getSimState()){
                 case TelephonyManager.SIM_STATE_ABSENT:
-                    sim = "Absent";
+                    network = "Absent";
                     break;
                 case TelephonyManager.SIM_STATE_NETWORK_LOCKED:
-                    sim = "Network Locked";
+                    network = "Network Locked";
                     break;
                 case TelephonyManager.SIM_STATE_PIN_REQUIRED:
-                    sim = "PIN Required";
+                    network = "PIN Required";
                     break;
                 case TelephonyManager.SIM_STATE_PUK_REQUIRED:
-                    sim = "PUK Required";
+                    network = "PUK Required";
                     break;
                 case TelephonyManager.SIM_STATE_READY:
-                    sim = "Ready";
+                    network = "Ready";
                     break;
                 case TelephonyManager.SIM_STATE_UNKNOWN:
                 default:
-                    sim = "Network Unknown";
+                    network = "Network Unknown";
                     break;
             }
         } catch (NullPointerException e){
             e.printStackTrace();
             Log.w(TAG, "Null in getBluetoothHostname");
         }
-        return sim.equals("") ? context.getResources().getString(R.string.not_found) : sim;
+        Item item = new Item(context);
+        item.setTitle("Sim State");
+        item.setSubTitle(network);
+        return item;
     }
 
-    private String getPhoneNumber() {
-        String sim="";
+    private Item getPhoneNumber() {
+        String network="";
         try {
             TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-            sim= telephonyManager.getLine1Number();
+            network= telephonyManager.getLine1Number();
         } catch (NullPointerException e){
             e.printStackTrace();
             Log.w(TAG, "Null in getPhoneNumber");
         }
-        return sim == null || sim.equals("") ? context.getResources().getString(R.string.not_found) : sim;
+        Item item = new Item(context);
+        item.setTitle("Phone Number");
+        item.setSubTitle(network);
+        return item;
     }
 
-    private String getVoicemailNumber() {
-        String sim="";
+    private Item getVoicemailNumber() {
+        String network="";
         try {
             if (new Permissions(activity).hasPermission(Permissions.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE)) {
                 TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-                sim= telephonyManager.getVoiceMailNumber();
+                network= telephonyManager.getVoiceMailNumber();
             } else {
-                sim = context.getResources().getString(R.string.phone_permission_denied);
+                network = context.getResources().getString(R.string.phone_permission_denied);
             }
         } catch (NullPointerException e){
             e.printStackTrace();
             Log.w(TAG, "Null in getPhoneStrength");
         }
-        return sim == null || sim.equals("") ? context.getResources().getString(R.string.not_found) : sim;
+        Item item = new Item(context);
+        item.setTitle("Voicemail Number");
+        item.setSubTitle(network);
+        return item;
     }
 
-    private String getCellNetworkName() {
-        String string="";
+    private Item getCellNetworkName() {
+        String network="";
         try {
             TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-            string= telephonyManager.getNetworkOperatorName();
+            network= telephonyManager.getNetworkOperatorName();
         } catch (NullPointerException e){
             e.printStackTrace();
             Log.w(TAG, "Null in getPhoneNumber");
         }
-        return string == null || string.equals("") ? context.getResources().getString(R.string.not_found) : string;
+        Item item = new Item(context);
+        item.setTitle("Cell Network Name");
+        item.setSubTitle(network);
+        return item;
     }
 
-    private String getCellNetworkType() {
-        String string="";
+    private Item getCellNetworkType() {
+        String network="";
         try {
             TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
             switch(telephonyManager.getNetworkType()){
@@ -315,7 +399,7 @@ public class Network {
                 case TelephonyManager.NETWORK_TYPE_EDGE:
                 case TelephonyManager.NETWORK_TYPE_GPRS:
                 case TelephonyManager.NETWORK_TYPE_IDEN:
-                    string="2G";
+                    network="2G";
                     break;
                 case TelephonyManager.NETWORK_TYPE_EHRPD:
                 case TelephonyManager.NETWORK_TYPE_EVDO_0:
@@ -326,20 +410,23 @@ public class Network {
                 case TelephonyManager.NETWORK_TYPE_HSPAP:
                 case TelephonyManager.NETWORK_TYPE_HSUPA:
                 case TelephonyManager.NETWORK_TYPE_UMTS:
-                    string="3G";
+                    network="3G";
                     break;
                 case TelephonyManager.NETWORK_TYPE_LTE:
-                    string="4G";
+                    network="4G";
                     break;
                 case TelephonyManager.NETWORK_TYPE_UNKNOWN:
                 default:
-                    string=context.getResources().getString(R.string.not_found);
+                    network=context.getResources().getString(R.string.not_found);
                     break;
             }
         } catch (NullPointerException e){
             e.printStackTrace();
             Log.w(TAG, "Null in getPhoneNumber");
         }
-        return string.equals("") ? context.getResources().getString(R.string.not_found) : string;
+        Item item = new Item(context);
+        item.setTitle("Cell Network Type");
+        item.setSubTitle(network);
+        return item;
     }
 }

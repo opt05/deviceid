@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.support.v7.app.AlertDialog;
+import android.support.v7.util.SortedList;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -15,28 +16,76 @@ import android.widget.TextView;
 
 import com.cwlarson.deviceid.MainActivity;
 import com.cwlarson.deviceid.R;
+import com.cwlarson.deviceid.data.Item;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+    @SuppressWarnings("FieldCanBeLocal")
     private final String TAG = "MyAdapter";
-    private boolean isFiltered = false;
     private Context context;
-    private Activity activity;
+    private final Activity activity;
 
-    private List<List<String>> visibleObjects = new ArrayList<>();
-    private List<List<String>> allObjects = new ArrayList<>();
-    private TextView mNoItemsTextView;
+    private final SortedList<Item> visibleObjects;
+    private final TextView mNoItemsTextView;
+
+    public MyAdapter(Activity parentActivity, TextView noItemsTextView) {
+        activity = parentActivity;
+        mNoItemsTextView = noItemsTextView;
+        visibleObjects = new SortedList<>(Item.class, new SortedList.Callback<Item>() {
+
+            @Override
+            public int compare(Item o1, Item o2) {
+                return o1.getTitle().compareTo(o2.getTitle());
+            }
+
+            @Override
+            public void onInserted(int position, int count) {
+                setNoItemsTextViewVisible();
+                notifyItemRangeInserted(position, count);
+            }
+
+            @Override
+            public void onRemoved(int position, int count) {
+                setNoItemsTextViewVisible();
+                notifyItemRangeRemoved(position, count);
+            }
+
+            @Override
+            public void onMoved(int fromPosition, int toPosition) {
+                setNoItemsTextViewVisible();
+                notifyItemMoved(fromPosition, toPosition);
+            }
+
+            @Override
+            public void onChanged(int position, int count) {
+                notifyItemRangeChanged(position, count);
+            }
+
+            @Override
+            public boolean areContentsTheSame(Item oldItem, Item newItem) {
+                return oldItem.getTitle().equals(newItem.getTitle());
+            }
+
+            @Override
+            public boolean areItemsTheSame(Item item1, Item item2) {
+                return item1.getTitle().equals(item2.getTitle()) &&
+                        item1.getSubTitle().equals(item2.getSubTitle());
+            }
+        });
+        setNoItemsTextViewVisible();
+    }
 
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
     // you provide access to all the views for a data item in a view holder
     public class ViewHolderItem extends RecyclerView.ViewHolder {
         // each data item is just a string in this case
-        public TextView mTextView,mTextViewBody;
-        public ImageButton mMoreButton;
+        public final TextView mTextView;
+        public final TextView mTextViewBody;
+        public final ImageButton mMoreButton;
         public ViewHolderItem(final View v) {
             super(v);
             this.mTextView = (TextView) v.findViewById(R.id.item_title);
@@ -55,7 +104,7 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 @Override
                 public boolean onLongClick(View v) {
                 // This isn't a valid body so we shouldn't do anything and inform the user
-                if (!mTextViewBody.getText().toString().equals(context.getResources().getString(R.string.not_found))) {
+                if (!isNotRealItem(mTextViewBody.getText().toString())) {
                     DataUtil dataUtil = new DataUtil(activity);
                     dataUtil.copyToClipboard(mTextView.getText().toString(),mTextViewBody.getText().toString());
                     return true;
@@ -124,18 +173,48 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
     }
 
-    // Provide a suitable constructor (depends on the kind of dataset)
-    public MyAdapter(Activity parentActivity, TextView noItemsTextView) {
-        activity = parentActivity;
-        mNoItemsTextView = noItemsTextView;
-        setNoItemsTextViewVisible();
+    public Item get(int position){
+        return visibleObjects.get(position);
     }
 
-    public void addItem(List<String> yourObject) {
-        allObjects.add(yourObject);
-        visibleObjects.add(yourObject);
-        setNoItemsTextViewVisible();
-        notifyItemInserted(allObjects.size() - 1);
+    public int add(Item item){
+        return visibleObjects.add(item);
+    }
+
+    public int indexOf(Item item){
+        return visibleObjects.indexOf(item);
+    }
+
+    public void updateItemAt(int index, Item item){
+        visibleObjects.updateItemAt(index,item);
+    }
+
+    public void addAll(List<Item> items){
+        visibleObjects.beginBatchedUpdates();
+        for (Item item : items){
+            visibleObjects.add(item);
+        }
+        visibleObjects.endBatchedUpdates();
+    }
+
+    public void addAll(Item[] items){
+        addAll(Arrays.asList(items));
+    }
+
+    public boolean remove(Item item){
+        return visibleObjects.remove(item);
+    }
+
+    public Item removeItemAtt(int index){
+        return visibleObjects.removeItemAt(index);
+    }
+
+    public void clear(){
+        visibleObjects.beginBatchedUpdates();
+        while(visibleObjects.size()>0){
+            visibleObjects.removeItemAt(visibleObjects.size()-1);
+        }
+        visibleObjects.endBatchedUpdates();
     }
 
     // Create new views (invoked by the layout manager)
@@ -145,6 +224,13 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             return new ViewHolderItem(v);
     }
 
+    private Boolean isNotRealItem(String textviewBody){
+        return textviewBody.equals(context.getResources().getString(R.string.not_found))
+                || textviewBody.equals(context.getResources().getString(R.string.phone_permission_denied))
+                || textviewBody.startsWith(context.getResources().getString(R.string.no_longer_possible).replace("%s", ""))
+                || textviewBody.startsWith(context.getResources().getString(R.string.not_possible_yet).replace("%s", ""));
+    }
+
     // Replace the contents of a view (invoked by the layout manager)
     @Override
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
@@ -152,14 +238,14 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         // - replace the contents of the view with that element
         if (holder instanceof ViewHolderItem) { //Item
             try { //Title
-                ((ViewHolderItem) holder).mTextView.setText(visibleObjects.get(position).get(0));
+                ((ViewHolderItem) holder).mTextView.setText(visibleObjects.get(position).getTitle());
             } catch (ArrayIndexOutOfBoundsException e) {
                 ((ViewHolderItem) holder).mTextView.setText("");
             }
             try { //Body
-                ((ViewHolderItem) holder).mTextViewBody.setText(visibleObjects.get(position).get(1));
+                ((ViewHolderItem) holder).mTextViewBody.setText(visibleObjects.get(position).getSubTitle());
                 // Hide the more button if it is unavailable
-                if(((ViewHolderItem) holder).mTextViewBody.getText().toString().equals(context.getResources().getString(R.string.not_found))||((ViewHolderItem) holder).mTextViewBody.getText().toString().equals(context.getResources().getString(R.string.phone_permission_denied)))
+                if(isNotRealItem(((ViewHolderItem) holder).mTextViewBody.getText().toString()))
                     ((ViewHolderItem) holder).mMoreButton.setVisibility(View.GONE);
                 else
                     ((ViewHolderItem) holder).mMoreButton.setVisibility(View.VISIBLE);
@@ -169,7 +255,7 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
         } else if (holder instanceof ViewHolderHeader) { //Header
             try { //Title
-                ((ViewHolderHeader) holder).header.setText(visibleObjects.get(position).get(0));
+                ((ViewHolderHeader) holder).header.setText(visibleObjects.get(position).getTitle());
             } catch (ArrayIndexOutOfBoundsException e) {
                 ((ViewHolderHeader) holder).header.setText("");
             }
@@ -184,50 +270,10 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         return visibleObjects.size();
     }
 
-    public void flushFilter(){
-        visibleObjects.clear(); //Clear the list
-        visibleObjects.addAll(allObjects);
-        isFiltered=false;
-        setNoItemsTextViewVisible();
-        notifyDataSetChanged();
-    }
-
-    public void setFilterFavorite() {
-        visibleObjects.clear(); //Clear the list
-        DataUtil dataUtil = new DataUtil(activity);
-        for (List<String> item:allObjects) {
-            if (dataUtil.isFavoriteItem(item.get(0))) {
-                Log.v(TAG, "Showing favorite: "+item.get(0));
-                visibleObjects.add(item);
-            }
-        }
-        isFiltered=true;
-        setNoItemsTextViewVisible();
-        notifyDataSetChanged();
-    }
-
     private void setNoItemsTextViewVisible() {
         if (getItemCount()<=0)
             mNoItemsTextView.setVisibility(View.VISIBLE);
         else
             mNoItemsTextView.setVisibility(View.GONE);
-    }
-
-    public void setSearch(String queryText) {
-        visibleObjects.clear(); //Clear the list
-        for (List<String> item:allObjects) {
-            if ((item.get(0).toLowerCase().contains(queryText) ||
-                    item.get(1).toLowerCase().contains(queryText))) {
-                Log.v(TAG, "Showing search: "+item.get(0));
-                visibleObjects.add(item);
-            }
-        }
-        isFiltered=true;
-        setNoItemsTextViewVisible();
-        notifyDataSetChanged();
-    }
-
-    public boolean isFiltered() {
-        return isFiltered;
     }
 }

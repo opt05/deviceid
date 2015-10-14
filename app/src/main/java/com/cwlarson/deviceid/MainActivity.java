@@ -18,11 +18,12 @@ import com.cwlarson.deviceid.util.TabsViewPagerAdapter;
 
 public class MainActivity extends AppCompatActivity {
 
-    public static MenuItem searchItem;
-    public static SearchView searchView;
+    private static MenuItem searchItem;
+    private static SearchView searchView;
+    @SuppressWarnings("unused")
     private final String TAG = "MainActivity";
     public static AlertDialog dialog;
-    public static ViewPager mViewPager;
+    private static ViewPager mViewPager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

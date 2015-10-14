@@ -7,9 +7,11 @@
         android:title="@string/menu_search"
         android:icon="@drawable/ic_action_search"
         deviceid:actionViewClass="android.support.v7.widget.SearchView"
-        deviceid:showAsAction="ifRoom"/><!--|collapseActionView-->
+        deviceid:showAsAction="ifRoom"
+        android:visible="false"/><!--|collapseActionView-->
     <item android:id="@+id/action_filter"
         android:icon="@drawable/ic_action_filter_list"
         android:title="@string/filter_action"
-        deviceid:showAsAction="ifRoom"  />
+        deviceid:showAsAction="ifRoom"
+        android:visible="false"/>
 </menu>

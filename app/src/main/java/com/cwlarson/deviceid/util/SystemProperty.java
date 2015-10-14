@@ -12,7 +12,7 @@ public class SystemProperty {
     }
 
     @SuppressWarnings("unchecked")
-    public String getOrThrow(String key) throws NoSuchPropertyException {
+    private String getOrThrow(String key) throws NoSuchPropertyException {
         try {
             ClassLoader classLoader = mContext.getClassLoader();
             Class SystemProperties = classLoader.loadClass("android.os.SystemProperties");

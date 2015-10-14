@@ -5,43 +5,51 @@ import android.app.ActivityManager;
 import android.content.Context;
 import android.content.pm.ConfigurationInfo;
 import android.os.Build;
+import android.text.format.DateFormat;
 import android.util.Log;
 
 import com.cwlarson.deviceid.R;
 import com.cwlarson.deviceid.util.MyAdapter;
 import com.cwlarson.deviceid.util.SystemProperty;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 
 public class Software {
-    String TAG = "Network";
-    private Context context;
+    private final String TAG = "Network";
+    private final Context context;
 
     public Software(Activity activity){
         this.context = activity.getApplicationContext();
     }
 
     public void setSoftwareTiles(MyAdapter mAdapter){
-        mAdapter.addItem(Arrays.asList("Android Version", getAndroidVersion()));
-        mAdapter.addItem(Arrays.asList("Baseband Version", getBuildBaseband()));
-        mAdapter.addItem(Arrays.asList("Build Board", getBuildBoard()));
-        mAdapter.addItem(Arrays.asList("Build Bootloader", getBuildBootloader()));
-        mAdapter.addItem(Arrays.asList("Build Brand", getBuildBrand()));
-        mAdapter.addItem(Arrays.asList("Build Date", getBuildDate()));
-        mAdapter.addItem(Arrays.asList("Build Device", getBuildDevice()));
-        mAdapter.addItem(Arrays.asList("Build Display", getBuildDisplay()));
-        mAdapter.addItem(Arrays.asList("Build Fingerprint", getBuildFingerprint()));
-        mAdapter.addItem(Arrays.asList("Build Hardware", getBuildHardware()));
-        mAdapter.addItem(Arrays.asList("Build Host", getBuildHost()));
-        mAdapter.addItem(Arrays.asList("Build Number", getBuildNumber()));
-        mAdapter.addItem(Arrays.asList("Build Tags", getBuildTags()));
-        mAdapter.addItem(Arrays.asList("Build Type", getBuildType()));
-        mAdapter.addItem(Arrays.asList("Build User", getBuildUser()));
-        mAdapter.addItem(Arrays.asList("Build Version", getDeviceBuildVersion()));
-        mAdapter.addItem(Arrays.asList("Kernel Version", getBuildKernel()));
-        mAdapter.addItem(Arrays.asList("OpenGL Version", getOpenGLVersion()));
+        List<Item> items = new ArrayList<>();
+        items.add(getAndroidVersion());
+        items.add(getPatchLevel());
+        items.add(getPreviewSDKInt());
+        items.add(getDeviceBuildVersion());
+        items.add(getBuildBaseband());
+        items.add(getBuildKernel());
+        items.add(getBuildDate());
+        items.add(getBuildNumber());
+        items.add(getBuildBoard());
+        items.add(getBuildBootloader());
+        items.add(getBuildBrand());
+        items.add(getBuildDevice());
+        items.add(getBuildDisplay());
+        items.add(getBuildFingerprint());
+        items.add(getBuildHardware());
+        items.add(getBuildHost());
+        items.add(getBuildTags());
+        items.add(getBuildType());
+        items.add(getBuildUser());
+        items.add(getOpenGLVersion());
+        mAdapter.addAll(items);
     }
 
     enum Codenames {
@@ -117,10 +125,10 @@ public class Software {
         }
     }
 
-    private String getAndroidVersion() {
-        String version="",api="",versionName="";
+    private Item getAndroidVersion() {
+        String software="",api="",versionName="";
         try {
-            version = Build.VERSION.RELEASE;
+            software = Build.VERSION.RELEASE;
             api = Integer.toString(Build.VERSION.SDK_INT);
             //noinspection ConstantConditions
             versionName = (Codenames.getCodename() == null) ? "" : Codenames.getCodename().toString();
@@ -128,79 +136,195 @@ public class Software {
             e.printStackTrace();
             Log.w(TAG, "Null in getAndroidVersion");
         }
-        version=version+ " (" +api+") "+versionName;
-
-        return version.equals("") ? context.getResources().getString(R.string.not_found) : version;
+        software=software+ " (" +api+") "+versionName;
+        Item item = new Item(context);
+        item.setTitle("Android Version");
+        item.setSubTitle(software); 
+        return item;
     }
 
-    private String getDeviceBuildVersion() {
+    private Item getPatchLevel() {
+        String software="";
+        try {
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                try {
+                    SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+                    software = DateFormat.getDateFormat(context).format(format.parse(Build.VERSION.SECURITY_PATCH));
+                } catch(ParseException e){
+                    e.printStackTrace();
+                    software = Build.VERSION.SECURITY_PATCH;
+                }
+
+            } else
+                software = context.getResources().getString(R.string.not_possible_yet,"6.0");
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.w(TAG, "Null in getAndroidVersion");
+        }
+        Item item = new Item(context);
+        item.setTitle("Security Patch Level");
+        item.setSubTitle(software);
+        return item;
+    }
+
+    private Item getPreviewSDKInt(){
+        String software="";
+        try {
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                int sdk = Build.VERSION.PREVIEW_SDK_INT;
+                if(sdk<=0)
+                    software = "Non-Preview";
+                else
+                    software = "Preview " + Integer.toString(sdk);
+            }
+            else
+                software = context.getResources().getString(R.string.not_possible_yet,"6.0");
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.w(TAG, "Null in getPreviewSDKInt");
+        }
+        Item item = new Item(context);
+        item.setTitle("Preview SDK Number");
+        item.setSubTitle(software);
+        return item;
+    }
+
+    private Item getDeviceBuildVersion() {
         //Get Moto specific build version if available
         SystemProperty sp = new SystemProperty(context);
-        return sp.get("ro.build.version.full")==null|| sp.get("ro.build.version.full").equals("") ? Build.DISPLAY : sp.get("ro.build.version.full");
+        String software=sp.get("ro.build.version.full")==null|| sp.get("ro.build.version.full").equals("") ? Build.DISPLAY : sp.get("ro.build.version.full");
+        Item item = new Item(context);
+        item.setTitle("Build Version");
+        item.setSubTitle(software); 
+        return item;
     }
 
-    private String getBuildBaseband() {
-        return Build.getRadioVersion().equals("") ? context.getResources().getString(R.string.not_found) : Build.getRadioVersion();
+    private Item getBuildBaseband() {
+        String software = Build.getRadioVersion();
+        Item item = new Item(context);
+        item.setTitle("Build Baseband");
+        item.setSubTitle(software); 
+        return item;
     }
 
-    private String getBuildKernel() {
-        return System.getProperty("os.version")==null|| System.getProperty("os.version").equals("") ? context.getResources().getString(R.string.not_found) : System.getProperty("os.version");
+    private Item getBuildKernel() {
+        String software = System.getProperty("os.version");
+        Item item = new Item(context);
+        item.setTitle("Kernel Version");
+        item.setSubTitle(software); 
+        return item;
     }
 
-    private String getBuildDate() {
-        return SimpleDateFormat.getInstance().format(new Date(Build.TIME)).equals("") ? context.getResources().getString(R.string.not_found) : SimpleDateFormat.getInstance().format(new Date(Build.TIME));
+    private Item getBuildDate() {
+        String software = SimpleDateFormat.getInstance().format(new Date(Build.TIME));
+        Item item = new Item(context);
+        item.setTitle("Build Date");
+        item.setSubTitle(software); 
+        return item;
     }
 
-    private String getBuildNumber() {
-        return Build.ID==null || Build.ID.equals("") ? context.getResources().getString(R.string.not_found) : Build.ID;
+    private Item getBuildNumber() {
+        String software = Build.ID;
+        Item item = new Item(context);
+        item.setTitle("Build Number");
+        item.setSubTitle(software); 
+        return item;
     }
 
-    private String getBuildBoard() {
-        return Build.BOARD==null || Build.BOARD.equals("") ? context.getResources().getString(R.string.not_found) : Build.BOARD;
+    private Item getBuildBoard() {
+        String software = Build.BOARD;
+        Item item = new Item(context);
+        item.setTitle("Build Board");
+        item.setSubTitle(software); 
+        return item;
     }
 
-    private String getBuildBootloader() {
-        return Build.BOOTLOADER==null || Build.BOOTLOADER.equals("") ? context.getResources().getString(R.string.not_found) : Build.BOOTLOADER;
+    private Item getBuildBootloader() {
+        String software = Build.BOOTLOADER;
+        Item item = new Item(context);
+        item.setTitle("Build Bootloader");
+        item.setSubTitle(software); 
+        return item;
     }
 
-    private String getBuildBrand() {
-        return Build.BRAND==null || Build.BRAND.equals("") ? context.getResources().getString(R.string.not_found) : Build.BRAND;
+    private Item getBuildBrand() {
+        String software = Build.BRAND;
+        Item item = new Item(context);
+        item.setTitle("Build Brand");
+        item.setSubTitle(software); 
+        return item;
     }
 
-    private String getBuildDevice() {
-        return Build.DEVICE==null || Build.DEVICE.equals("") ? context.getResources().getString(R.string.not_found) : Build.DEVICE;
+    private Item getBuildDevice() {
+        String software = Build.DEVICE;
+        Item item = new Item(context);
+        item.setTitle("Build Device");
+        item.setSubTitle(software); 
+        return item;
     }
 
-    private String getBuildDisplay() {
-        return Build.DISPLAY==null || Build.DISPLAY.equals("") ? context.getResources().getString(R.string.not_found) : Build.DISPLAY;
+    private Item getBuildDisplay() {
+        String software = Build.DISPLAY;
+        Item item = new Item(context);
+        item.setTitle("Build Display");
+        item.setSubTitle(software); 
+        return item;
     }
 
-    private String getBuildFingerprint() {
-        return Build.FINGERPRINT==null || Build.FINGERPRINT.equals("") ? context.getResources().getString(R.string.not_found) : Build.FINGERPRINT;
+    private Item getBuildFingerprint() {
+        String software = Build.FINGERPRINT;
+        Item item = new Item(context);
+        item.setTitle("Build Fingerprint");
+        item.setSubTitle(software); 
+        return item;
     }
 
-    private String getBuildHardware() {
-        return Build.HARDWARE==null || Build.HARDWARE.equals("") ? context.getResources().getString(R.string.not_found) : Build.HARDWARE;
+    private Item getBuildHardware() {
+        String software = Build.HARDWARE;
+        Item item = new Item(context);
+        item.setTitle("Build Hardware");
+        item.setSubTitle(software); 
+        return item;
     }
 
-    private String getBuildHost() {
-        return Build.HOST==null || Build.HOST.equals("") ? context.getResources().getString(R.string.not_found) : Build.HOST;
+    private Item getBuildHost() {
+        String software = Build.HOST;
+        Item item = new Item(context);
+        item.setTitle("Build Host");
+        item.setSubTitle(software); 
+        return item;
     }
 
-    private String getBuildTags() {
-        return Build.TAGS==null || Build.TAGS.equals("") ? context.getResources().getString(R.string.not_found) : Build.TAGS;
+    private Item getBuildTags() {
+        String software = Build.TAGS;
+        Item item = new Item(context);
+        item.setTitle("Build Tags");
+        item.setSubTitle(software); 
+        return item;
     }
 
-    private String getBuildType() {
-        return Build.TYPE==null || Build.TYPE.equals("") ? context.getResources().getString(R.string.not_found) : Build.TYPE;
+    private Item getBuildType() {
+        String software = Build.TYPE;
+        Item item = new Item(context);
+        item.setTitle("Build Type");
+        item.setSubTitle(software); 
+        return item;
     }
 
-    private String getBuildUser() {
-        return Build.USER==null || Build.USER.equals("") ? context.getResources().getString(R.string.not_found) : Build.USER;
+    private Item getBuildUser() {
+        String software = Build.USER;
+        Item item = new Item(context);
+        item.setTitle("Build User");
+        item.setSubTitle(software); 
+        return item;
     }
 
-    private String getOpenGLVersion(){
+    private Item getOpenGLVersion(){
         ConfigurationInfo configurationInfo = ((ActivityManager)context.getSystemService(Context.ACTIVITY_SERVICE)).getDeviceConfigurationInfo();
-        return (configurationInfo.getGlEsVersion().equals("")) ? context.getResources().getString(R.string.not_found) : configurationInfo.getGlEsVersion();
+        String software = configurationInfo.getGlEsVersion();
+        Item item = new Item(context);
+        item.setTitle("OpenGL Version");
+        item.setSubTitle(software); 
+        return item;
     }
 }

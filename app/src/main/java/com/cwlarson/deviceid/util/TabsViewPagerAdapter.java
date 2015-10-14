@@ -9,7 +9,7 @@ import com.cwlarson.deviceid.R;
 import com.cwlarson.deviceid.TabFragment;
 
 public class TabsViewPagerAdapter extends FragmentPagerAdapter {
-    private String[] tabTitles;
+    private final String[] tabTitles;
 
     public TabsViewPagerAdapter(FragmentManager fm, Context context) {
         super(fm);

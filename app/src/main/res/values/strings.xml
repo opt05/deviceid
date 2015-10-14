@@ -1,6 +1,8 @@
 <resources>
     <string name="app_name">Device ID</string>
     <string name="not_found">Unable to determine</string>
+    <string name="no_longer_possible">Not possible since Android %s</string>
+    <string name="not_possible_yet">Available starting on Android %s</string>
     <string name="copy_to_clipboard">Copied %s to clipboard!</string>
     <string name="send_to">Share text to…</string>
     <string name="filter_action">Filter list</string>
@@ -13,7 +15,7 @@
     <string name="phone_permission_snackbar">The phone permission is required to display %s</string>
     <string name="snackbar_not_found_adapter">Unable to retrieve %s from this device</string>
     <string name="phone_permission_snackbar_button">OK</string>
-    <string name="textview_recyclerview_no_items">There are no items to display\n(╯°□°）╯︵ ┻━┻</string>
+    <string name="textview_recyclerview_no_items">There are no items to display\n¯\\_(ツ)_/¯</string>
     <string-array name="item_menu">
         <item>Share</item>
         <item>Copy to clipboard</item>

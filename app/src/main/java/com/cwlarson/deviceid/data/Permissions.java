@@ -15,8 +15,8 @@ import com.cwlarson.deviceid.util.TabsViewPagerAdapter;
 
 public class Permissions {
     public static final int MY_PERMISSIONS_REQUEST_READ_PHONE_STATE = 1;
-    Activity activity;
-    Context context;
+    private final Activity activity;
+    private final Context context;
 
     public Permissions(Activity activity) {
         this.activity = activity;
@@ -32,14 +32,14 @@ public class Permissions {
         }
     }
 
-    public Boolean getPermissionClickAdapter(final int MY_PERMISSION, String itemTitle){
+    public void getPermissionClickAdapter(final int MY_PERMISSION, String itemTitle){
         final String permission;
         switch (MY_PERMISSION){
             case MY_PERMISSIONS_REQUEST_READ_PHONE_STATE:
                 permission = Manifest.permission.READ_PHONE_STATE;
                 break;
             default:
-                return false;
+                return;
         }
 
         if (ContextCompat.checkSelfPermission(context, permission) != PackageManager.PERMISSION_GRANTED) {
@@ -56,9 +56,9 @@ public class Permissions {
             } else {
                 ActivityCompat.requestPermissions(activity, new String[]{permission}, MY_PERMISSION);
             }
-            return true;
+            return;
         } else {
-            return false;
+            return;
         }
     }
 

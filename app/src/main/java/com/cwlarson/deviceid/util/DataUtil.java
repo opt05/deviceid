@@ -20,13 +20,13 @@ import com.cwlarson.deviceid.data.Permissions;
 import java.util.HashSet;
 import java.util.Set;
 
-public class DataUtil {
+class DataUtil {
 
-    String TAG = DataUtil.this.toString();
+    private final String TAG = DataUtil.this.toString();
     private static final String favItemKey = "FAV_ITEMS";
-    Toast toast;
-    private Activity activity;
-    private Context context;
+    private Toast toast;
+    private final Activity activity;
+    private final Context context;
 
     public DataUtil(Activity activity){
         this.activity=activity;
@@ -76,7 +76,7 @@ public class DataUtil {
         if(itemSubTitle.equals(context.getResources().getString(R.string.phone_permission_denied))) {
             Permissions permissions = new Permissions(activity);
             permissions.getPermissionClickAdapter(Permissions.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE, itemTitle);
-        } else if(itemSubTitle.equals(context.getResources().getString(R.string.not_found))) {
+        } else if(itemSubTitle.equals(context.getResources().getString(R.string.not_found))||itemSubTitle.startsWith(context.getResources().getString(R.string.no_longer_possible).replace("%s", ""))||itemSubTitle.startsWith(context.getResources().getString(R.string.not_possible_yet).replace("%s", ""))) {
             Snackbar.make(activity.findViewById(R.id.main_activity_layout), activity.getResources().getString(R.string.snackbar_not_found_adapter, itemTitle), Snackbar.LENGTH_LONG).show();
         } else { // This is a valid body so we should do something and inform the user
             AlertDialog.Builder builder = new AlertDialog.Builder(activity);

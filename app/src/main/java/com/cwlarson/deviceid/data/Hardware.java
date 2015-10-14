@@ -18,14 +18,15 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Hardware {
-    String TAG = "Hardware";
-    private Activity activity;
-    private Context context;
+    private final String TAG = "Hardware";
+    private final Activity activity;
+    private final Context context;
 
     public Hardware(Activity activity){
         this.activity = activity;
@@ -33,14 +34,17 @@ public class Hardware {
     }
 
     public void setHardwareTiles(MyAdapter mAdapter){
-        mAdapter.addItem(Arrays.asList("Android/Hardware ID", getAndroidID()));
-        mAdapter.addItem(Arrays.asList("External Storage", context.getResources().getString(R.string.hardware_storage_output_format, getAvailableExternalMemory(), getTotalExternalMemory())));
-        mAdapter.addItem(Arrays.asList("Internal Storage", context.getResources().getString(R.string.hardware_storage_output_format,getAvailableInternalMemory(),getTotalInternalMemory())));
-        mAdapter.addItem(Arrays.asList("RAM Size", getRamSize()));
-        mAdapter.addItem(Arrays.asList("Screen Density", getDeviceScreenDensity()));
+        List<Item> items = new ArrayList<>();
+        items.add(getDeviceScreenDensity());
+        items.add(getAndroidID());
+        items.add(getRamSize());
+        items.add(getFormattedInternalMemory());
+        items.add(getFormattedExternalMemory());
+        mAdapter.addAll(items);
     }
 
-    private String getDeviceScreenDensity() {
+    private Item getDeviceScreenDensity() {
+        String hardware;
         int density = context.getResources().getDisplayMetrics().densityDpi;
         int width = 0, height = 0;
         final DisplayMetrics metrics = new DisplayMetrics();
@@ -64,7 +68,7 @@ public class Hardware {
                     height = (Integer) mGetRawH.invoke(display);
                 } catch (IllegalArgumentException | InvocationTargetException | IllegalAccessException e) {
                     e.printStackTrace();
-                    Log.e(TAG, "IllefalArgumentException in getDeviceScreenDensity");
+                    Log.e(TAG, "IllegalArgumentException in getDeviceScreenDensity");
                 }
             }
         } catch (NoSuchMethodException e3) {
@@ -75,43 +79,60 @@ public class Hardware {
 
         switch (density) {
             case DisplayMetrics.DENSITY_LOW:
-                return "LDPI"+sizeInPixels;
+                hardware = "LDPI"+sizeInPixels;
+                break;
             case DisplayMetrics.DENSITY_MEDIUM:
-                return "MDPI"+sizeInPixels;
+                hardware = "MDPI"+sizeInPixels;
+                break;
             case DisplayMetrics.DENSITY_HIGH:
-                return "HDPI"+sizeInPixels;
+                hardware = "HDPI"+sizeInPixels;
+                break;
             case DisplayMetrics.DENSITY_XHIGH:
-                return "XHDPI"+sizeInPixels;
+                hardware = "XHDPI"+sizeInPixels;
+                break;
             case DisplayMetrics.DENSITY_XXHIGH:
-                return "XXHDPI"+sizeInPixels;
+                hardware = "XXHDPI"+sizeInPixels;
+                break;
             case DisplayMetrics.DENSITY_XXXHIGH:
-                return "XXXHDPI"+sizeInPixels;
+                hardware = "XXXHDPI"+sizeInPixels;
+                break;
             case DisplayMetrics.DENSITY_TV:
-                return "TVDPI"+sizeInPixels;
+                hardware = "TVDPI"+sizeInPixels;
+                break;
             case DisplayMetrics.DENSITY_400:
-                return "400DPI"+sizeInPixels;
+                hardware = "400DPI"+sizeInPixels;
+                break;
             case DisplayMetrics.DENSITY_560:
-                return "560DPI"+sizeInPixels;
+                hardware = "560DPI"+sizeInPixels;
+                break;
             default:
-                return context.getResources().getString(R.string.not_found)+sizeInPixels;
+                hardware = context.getResources().getString(R.string.not_found);
+                break;
         }
+        Item item = new Item(context);
+        item.setTitle("Screen Density");
+        item.setSubTitle(hardware); 
+        return item;
     }
 
-    private String getAndroidID() {
-        String android_id="";
+    private Item getAndroidID() {
+        String hardware="";
         try {
-            android_id= Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
+            hardware= Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
         } catch (NullPointerException e){
             e.printStackTrace();
             Log.w(TAG, "Null in getAndroidID");
         }
-        return android_id==null || android_id.equals("") ? context.getResources().getString(R.string.not_found) : android_id;
+        Item item = new Item(context);
+        item.setTitle("Android/Hardware ID");
+        item.setSubTitle(hardware); 
+        return item;
     }
 
-    private String getRamSize() {
+    private Item getRamSize() {
         RandomAccessFile reader;
         String load;
-        String lastValue = "";
+        String hardware = "";
         try {
             reader = new RandomAccessFile("/proc/meminfo", "r");
             load = reader.readLine();
@@ -124,12 +145,23 @@ public class Hardware {
                 value = m.group(1);
             }
             reader.close();
-            lastValue = Formatter.formatFileSize(context,Long.parseLong(value));
+            hardware = Formatter.formatFileSize(context, Long.parseLong(value));
 
         } catch (IOException ex) {
             ex.printStackTrace();
         }
-        return (lastValue.equals("")) ? context.getResources().getString(R.string.not_found) : lastValue;
+        Item item = new Item(context);
+        item.setTitle("RAM Size");
+        item.setSubTitle(hardware); 
+        return item;
+    }
+
+    private Item getFormattedInternalMemory() {
+        String hardware = context.getResources().getString(R.string.hardware_storage_output_format, getAvailableInternalMemory(), getTotalInternalMemory());
+        Item item = new Item(context);
+        item.setTitle("Internal Storage");
+        item.setSubTitle(hardware); 
+        return item;
     }
 
     private String getAvailableInternalMemory() {
@@ -138,6 +170,14 @@ public class Hardware {
 
     private String getTotalInternalMemory() {
         return Formatter.formatFileSize(context, new File(context.getFilesDir().getAbsoluteFile().toString()).getTotalSpace());
+    }
+
+    private Item getFormattedExternalMemory() {
+        String hardware = context.getResources().getString(R.string.hardware_storage_output_format, getAvailableExternalMemory(), getTotalExternalMemory());
+        Item item = new Item(context);
+        item.setTitle("External Storage");
+        item.setSubTitle(hardware); 
+        return item;
     }
 
     private String getAvailableExternalMemory() {

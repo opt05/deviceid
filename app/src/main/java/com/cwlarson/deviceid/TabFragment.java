@@ -3,14 +3,9 @@ package com.cwlarson.deviceid;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.support.v4.view.MenuItemCompat;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.SearchView;
-import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,7 +17,8 @@ import com.cwlarson.deviceid.data.Network;
 import com.cwlarson.deviceid.data.Software;
 import com.cwlarson.deviceid.util.MyAdapter;
 
-public class TabFragment extends Fragment implements SearchView.OnQueryTextListener {
+public class TabFragment extends Fragment {
+    @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private static final String TAG = "TabFragment";
     private RecyclerView mRecyclerView;
     private MyAdapter mAdapter;
@@ -81,7 +77,7 @@ public class TabFragment extends Fragment implements SearchView.OnQueryTextListe
         setHasOptionsMenu(true);
     }
 
-    @Override
+    /*@Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         // SearchView
         MainActivity.searchItem = menu.findItem(R.id.action_search);
@@ -100,7 +96,7 @@ public class TabFragment extends Fragment implements SearchView.OnQueryTextListe
             });
         }
         menu.findItem(R.id.action_search).setVisible(true);
-    }
+    }*/
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -108,25 +104,25 @@ public class TabFragment extends Fragment implements SearchView.OnQueryTextListe
             case R.id.action_search:
                 //handled by AppCompat (nothing to do here)
                 return true;
-            case R.id.action_filter:
+            /*case R.id.action_filter:
                 if (!((MyAdapter) mRecyclerView.getAdapter()).isFiltered()) {
                     ((MyAdapter) mRecyclerView.getAdapter()).setFilterFavorite();
                 } else {
                     ((MyAdapter) mRecyclerView.getAdapter()).flushFilter();
                 }
-                return true;
+                return true;*/
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
 
-    @Override
+    /*@Override
     public boolean onQueryTextSubmit(String query) {
         //Log.d(TAG, query);
         return false;
-    }
+    }*/
 
-    @Override
+    /*@Override
     public boolean onQueryTextChange(String s) {
         Log.d(TAG, s);
         if(s.length()>0) {
@@ -135,5 +131,5 @@ public class TabFragment extends Fragment implements SearchView.OnQueryTextListe
             ((MyAdapter) mRecyclerView.getAdapter()).flushFilter();
         }
         return false;
-    }
+    }*/
 }
