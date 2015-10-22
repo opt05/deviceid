@@ -20,7 +20,6 @@ import com.cwlarson.deviceid.util.MyAdapter;
 public class TabFragment extends Fragment {
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private static final String TAG = "TabFragment";
-    private RecyclerView mRecyclerView;
     private MyAdapter mAdapter;
 
     public static TabFragment newInstance(int tabInteger) {
@@ -58,7 +57,7 @@ public class TabFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_tabs, container,false);
 
-        mRecyclerView = (RecyclerView) v.findViewById(R.id.device_recycler_view);
+        RecyclerView mRecyclerView = (RecyclerView) v.findViewById(R.id.device_recycler_view);
 
         // use a linear layout manager
         GridLayoutManager mLayoutManager = new GridLayoutManager(getActivity(),getResources().getInteger(R.integer.grid_layout_columns));
@@ -76,60 +75,4 @@ public class TabFragment extends Fragment {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
     }
-
-    /*@Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        // SearchView
-        MainActivity.searchItem = menu.findItem(R.id.action_search);
-        MainActivity.searchView = (SearchView) MenuItemCompat.getActionView(MainActivity.searchItem);
-        if (MainActivity.searchView != null) {
-            MainActivity.searchView.setQueryHint("Search here");
-            MainActivity.searchView.setOnQueryTextListener(this);
-            MainActivity.searchView.setMaxWidth(4000);
-            MainActivity.searchView.setIconifiedByDefault(true);
-            MainActivity.searchView.setOnCloseListener(new SearchView.OnCloseListener() {
-                @Override
-                public boolean onClose() {
-                    ((MyAdapter) mRecyclerView.getAdapter()).flushFilter();
-                    return false;
-                }
-            });
-        }
-        menu.findItem(R.id.action_search).setVisible(true);
-    }*/
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.action_search:
-                //handled by AppCompat (nothing to do here)
-                return true;
-            /*case R.id.action_filter:
-                if (!((MyAdapter) mRecyclerView.getAdapter()).isFiltered()) {
-                    ((MyAdapter) mRecyclerView.getAdapter()).setFilterFavorite();
-                } else {
-                    ((MyAdapter) mRecyclerView.getAdapter()).flushFilter();
-                }
-                return true;*/
-            default:
-                return super.onOptionsItemSelected(item);
-        }
-    }
-
-    /*@Override
-    public boolean onQueryTextSubmit(String query) {
-        //Log.d(TAG, query);
-        return false;
-    }*/
-
-    /*@Override
-    public boolean onQueryTextChange(String s) {
-        Log.d(TAG, s);
-        if(s.length()>0) {
-            ((MyAdapter) mRecyclerView.getAdapter()).setSearch(s);
-        } else {
-            ((MyAdapter) mRecyclerView.getAdapter()).flushFilter();
-        }
-        return false;
-    }*/
 }

@@ -22,12 +22,13 @@ public class Device {
         this.context = activity.getApplicationContext();
     }
 
-    public void setDeviceTiles(MyAdapter mAdapter){
+    public List<Item> setDeviceTiles(MyAdapter mAdapter){
         List<Item> items = new ArrayList<>();
         items.add(getDeviceModel());
         items.add(getIMEI());
         items.add(getSerial());
-        mAdapter.addAll(items);
+        if(mAdapter!=null) mAdapter.addAll(items);
+        return items;
     }
 
     private Item getIMEI() {

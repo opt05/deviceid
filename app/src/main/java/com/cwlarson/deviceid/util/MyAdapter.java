@@ -270,7 +270,7 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         return visibleObjects.size();
     }
 
-    private void setNoItemsTextViewVisible() {
+    void setNoItemsTextViewVisible() {
         if (getItemCount()<=0)
             mNoItemsTextView.setVisibility(View.VISIBLE);
         else

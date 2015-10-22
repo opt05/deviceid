@@ -31,4 +31,5 @@
         <item>Hardware</item>
     </string-array>
     <string name="hardware_storage_output_format">%1$s of %2$s free</string>
+    <string name="title_activity_search">Item Search</string>
 </resources>

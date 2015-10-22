@@ -33,14 +33,15 @@ public class Hardware {
         this.context = activity.getApplicationContext();
     }
 
-    public void setHardwareTiles(MyAdapter mAdapter){
+    public List<Item> setHardwareTiles(MyAdapter mAdapter){
         List<Item> items = new ArrayList<>();
         items.add(getDeviceScreenDensity());
         items.add(getAndroidID());
         items.add(getRamSize());
         items.add(getFormattedInternalMemory());
         items.add(getFormattedExternalMemory());
-        mAdapter.addAll(items);
+        if(mAdapter!=null) mAdapter.addAll(items);
+        return items;
     }
 
     private Item getDeviceScreenDensity() {

@@ -1,5 +1,6 @@
 package com.cwlarson.deviceid;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.TabLayout;
@@ -17,9 +18,6 @@ import com.cwlarson.deviceid.util.TabsViewPagerAdapter;
 
 
 public class MainActivity extends AppCompatActivity {
-
-    private static MenuItem searchItem;
-    private static SearchView searchView;
     @SuppressWarnings("unused")
     private final String TAG = "MainActivity";
     public static AlertDialog dialog;
@@ -47,6 +45,25 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_search:
+                Intent intent = new Intent(this,SearchActivity.class);
+                startActivity(intent);
+                return true;
+            /*case R.id.action_filter:
+                if (!((MyAdapter) mRecyclerView.getAdapter()).isFiltered()) {
+                    ((MyAdapter) mRecyclerView.getAdapter()).setFilterFavorite();
+                } else {
+                    ((MyAdapter) mRecyclerView.getAdapter()).flushFilter();
+                }
+                return true;*/
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    @Override
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
         setUpToolbar();
@@ -64,17 +81,6 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
         // Prevents memory leaks of dialogs
         if(dialog!=null) dialog.dismiss();
-    }
-
-    @Override
-    public void onBackPressed() {
-        if (!searchView.isIconified()) {
-            searchView.setIconified(true);
-            searchView.clearFocus();
-            searchItem.collapseActionView();
-        } else {
-            super.onBackPressed();
-        }
     }
 
     // Request permission for IMEI/MEID for Android M+

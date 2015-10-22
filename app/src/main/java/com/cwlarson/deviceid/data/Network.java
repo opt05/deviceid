@@ -32,7 +32,7 @@ public class Network {
         this.mWifiConnectionInfo = ((WifiManager) context.getSystemService(Context.WIFI_SERVICE)).getConnectionInfo();
     }
 
-    public void setNetworkTiles(MyAdapter mAdapter){
+    public List<Item> setNetworkTiles(MyAdapter mAdapter){
         List<Item> items = new ArrayList<>();
         items.add(getWifiMac());
         items.add(getWifiBSSID());
@@ -54,7 +54,8 @@ public class Network {
         items.add(getVoicemailNumber());
         items.add(getCellNetworkName());
         items.add(getCellNetworkType());
-        mAdapter.addAll(items);
+        if(mAdapter!=null) mAdapter.addAll(items);
+        return items;
     }
 
     private Item getWifiMac(){

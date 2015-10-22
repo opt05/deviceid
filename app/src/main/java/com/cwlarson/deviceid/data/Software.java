@@ -27,7 +27,7 @@ public class Software {
         this.context = activity.getApplicationContext();
     }
 
-    public void setSoftwareTiles(MyAdapter mAdapter){
+    public List<Item> setSoftwareTiles(MyAdapter mAdapter){
         List<Item> items = new ArrayList<>();
         items.add(getAndroidVersion());
         items.add(getPatchLevel());
@@ -49,7 +49,8 @@ public class Software {
         items.add(getBuildType());
         items.add(getBuildUser());
         items.add(getOpenGLVersion());
-        mAdapter.addAll(items);
+        if(mAdapter!=null) mAdapter.addAll(items);
+        return items;
     }
 
     enum Codenames {
