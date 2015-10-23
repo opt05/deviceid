@@ -23,6 +23,7 @@ public class Permissions {
         this.context = activity.getApplicationContext();
     }
 
+    @SuppressWarnings("SameParameterValue")
     public Boolean hasPermission(int MY_PERMISSION){
         switch (MY_PERMISSION){
             case MY_PERMISSIONS_REQUEST_READ_PHONE_STATE:
@@ -32,6 +33,7 @@ public class Permissions {
         }
     }
 
+    @SuppressWarnings("SameParameterValue")
     public void getPermissionClickAdapter(final int MY_PERMISSION, String itemTitle){
         final String permission;
         switch (MY_PERMISSION){
@@ -56,9 +58,6 @@ public class Permissions {
             } else {
                 ActivityCompat.requestPermissions(activity, new String[]{permission}, MY_PERMISSION);
             }
-            return;
-        } else {
-            return;
         }
     }
 

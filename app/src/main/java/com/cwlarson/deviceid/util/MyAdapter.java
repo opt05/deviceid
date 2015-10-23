@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.util.SortedList;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,7 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-    @SuppressWarnings("FieldCanBeLocal")
+    @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private final String TAG = "MyAdapter";
     private Context context;
     private final Activity activity;
@@ -140,16 +139,23 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                                     context.startActivity(Intent.createChooser(sendIntent, context.getResources().getText(R.string.send_to)));
                                     break;
                                 case 1: //Copy to clipboard
-                                    dataUtil.copyToClipboard(mTextView.getText().toString(),mTextViewBody.getText().toString());
+                                    dataUtil.copyToClipboard(mTextView.getText().toString(), mTextViewBody.getText().toString());
                                     break;
                                 case 2: //Favorite item stuff
-                                    if(list.get(i).equals(context.getResources().getString(R.string.item_menu_favorite))){
+                                    if (list.get(i).equals(context.getResources().getString(R.string.item_menu_favorite))) {
                                         // is not a favorite currently
                                         DataUtil dataUtil = new DataUtil(activity);
-                                        dataUtil.saveFavoriteItem(mTextView.getText().toString());
+                                        dataUtil.saveFavoriteItem(mTextView.getText().toString(), mTextViewBody.getText().toString());
                                     } else { // is a favorite
                                         DataUtil dataUtil = new DataUtil(activity);
-                                        dataUtil.removeFavoriteItem(mTextView.getText().toString());
+                                        dataUtil.removeFavoriteItem(mTextView.getText().toString(), mTextViewBody.getText().toString());
+                                        //Remove favorite from Favorite tab if currently showing
+                                        /*if(tabNum==4) {
+                                            Item item = new Item(context);
+                                            item.setTitle(mTextView.getText().toString());
+                                            item.setSubTitle(mTextViewBody.getText().toString());
+                                            remove(item);
+                                        }*/
                                     }
                                     break;
                                 default:
@@ -164,30 +170,21 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
     }
 
-    public static class ViewHolderHeader extends RecyclerView.ViewHolder {
-        public final TextView header;
-
-        public ViewHolderHeader(View itemView){
-            super(itemView);
-            header = (TextView) itemView.findViewById(R.id.header_title);
-        }
-    }
-
-    public Item get(int position){
+    /*public Item get(int position){
         return visibleObjects.get(position);
+    }*/
+
+    public void add(Item item){
+        visibleObjects.add(item);
     }
 
-    public int add(Item item){
-        return visibleObjects.add(item);
-    }
-
-    public int indexOf(Item item){
+    /*public int indexOf(Item item){
         return visibleObjects.indexOf(item);
     }
 
     public void updateItemAt(int index, Item item){
         visibleObjects.updateItemAt(index,item);
-    }
+    }*/
 
     public void addAll(List<Item> items){
         visibleObjects.beginBatchedUpdates();
@@ -197,17 +194,17 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         visibleObjects.endBatchedUpdates();
     }
 
-    public void addAll(Item[] items){
+    /*public void addAll(Item[] items){
         addAll(Arrays.asList(items));
-    }
+    }*/
 
     public boolean remove(Item item){
         return visibleObjects.remove(item);
     }
 
-    public Item removeItemAtt(int index){
+    /*public Item removeItemAt(int index){
         return visibleObjects.removeItemAt(index);
-    }
+    }*/
 
     public void clear(){
         visibleObjects.beginBatchedUpdates();
@@ -253,14 +250,6 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 ((ViewHolderItem) holder).mTextViewBody.setText("");
             }
 
-        } else if (holder instanceof ViewHolderHeader) { //Header
-            try { //Title
-                ((ViewHolderHeader) holder).header.setText(visibleObjects.get(position).getTitle());
-            } catch (ArrayIndexOutOfBoundsException e) {
-                ((ViewHolderHeader) holder).header.setText("");
-            }
-        } else {
-            Log.e(TAG,"No instance of ViewHolder found");
         }
     }
 
@@ -270,7 +259,7 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         return visibleObjects.size();
     }
 
-    void setNoItemsTextViewVisible() {
+    private void setNoItemsTextViewVisible() {
         if (getItemCount()<=0)
             mNoItemsTextView.setVisibility(View.VISIBLE);
         else

@@ -6,7 +6,6 @@ import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.View;
@@ -26,7 +25,7 @@ public class SearchActivity extends AppCompatActivity implements SearchView.OnQu
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private static final String TAG = "SearchActivity";
     private MyAdapter mAdapter;
-    private List<Item> mItemsList = new ArrayList<>();
+    private final List<Item> mItemsList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

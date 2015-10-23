@@ -5,10 +5,4 @@
     <color name="accent_color">#ff009688</color>
     <color name="primary_text_material_light_default">#de000000</color>
     <color name="primary_background_material_light_default">#ffeeeeee</color>
-
-    <!-- main color for drawable-v21/my_ripple -->
-    <color name="my_color_highlight">#FFE99E63</color>
-    <!-- main color for drawable/my_ripple -->
-    <color name="my_color_highlight_press">#77E99E63</color>
-    <color name="my_color_highlight_focus">#CCE99E63</color>
 </resources>

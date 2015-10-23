@@ -23,6 +23,7 @@ public class SystemProperty {
         }
     }
 
+    @SuppressWarnings("SameParameterValue")
     public String get(String key) {
         try {
             return getOrThrow(key);

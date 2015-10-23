@@ -5,9 +5,11 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.support.design.widget.Snackbar;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.widget.ImageButton;
@@ -20,10 +22,10 @@ import com.cwlarson.deviceid.data.Permissions;
 import java.util.HashSet;
 import java.util.Set;
 
-class DataUtil {
-
-    private final String TAG = DataUtil.this.toString();
+public class DataUtil {
+    private final String TAG = "DataUtil";
     private static final String favItemKey = "FAV_ITEMS";
+    public static final String BROADCAST_UPDATE_FAV="BROADCAST_UPDATE_FAV";
     private Toast toast;
     private final Activity activity;
     private final Context context;
@@ -33,13 +35,15 @@ class DataUtil {
         this.context=activity.getApplicationContext();
     }
 
-    public void saveFavoriteItem(String itemID) {
+    public void saveFavoriteItem(String itemID, String itemSub) {
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
         Set<String> favoriteItem = sharedPref.getStringSet(favItemKey, new HashSet<String>());
         Set<String> in = new HashSet<>(favoriteItem);
         in.add(itemID);
         sharedPref.edit().putStringSet(favItemKey, in).apply();
         Log.i(TAG, "saveFavoriteItems = "+ getAllFavoriteItems());
+        //Send a broadcast that a fav was removed
+        LocalBroadcastManager.getInstance(context).sendBroadcast(new Intent(BROADCAST_UPDATE_FAV).putExtra("ACTION", "ADD").putExtra("ITEM_TITLE", itemID).putExtra("ITEM_SUB",itemSub));
     }
 
     private Set<String> getAllFavoriteItems() {
@@ -57,7 +61,7 @@ class DataUtil {
         return false;
     }
 
-    public void removeFavoriteItem(String itemID) {
+    public void removeFavoriteItem(String itemID, String itemSub) {
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
         Set<String> favoriteItemsList = sharedPref.getStringSet(favItemKey, new HashSet<String>());
         Set<String> newFavoriteItemsList=new HashSet<>();
@@ -65,11 +69,13 @@ class DataUtil {
         for (String s:favoriteItemsList){
             if (!s.equals(itemID)){
                 newFavoriteItemsList.add(s);
-                Log.i(TAG,"Item to delete: "+itemID);
+                //Log.i(TAG,"Item to delete: "+itemID);
             }
         }
         sharedPref.edit().putStringSet(favItemKey, newFavoriteItemsList).apply();
         Log.i(TAG, "removeFavoriteItems = " + getAllFavoriteItems());
+        //Send a broadcast that a fav was removed
+        LocalBroadcastManager.getInstance(context).sendBroadcast(new Intent(BROADCAST_UPDATE_FAV).putExtra("ACTION", "REMOVE").putExtra("ITEM_TITLE",itemID).putExtra("ITEM_SUB",itemSub));
     }
     // Returns true if method already takes care of the click, false if the parent should
     public void onClickAdapter(String itemTitle, String itemSubTitle, final ImageButton itemMoreButton){
