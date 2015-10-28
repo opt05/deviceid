@@ -1,7 +1,9 @@
 package com.cwlarson.deviceid;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.design.widget.TabLayout;
 import android.support.v4.view.ViewPager;
@@ -40,6 +42,9 @@ public class MainActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.base_menu, menu);
+        // Get checkable menu item value
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        menu.findItem(R.id.action_hide_unables).setChecked(sharedPreferences.getBoolean("hide_unables",false));
         return true;
     }
 
@@ -50,13 +55,15 @@ public class MainActivity extends AppCompatActivity {
                 Intent intent = new Intent(this,SearchActivity.class);
                 startActivity(intent);
                 return true;
-            /*case R.id.action_filter:
-                if (!((MyAdapter) mRecyclerView.getAdapter()).isFiltered()) {
-                    ((MyAdapter) mRecyclerView.getAdapter()).setFilterFavorite();
-                } else {
-                    ((MyAdapter) mRecyclerView.getAdapter()).flushFilter();
-                }
-                return true;*/
+            case R.id.action_hide_unables:
+                item.setChecked(!item.isChecked());
+                SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.putBoolean("hide_unables",item.isChecked());
+                editor.apply();
+                // Refresh tabs due to data added/removed
+                mViewPager.getAdapter().notifyDataSetChanged();
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }

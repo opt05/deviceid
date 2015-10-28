@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.util.SortedList;
 import android.support.v7.widget.RecyclerView;
@@ -11,6 +13,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.cwlarson.deviceid.MainActivity;
@@ -32,6 +35,7 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     public MyAdapter(Activity parentActivity, TextView noItemsTextView) {
         activity = parentActivity;
+        context = activity.getApplicationContext();
         mNoItemsTextView = noItemsTextView;
         visibleObjects = new SortedList<>(Item.class, new SortedList.Callback<Item>() {
 
@@ -85,11 +89,13 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         public final TextView mTextView;
         public final TextView mTextViewBody;
         public final ImageButton mMoreButton;
+        public final ImageView mFavStar;
         public ViewHolderItem(final View v) {
             super(v);
             this.mTextView = (TextView) v.findViewById(R.id.item_title);
             this.mTextViewBody = (TextView) v.findViewById(R.id.item_body);
             this.mMoreButton = (ImageButton) v.findViewById(R.id.item_more_button);
+            this.mFavStar = (ImageView) v.findViewById(R.id.item_fav_star);
             context = v.getContext();
             // Single click of the recyclerview item
             v.setOnClickListener(new View.OnClickListener() {
@@ -111,7 +117,7 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 return false;
                 }
             });
-
+            // Set more button click event
             mMoreButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
@@ -149,13 +155,6 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                                     } else { // is a favorite
                                         DataUtil dataUtil = new DataUtil(activity);
                                         dataUtil.removeFavoriteItem(mTextView.getText().toString(), mTextViewBody.getText().toString());
-                                        //Remove favorite from Favorite tab if currently showing
-                                        /*if(tabNum==4) {
-                                            Item item = new Item(context);
-                                            item.setTitle(mTextView.getText().toString());
-                                            item.setSubTitle(mTextViewBody.getText().toString());
-                                            remove(item);
-                                        }*/
                                     }
                                     break;
                                 default:
@@ -187,8 +186,11 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     }*/
 
     public void addAll(List<Item> items){
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         visibleObjects.beginBatchedUpdates();
         for (Item item : items){
+            // Skips current item if not real and hide setting is on
+            if(sharedPreferences.getBoolean("hide_unables",false)&&isNotRealItem(item.getSubTitle())) continue;
             visibleObjects.add(item);
         }
         visibleObjects.endBatchedUpdates();
@@ -198,8 +200,17 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         addAll(Arrays.asList(items));
     }*/
 
-    public boolean remove(Item item){
-        return visibleObjects.remove(item);
+    public void remove(Item item){
+        visibleObjects.remove(item);
+    }
+
+    public void setFavStar(Item item){
+        // Set view of fav star icon
+        int index = visibleObjects.indexOf(item);
+        if(index>=0) {
+            visibleObjects.removeItemAt(index);
+            visibleObjects.add(item);
+        }
     }
 
     /*public Item removeItemAt(int index){
@@ -236,6 +247,12 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         if (holder instanceof ViewHolderItem) { //Item
             try { //Title
                 ((ViewHolderItem) holder).mTextView.setText(visibleObjects.get(position).getTitle());
+                // Set view of fav star icon
+                DataUtil dataUtil = new DataUtil(activity);
+                if (dataUtil.isFavoriteItem(((ViewHolderItem) holder).mTextView.getText().toString()))
+                    ((ViewHolderItem) holder).mFavStar.setVisibility(View.VISIBLE);
+                else
+                    ((ViewHolderItem) holder).mFavStar.setVisibility(View.GONE);
             } catch (ArrayIndexOutOfBoundsException e) {
                 ((ViewHolderItem) holder).mTextView.setText("");
             }

@@ -174,7 +174,7 @@ public class Hardware {
     }
 
     private Item getFormattedExternalMemory() {
-        String hardware = context.getResources().getString(R.string.hardware_storage_output_format, getAvailableExternalMemory(), getTotalExternalMemory());
+        String hardware = (getTotalExternalMemory().startsWith("0.00"))?context.getResources().getString(R.string.not_found):context.getResources().getString(R.string.hardware_storage_output_format, getAvailableExternalMemory(), getTotalExternalMemory());
         Item item = new Item(context);
         item.setTitle("External Storage");
         item.setSubTitle(hardware); 

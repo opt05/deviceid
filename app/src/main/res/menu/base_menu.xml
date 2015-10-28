@@ -7,9 +7,8 @@
         android:title="@string/menu_search"
         android:icon="@drawable/ic_action_search"
         deviceid:showAsAction="ifRoom"/>
-    <item android:id="@+id/action_filter"
-        android:icon="@drawable/ic_action_filter_list"
-        android:title="@string/filter_action"
-        deviceid:showAsAction="ifRoom"
-        android:visible="false"/>
+    <item android:id="@+id/action_hide_unables"
+        android:title="@string/menu_hide_unable"
+        deviceid:showAsAction="never"
+        android:checkable="true" />
 </menu>

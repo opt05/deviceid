@@ -67,16 +67,13 @@ public class TabFragment extends Fragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (getArguments().getInt("tab") == 4)
-            LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(mReceiver);
+        LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(mReceiver);
     }
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if(getArguments().getInt("tab")==4) {
-            mReceiver = new DataUpdateReceiver();
-            LocalBroadcastManager.getInstance(getContext()).registerReceiver(mReceiver, new IntentFilter(DataUtil.BROADCAST_UPDATE_FAV));
-        }
+        mReceiver = new DataUpdateReceiver();
+        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mReceiver, new IntentFilter(DataUtil.BROADCAST_UPDATE_FAV));
 
     }
 
@@ -102,17 +99,25 @@ public class TabFragment extends Fragment {
         @Override
         public void onReceive(Context context, Intent intent) {
             if(intent.getStringExtra("ACTION").equals("REMOVE")) {
-                Log.d(TAG, "REMOVE");
-                Item item = new Item(context);
-                item.setTitle(intent.getStringExtra("ITEM_TITLE"));
-                item.setSubTitle(intent.getStringExtra("ITEM_SUB"));
-                mAdapter.remove(item);
+            Log.d(TAG, "REMOVE");
+            Item item = new Item(context);
+            item.setTitle(intent.getStringExtra("ITEM_TITLE"));
+            item.setSubTitle(intent.getStringExtra("ITEM_SUB"));
+            if(getArguments().getInt("tab") == 4){
+                mAdapter.remove(item);}
+            else {
+                mAdapter.setFavStar(item);
+            }
             }else if(intent.getStringExtra("ACTION").equals("ADD")){
                 Log.d(TAG,"ADD");
                 Item item = new Item(context);
                 item.setTitle(intent.getStringExtra("ITEM_TITLE"));
                 item.setSubTitle(intent.getStringExtra("ITEM_SUB"));
-                mAdapter.add(item);
+                if(getArguments().getInt("tab") == 4){
+                    mAdapter.add(item);}
+                else {
+                    mAdapter.setFavStar(item);
+                }
             }
         }
     }

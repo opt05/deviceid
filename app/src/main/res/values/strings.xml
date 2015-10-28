@@ -5,8 +5,8 @@
     <string name="not_possible_yet">Available starting on Android %s</string>
     <string name="copy_to_clipboard">Copied %s to clipboard!</string>
     <string name="send_to">Share text to…</string>
-    <string name="filter_action">Filter list</string>
     <string name="menu_search">Search</string>
+    <string name="menu_hide_unable">Hide not applicable</string>
     <string name="phone_permission_denied">Please enable the Phone permission</string>
     <string name="phone_permission_snackbar">The phone permission is required to display %s</string>
     <string name="snackbar_not_found_adapter">Unable to retrieve %s from this device</string>
@@ -30,4 +30,5 @@
     <string name="hardware_storage_output_format">%1$s of %2$s free</string>
     <string name="title_activity_search">Item Search</string>
     <string name="item_more_button_desc">item more button</string>
+    <string name="item_favorite_star_desc">item favorite</string>
 </resources>

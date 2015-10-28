@@ -6,7 +6,7 @@ android {
 
     defaultConfig {
         applicationId "com.cwlarson.deviceid"
-        minSdkVersion 15
+        minSdkVersion 16
         targetSdkVersion 23
         versionCode 6
         versionName "1.1.0"
@@ -18,14 +18,18 @@ android {
             def props = new Properties()
             props.load(new FileInputStream(rootProject.file("release.properties")))
             storeFile rootProject.file(props.keyStore)
+            //noinspection GroovyAssignabilityCheck
             storePassword props.keyStorePassword
+            //noinspection GroovyAssignabilityCheck
             keyAlias props.keyAlias
+            //noinspection GroovyAssignabilityCheck
             keyPassword props.keyAliasPassword
         }
 
     }
     buildTypes {
         release {
+            //noinspection GroovyAssignabilityCheck
             signingConfig signingConfigs.release
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
