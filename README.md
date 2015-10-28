@@ -14,7 +14,7 @@ Licensed under the MIT License. For complete licensing information see [LICENSE.
 * Android Studio 1.5 Preview 2 (Gradle 1.3.0)
 * Android build tools 23.0.1
 * Android support library 23.1.0
-* Android 4.1.0 (API 16) or above (built against 6.0/API 22)
+* Android 4.1.0 (API 16) or above (built against 6.0/API 23)
 * Built on a Windows PC, but should be OS agnostic
 
 ### Bugs and Features ###
