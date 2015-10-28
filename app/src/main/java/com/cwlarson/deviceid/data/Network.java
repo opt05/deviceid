@@ -344,8 +344,12 @@ public class Network {
     private Item getPhoneNumber() {
         String network="";
         try {
-            TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-            network= telephonyManager.getLine1Number();
+            if (new Permissions(activity).hasPermission(Permissions.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE)) {
+                TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+                network= telephonyManager.getLine1Number();
+            } else {
+                network = context.getResources().getString(R.string.phone_permission_denied);
+            }
         } catch (NullPointerException e){
             e.printStackTrace();
             Log.w(TAG, "Null in getPhoneNumber");

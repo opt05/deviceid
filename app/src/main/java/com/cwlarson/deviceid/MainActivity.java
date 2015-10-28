@@ -5,7 +5,9 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
+import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.TabLayout;
+import android.support.v4.view.MotionEventCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -13,16 +15,39 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 
 import com.cwlarson.deviceid.data.Permissions;
 import com.cwlarson.deviceid.util.TabsViewPagerAdapter;
 
 
-public class MainActivity extends AppCompatActivity {
-    @SuppressWarnings("unused")
+public class MainActivity extends AppCompatActivity implements AppBarLayout.OnOffsetChangedListener {
+    @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private final String TAG = "MainActivity";
+    private AppBarLayout appBarLayout;
     public static AlertDialog dialog;
     private static ViewPager mViewPager;
+    private static TabsViewPagerAdapter mAdapter;
+    private int index = 0;
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        final int action = MotionEventCompat.getActionMasked(ev);
+        switch(action){
+            case MotionEvent.ACTION_DOWN:
+            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_CANCEL:
+                TabFragment tabFragment = mAdapter.getFragment(mViewPager.getCurrentItem());
+                if(tabFragment!=null) {
+                    if(index==0)
+                        tabFragment.setSwipeToRefreshEnabled(true);
+                    else
+                        tabFragment.setSwipeToRefreshEnabled(false);
+                }
+        }
+
+        return super.dispatchTouchEvent(ev);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,7 +56,9 @@ public class MainActivity extends AppCompatActivity {
 
         // Get the ViewPager and set it's PagerAdapter so that it can display items
         mViewPager = (ViewPager) findViewById(R.id.viewpager);
-        mViewPager.setAdapter(new TabsViewPagerAdapter(getSupportFragmentManager(), MainActivity.this));
+        mAdapter = new TabsViewPagerAdapter(getSupportFragmentManager(), MainActivity.this);
+        mViewPager.setAdapter(mAdapter);
+        appBarLayout = (AppBarLayout) findViewById(R.id.myToolbarLayout);
 
         // Give the TabLayout the ViewPager
         TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
@@ -46,6 +73,12 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         menu.findItem(R.id.action_hide_unables).setChecked(sharedPreferences.getBoolean("hide_unables",false));
         return true;
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        appBarLayout.addOnOffsetChangedListener(this);
     }
 
     @Override
@@ -83,15 +116,27 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onStop() {
+        appBarLayout.removeOnOffsetChangedListener(this);
+        super.onStop();
+    }
+
+    @Override
     protected void onDestroy() {
-        super.onDestroy();
+        mAdapter.destroy();
         // Prevents memory leaks of dialogs
         if(dialog!=null) dialog.dismiss();
+        super.onDestroy();
     }
 
     // Request permission for IMEI/MEID for Android M+
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
         new Permissions(this).onRequestPermissionsResult(requestCode, grantResults,(TabsViewPagerAdapter) mViewPager.getAdapter());
+    }
+
+    @Override
+    public void onOffsetChanged(AppBarLayout appBarLayout, int verticalOffset) {
+        index=verticalOffset;
     }
 }

@@ -46,7 +46,7 @@ public class DataUtil {
         LocalBroadcastManager.getInstance(context).sendBroadcast(new Intent(BROADCAST_UPDATE_FAV).putExtra("ACTION", "ADD").putExtra("ITEM_TITLE", itemID).putExtra("ITEM_SUB",itemSub));
     }
 
-    public Set<String> getAllFavoriteItems() {
+    private Set<String> getAllFavoriteItems() {
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(context);
         return sharedPref.getStringSet(favItemKey,new HashSet<String>());
     }
