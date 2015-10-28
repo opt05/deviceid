@@ -1,19 +1,17 @@
 <resources>
     <string name="app_name">Device ID</string>
     <string name="not_found">Unable to determine</string>
-    <string name="copy_to_clipboard">Copied _ITEM_ to clipboard!</string>
-    <string name="copy_to_clipboard_replace">_ITEM_</string>
+    <string name="no_longer_possible">Not possible since Android %s</string>
+    <string name="not_possible_yet">Available starting on Android %s</string>
+    <string name="copy_to_clipboard">Copied %s to clipboard!</string>
     <string name="send_to">Share text to…</string>
-    <string name="filter_action">Filter list</string>
-    <string name="unfilter_action">Unfilter list</string>
-    <string name="filter_title_beg">Filter: </string>
-    <string name="filter_title_favorites">Favorites</string>
-    <string name="filter_title_search">Search</string>
     <string name="menu_search">Search</string>
+    <string name="menu_hide_unable">Hide not applicable</string>
     <string name="phone_permission_denied">Please enable the Phone permission</string>
-    <string name="phone_permission_snackbar">The phone permission is required for %s to display IMEI / MEID</string>
+    <string name="phone_permission_snackbar">The phone permission is required to display %s</string>
     <string name="snackbar_not_found_adapter">Unable to retrieve %s from this device</string>
     <string name="phone_permission_snackbar_button">OK</string>
+    <string name="textview_recyclerview_no_items">There are no items to display\n¯\\_(ツ)_/¯</string>
     <string-array name="item_menu">
         <item>Share</item>
         <item>Copy to clipboard</item>
@@ -22,4 +20,15 @@
     <string name="item_menu_unfavorite">Unfavorite item</string>
     <string name="dialog_long_press_positive_button">Actions</string>
     <string name="dialog_long_press_negative_button">Cancel</string>
+    <string-array name="tab_item_titles">
+        <item>Device</item>
+        <item>Network</item>
+        <item>Software</item>
+        <item>Hardware</item>
+        <item>Favorites</item>
+    </string-array>
+    <string name="hardware_storage_output_format">%1$s of %2$s free</string>
+    <string name="title_activity_search">Item Search</string>
+    <string name="item_more_button_desc">item more button</string>
+    <string name="item_favorite_star_desc">item favorite</string>
 </resources>

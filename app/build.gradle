@@ -6,10 +6,10 @@ android {
 
     defaultConfig {
         applicationId "com.cwlarson.deviceid"
-        minSdkVersion 15
+        minSdkVersion 16
         targetSdkVersion 23
-        versionCode 5
-        versionName "1.0.3"
+        versionCode 6
+        versionName "1.1.0"
     }
 
     signingConfigs {
@@ -18,14 +18,18 @@ android {
             def props = new Properties()
             props.load(new FileInputStream(rootProject.file("release.properties")))
             storeFile rootProject.file(props.keyStore)
+            //noinspection GroovyAssignabilityCheck
             storePassword props.keyStorePassword
+            //noinspection GroovyAssignabilityCheck
             keyAlias props.keyAlias
+            //noinspection GroovyAssignabilityCheck
             keyPassword props.keyAliasPassword
         }
 
     }
     buildTypes {
         release {
+            //noinspection GroovyAssignabilityCheck
             signingConfig signingConfigs.release
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
@@ -35,7 +39,8 @@ android {
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
-    compile 'com.android.support:appcompat-v7:23.0.1'
-    compile 'com.android.support:recyclerview-v7:23.0.1'
-    compile 'com.android.support:design:23.0.1'
+    compile 'com.android.support:appcompat-v7:23.1.0'
+    compile 'com.android.support:recyclerview-v7:23.1.0'
+    compile 'com.android.support:cardview-v7:23.1.0'
+    compile 'com.android.support:design:23.1.0'
 }

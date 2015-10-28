@@ -2,13 +2,10 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:deviceid="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context=".MainActivity">
+    tools:context=".SearchActivity">
     <item android:id="@+id/action_search"
         android:title="@string/menu_search"
         android:icon="@drawable/ic_action_search"
+        deviceid:actionViewClass="android.support.v7.widget.SearchView"
         deviceid:showAsAction="ifRoom"/>
-    <item android:id="@+id/action_hide_unables"
-        android:title="@string/menu_hide_unable"
-        deviceid:showAsAction="never"
-        android:checkable="true" />
 </menu>
