@@ -17,8 +17,8 @@
             android:layout_alignParentEnd="true"
             android:visibility="gone"/>
         <LinearLayout
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:orientation="horizontal"
         android:padding="8dp"
         android:background="?android:selectableItemBackground"
@@ -48,12 +48,12 @@
             </LinearLayout>
             <LinearLayout
                 android:layout_width="wrap_content"
-                android:layout_height="fill_parent"
+                android:layout_height="match_parent"
                 android:orientation="vertical">
                 <ImageButton
                     android:id="@+id/item_more_button"
                     android:layout_width="wrap_content"
-                    android:layout_height="fill_parent"
+                    android:layout_height="match_parent"
                     android:src="@drawable/ic_more_vert_black"
                     android:background="@android:color/transparent"
                     android:contentDescription="@string/item_more_button_desc"

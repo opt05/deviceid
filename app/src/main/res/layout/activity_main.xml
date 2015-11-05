@@ -6,7 +6,7 @@
     tools:context=".MainActivity"
     android:id="@+id/main_activity_layout">
     <android.support.design.widget.AppBarLayout
-        android:layout_width="fill_parent"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:fitsSystemWindows="true"
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
