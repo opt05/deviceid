@@ -9,6 +9,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -69,7 +70,7 @@ public class TabFragment extends Fragment {
                 new Hardware(getActivity()).setHardwareTiles(mAdapter);
                 break;
             case 4:
-                new Favorites(getActivity()).setFavoritesTiles(mAdapter);
+                new Favorites((AppCompatActivity) getActivity()).setFavoritesTiles(mAdapter);
                 break;
             default:
                 new Device(getActivity()).setDeviceTiles(mAdapter);
@@ -80,13 +81,13 @@ public class TabFragment extends Fragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(mReceiver);
+        LocalBroadcastManager.getInstance(getActivity().getApplicationContext()).unregisterReceiver(mReceiver);
     }
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mReceiver = new DataUpdateReceiver();
-        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mReceiver, new IntentFilter(DataUtil.BROADCAST_UPDATE_FAV));
+        LocalBroadcastManager.getInstance(getActivity().getApplicationContext()).registerReceiver(mReceiver, new IntentFilter(DataUtil.BROADCAST_UPDATE_FAV));
     }
 
     @Nullable
@@ -99,10 +100,9 @@ public class TabFragment extends Fragment {
         // use a linear layout manager
         final GridLayoutManager mLayoutManager = new GridLayoutManager(getActivity(),getResources().getInteger(R.integer.grid_layout_columns));
         mRecyclerView.setLayoutManager(mLayoutManager);
-        mRecyclerView.setHasFixedSize(true);
 
         // specify an adapter (see also next example)
-        mAdapter = new MyAdapter(getActivity(), (TextView)v.findViewById(R.id.textview_recyclerview_no_items));
+        mAdapter = new MyAdapter((AppCompatActivity) getActivity(), (TextView)v.findViewById(R.id.textview_recyclerview_no_items));
         mRecyclerView.setAdapter(mAdapter);
 
         // Setup SwipeToRefresh

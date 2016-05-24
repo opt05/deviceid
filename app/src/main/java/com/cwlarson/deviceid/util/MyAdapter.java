@@ -1,12 +1,9 @@
 package com.cwlarson.deviceid.util;
 
-import android.app.Activity;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
-import android.support.v7.app.AlertDialog;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.util.SortedList;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -16,24 +13,22 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.cwlarson.deviceid.MainActivity;
 import com.cwlarson.deviceid.R;
 import com.cwlarson.deviceid.data.Item;
+import com.cwlarson.deviceid.dialog.ItemMoreButtonDialog;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private final String TAG = "MyAdapter";
     private Context context;
-    private final Activity activity;
+    private final AppCompatActivity activity;
 
     private final SortedList<Item> visibleObjects;
     private final TextView mNoItemsTextView;
 
-    public MyAdapter(Activity parentActivity, TextView noItemsTextView) {
+    public MyAdapter(AppCompatActivity parentActivity, TextView noItemsTextView) {
         activity = parentActivity;
         context = activity.getApplicationContext();
         mNoItemsTextView = noItemsTextView;
@@ -121,49 +116,7 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             mMoreButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(context);
-                    builder.setTitle(mTextView.getText().toString());
-                    //Get menu list
-                    final List<String> list = new ArrayList<>();
-                    list.addAll(Arrays.asList(context.getResources().getStringArray(R.array.item_menu)));
-                    //Get favorite item
-                    final DataUtil dataUtil = new DataUtil(activity);
-                    if (dataUtil.isFavoriteItem(mTextView.getText().toString())) {
-                        list.add(context.getResources().getString(R.string.item_menu_unfavorite));
-                    } else {
-                        list.add(context.getResources().getString(R.string.item_menu_favorite));
-                    }
-                    builder.setItems(list.toArray(new String[list.size()]), new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            switch (i) {
-                                case 0: //Share
-                                    Intent sendIntent = new Intent();
-                                    sendIntent.setAction(Intent.ACTION_SEND);
-                                    sendIntent.putExtra(Intent.EXTRA_TEXT, mTextViewBody.getText());
-                                    sendIntent.setType("text/plain");
-                                    context.startActivity(Intent.createChooser(sendIntent, context.getResources().getText(R.string.send_to)));
-                                    break;
-                                case 1: //Copy to clipboard
-                                    dataUtil.copyToClipboard(mTextView.getText().toString(), mTextViewBody.getText().toString());
-                                    break;
-                                case 2: //Favorite item stuff
-                                    if (list.get(i).equals(context.getResources().getString(R.string.item_menu_favorite))) {
-                                        // is not a favorite currently
-                                        DataUtil dataUtil = new DataUtil(activity);
-                                        dataUtil.saveFavoriteItem(mTextView.getText().toString(), mTextViewBody.getText().toString());
-                                    } else { // is a favorite
-                                        DataUtil dataUtil = new DataUtil(activity);
-                                        dataUtil.removeFavoriteItem(mTextView.getText().toString(), mTextViewBody.getText().toString());
-                                    }
-                                    break;
-                                default:
-                                    break;
-                            }
-                        }
-                    });
-                    MainActivity.dialog = builder.create();
-                    MainActivity.dialog.show();
+                    ItemMoreButtonDialog.newInstance(mTextView.getText().toString(),mTextViewBody.getText().toString()).show(activity.getSupportFragmentManager(),"itemMoreButtonDialog");
                 }
             });
         }

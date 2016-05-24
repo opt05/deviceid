@@ -7,6 +7,8 @@
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <!-- To read Wifi Mac -->
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <!-- To read SIM state -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- To read Bluetooth Mac -->
     <uses-permission android:name="android.permission.BLUETOOTH" />
 

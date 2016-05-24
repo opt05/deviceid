@@ -1,11 +1,17 @@
 package com.cwlarson.deviceid;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.View;
@@ -16,6 +22,7 @@ import com.cwlarson.deviceid.data.Hardware;
 import com.cwlarson.deviceid.data.Item;
 import com.cwlarson.deviceid.data.Network;
 import com.cwlarson.deviceid.data.Software;
+import com.cwlarson.deviceid.util.DataUtil;
 import com.cwlarson.deviceid.util.MyAdapter;
 
 import java.util.ArrayList;
@@ -25,6 +32,7 @@ public class SearchActivity extends AppCompatActivity implements SearchView.OnQu
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private static final String TAG = "SearchActivity";
     private MyAdapter mAdapter;
+    private BroadcastReceiver mReceiver;
     private final List<Item> mItemsList = new ArrayList<>();
 
     @Override
@@ -52,6 +60,16 @@ public class SearchActivity extends AppCompatActivity implements SearchView.OnQu
         mItemsList.addAll(new Network(this).setNetworkTiles(null));
         mItemsList.addAll(new Software(this).setSoftwareTiles(null));
         mItemsList.addAll(new Hardware(this).setHardwareTiles(null));
+
+        mReceiver = new DataUpdateReceiver();
+        LocalBroadcastManager.getInstance(this).registerReceiver(mReceiver, new IntentFilter(DataUtil.BROADCAST_UPDATE_FAV));
+
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mReceiver);
     }
 
     @Override
@@ -93,5 +111,24 @@ public class SearchActivity extends AppCompatActivity implements SearchView.OnQu
         //Log.d(TAG, s);
         mAdapter.clear();
         return false;
+    }
+
+    public class DataUpdateReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if(intent.getStringExtra("ACTION").equals("REMOVE")) {
+                Log.d(TAG, "REMOVE");
+                Item item = new Item(context);
+                item.setTitle(intent.getStringExtra("ITEM_TITLE"));
+                item.setSubTitle(intent.getStringExtra("ITEM_SUB"));
+                mAdapter.setFavStar(item);
+            }else if(intent.getStringExtra("ACTION").equals("ADD")){
+                Log.d(TAG,"ADD");
+                Item item = new Item(context);
+                item.setTitle(intent.getStringExtra("ITEM_TITLE"));
+                item.setSubTitle(intent.getStringExtra("ITEM_SUB"));
+                mAdapter.setFavStar(item);
+            }
+        }
     }
 }

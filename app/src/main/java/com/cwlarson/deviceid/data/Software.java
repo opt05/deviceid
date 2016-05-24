@@ -66,7 +66,8 @@ public class Software {
         JELLY_BEAN, JELLY_BEAN_MR1, JELLY_BEAN_MR2,
         KITKAT, KITKAT_WATCH,
         LOLLIPOP, LOLLIPOP_MR1,
-        MARSHMALLOW;
+        MARSHMALLOW,
+        N;
 
         public static Codenames getCodename()
         {
@@ -118,6 +119,8 @@ public class Software {
                     return LOLLIPOP_MR1;
                 case 23:
                     return MARSHMALLOW;
+                case 24:
+                    return N;
                 case 1000:
                     return CUR_DEVELOPMENT;
                 default:

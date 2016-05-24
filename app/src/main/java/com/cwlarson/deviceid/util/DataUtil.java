@@ -1,23 +1,21 @@
 package com.cwlarson.deviceid.util;
 
-import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.LocalBroadcastManager;
-import android.support.v7.app.AlertDialog;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
-import com.cwlarson.deviceid.MainActivity;
 import com.cwlarson.deviceid.R;
 import com.cwlarson.deviceid.data.Permissions;
+import com.cwlarson.deviceid.dialog.ItemClickDialog;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -27,10 +25,10 @@ public class DataUtil {
     private static final String favItemKey = "FAV_ITEMS";
     public static final String BROADCAST_UPDATE_FAV="BROADCAST_UPDATE_FAV";
     private Toast toast;
-    private final Activity activity;
+    private final AppCompatActivity activity;
     private final Context context;
 
-    public DataUtil(Activity activity){
+    public DataUtil(AppCompatActivity activity){
         this.activity=activity;
         this.context=activity.getApplicationContext();
     }
@@ -85,24 +83,7 @@ public class DataUtil {
         } else if(itemSubTitle.equals(context.getResources().getString(R.string.not_found))||itemSubTitle.startsWith(context.getResources().getString(R.string.no_longer_possible).replace("%s", ""))||itemSubTitle.startsWith(context.getResources().getString(R.string.not_possible_yet).replace("%s", ""))) {
             Snackbar.make(activity.findViewById(R.id.main_activity_layout), activity.getResources().getString(R.string.snackbar_not_found_adapter, itemTitle), Snackbar.LENGTH_LONG).show();
         } else { // This is a valid body so we should do something and inform the user
-            AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-            builder.setTitle(itemTitle);
-            builder.setMessage(itemSubTitle);
-            builder.setPositiveButton(R.string.dialog_long_press_positive_button, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialogInterface, int i) {
-                    itemMoreButton.performClick();
-                    dialogInterface.dismiss();
-                }
-            });
-            builder.setNegativeButton(R.string.dialog_long_press_negative_button, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialogInterface, int i) {
-                    dialogInterface.cancel();
-                }
-            });
-            MainActivity.dialog = builder.create();
-            MainActivity.dialog.show();
+            ItemClickDialog.newInstance(itemTitle,itemSubTitle).show(activity.getSupportFragmentManager(),"itemClickDialog");
         }
     }
     //Copy to clipboard
