@@ -9,7 +9,6 @@ import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.TabLayout;
 import android.support.v4.view.MotionEventCompat;
 import android.support.v4.view.ViewPager;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
@@ -25,7 +24,6 @@ public class MainActivity extends AppCompatActivity implements AppBarLayout.OnOf
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private final String TAG = "MainActivity";
     private AppBarLayout appBarLayout;
-    public static AlertDialog dialog;
     private static ViewPager mViewPager;
     private static TabsViewPagerAdapter mAdapter;
     private int index = 0;
@@ -62,7 +60,7 @@ public class MainActivity extends AppCompatActivity implements AppBarLayout.OnOf
 
         // Give the TabLayout the ViewPager
         TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
-        tabLayout.setupWithViewPager(mViewPager);
+        if(tabLayout!=null) tabLayout.setupWithViewPager(mViewPager);
     }
 
     @Override
@@ -124,8 +122,6 @@ public class MainActivity extends AppCompatActivity implements AppBarLayout.OnOf
     @Override
     protected void onDestroy() {
         mAdapter.destroy();
-        // Prevents memory leaks of dialogs
-        if(dialog!=null) dialog.dismiss();
         super.onDestroy();
     }
 

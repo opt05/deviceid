@@ -1,6 +1,6 @@
 package com.cwlarson.deviceid.data;
 
-import android.app.Activity;
+import android.support.v7.app.AppCompatActivity;
 
 import com.cwlarson.deviceid.util.DataUtil;
 import com.cwlarson.deviceid.util.MyAdapter;
@@ -11,10 +11,10 @@ import java.util.List;
 public class Favorites {
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private final String TAG = "Favorites";
-    private final Activity activity;
+    private final AppCompatActivity activity;
     private final List<Item> mItems= new ArrayList<>();
 
-    public Favorites(Activity activity){
+    public Favorites(AppCompatActivity activity){
         this.activity = activity;
     }
 
