@@ -79,13 +79,13 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
     // you provide access to all the views for a data item in a view holder
-    public class ViewHolderItem extends RecyclerView.ViewHolder {
+    private class ViewHolderItem extends RecyclerView.ViewHolder {
         // each data item is just a string in this case
-        public final TextView mTextView;
-        public final TextView mTextViewBody;
-        public final ImageButton mMoreButton;
-        public final ImageView mFavStar;
-        public ViewHolderItem(final View v) {
+        final TextView mTextView;
+        final TextView mTextViewBody;
+        final ImageButton mMoreButton;
+        final ImageView mFavStar;
+        ViewHolderItem(final View v) {
             super(v);
             this.mTextView = (TextView) v.findViewById(R.id.item_title);
             this.mTextViewBody = (TextView) v.findViewById(R.id.item_body);
