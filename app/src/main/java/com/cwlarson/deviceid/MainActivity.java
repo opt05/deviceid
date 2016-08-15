@@ -10,6 +10,7 @@ import android.support.design.widget.TabLayout;
 import android.support.v4.view.MotionEventCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.app.AppCompatDelegate;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -27,6 +28,9 @@ public class MainActivity extends AppCompatActivity implements AppBarLayout.OnOf
     private static ViewPager mViewPager;
     private static TabsViewPagerAdapter mAdapter;
     private int index = 0;
+    static {
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_AUTO);
+    }
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {

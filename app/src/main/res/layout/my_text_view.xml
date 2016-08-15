@@ -34,13 +34,14 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textSize="18sp"
-                    android:textColor="@color/primary_text_material_light_default"
+                    android:textColor="?android:attr/textColorPrimary"
                     android:lines="1"
                     android:ellipsize="end"/>
                 <TextView
                     android:id="@+id/item_body"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:textColor="?android:attr/textColorSecondary"
                     android:textSize="16sp"/>
             </LinearLayout>
             <LinearLayout
@@ -51,7 +52,7 @@
                     android:id="@+id/item_more_button"
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
-                    app:srcCompat="@drawable/ic_more_vert_black"
+                    app:srcCompat="@drawable/ic_more_vert"
                     android:background="@android:color/transparent"
                     android:contentDescription="@string/item_more_button_desc"
                     android:scaleType="fitCenter"

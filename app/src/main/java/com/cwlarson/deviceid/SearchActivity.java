@@ -7,10 +7,12 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.app.AppCompatDelegate;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -30,10 +32,21 @@ import java.util.List;
 
 public class SearchActivity extends AppCompatActivity implements SearchView.OnQueryTextListener {
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
-    private static final String TAG = "SearchActivity";
+    private static final String TAG = "SearchActivity", KEY_SAVED_FILTER_CONSTRAINT ="KEY_SAVED_FILTER_CONSTRAINT";
     private MyAdapter mAdapter;
     private BroadcastReceiver mReceiver;
     private final List<Item> mItemsList = new ArrayList<>();
+    private SearchView searchView;
+    private String restoredSearch;
+    static {
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_AUTO);
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if(searchView!=null) outState.putString(KEY_SAVED_FILTER_CONSTRAINT, searchView.getQuery().toString());
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,7 +76,7 @@ public class SearchActivity extends AppCompatActivity implements SearchView.OnQu
 
         mReceiver = new DataUpdateReceiver();
         LocalBroadcastManager.getInstance(this).registerReceiver(mReceiver, new IntentFilter(DataUtil.BROADCAST_UPDATE_FAV));
-
+        if(savedInstanceState!=null && savedInstanceState.getString(KEY_SAVED_FILTER_CONSTRAINT)!=null) restoredSearch=savedInstanceState.getString(KEY_SAVED_FILTER_CONSTRAINT);
     }
 
     @Override
@@ -77,12 +90,14 @@ public class SearchActivity extends AppCompatActivity implements SearchView.OnQu
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.search_menu, menu);
         //Expand search view
-        SearchView searchView = (SearchView) menu.findItem(R.id.action_search).getActionView();
+        searchView = (SearchView) menu.findItem(R.id.action_search).getActionView();
         searchView.setIconifiedByDefault(true);
         searchView.setFocusable(true);
         searchView.setIconified(false);
         searchView.requestFocusFromTouch();
         searchView.setOnQueryTextListener(this);
+        // Set max width only if it is not a tablet
+        if(getDisplayWidth()<600) searchView.setMaxWidth(Integer.MAX_VALUE);
         searchView.setOnCloseListener(new SearchView.OnCloseListener() {
             @Override
             public boolean onClose() {
@@ -90,7 +105,18 @@ public class SearchActivity extends AppCompatActivity implements SearchView.OnQu
                 return false;
             }
         });
-        return true;
+        // Restore query on rotate of screen
+        if(restoredSearch!=null && !restoredSearch.isEmpty()) {
+            searchView.setQuery(restoredSearch,true);
+            searchView.clearFocus();
+            restoredSearch=null;
+        }
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    private float getDisplayWidth() {
+        DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
+        return displayMetrics.widthPixels / displayMetrics.density;
     }
 
     @Override
@@ -103,14 +129,14 @@ public class SearchActivity extends AppCompatActivity implements SearchView.OnQu
                     mAdapter.add(item);
             }
         }
-        return false;
+        return true;
     }
 
     @Override
     public boolean onQueryTextChange(String s) {
         //Log.d(TAG, s);
         mAdapter.clear();
-        return false;
+        return true;
     }
 
     public class DataUpdateReceiver extends BroadcastReceiver {

@@ -67,7 +67,7 @@ public class Software {
         KITKAT, KITKAT_WATCH,
         LOLLIPOP, LOLLIPOP_MR1,
         MARSHMALLOW,
-        N;
+        NOUGAT;
 
         public static Codenames getCodename()
         {
@@ -120,7 +120,7 @@ public class Software {
                 case 23:
                     return MARSHMALLOW;
                 case 24:
-                    return N;
+                    return NOUGAT;
                 case 1000:
                     return CUR_DEVELOPMENT;
                 default:
@@ -152,13 +152,14 @@ public class Software {
         try {
             if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 try {
-                    SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
-                    software = DateFormat.getDateFormat(context).format(format.parse(Build.VERSION.SECURITY_PATCH));
-                } catch(ParseException e){
+                    SimpleDateFormat template = new SimpleDateFormat("yyyy-MM-dd");
+                    Date patchDate = template.parse(Build.VERSION.SECURITY_PATCH);
+                    String format = DateFormat.getBestDateTimePattern(Locale.getDefault(), "dMMMMyyyy");
+                    software = DateFormat.format(format, patchDate).toString();
+                } catch (ParseException e) {
                     e.printStackTrace();
                     software = Build.VERSION.SECURITY_PATCH;
                 }
-
             } else
                 software = context.getResources().getString(R.string.not_possible_yet,"6.0");
         } catch (Exception e) {
@@ -174,9 +175,9 @@ public class Software {
     private Item getPreviewSDKInt(){
         String software="";
         try {
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 int sdk = Build.VERSION.PREVIEW_SDK_INT;
-                if(sdk<=0)
+                if(sdk==0)
                     software = "Non-Preview";
                 else
                     software = "Preview " + Integer.toString(sdk);
