@@ -8,16 +8,16 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatDialogFragment;
 
 import com.cwlarson.deviceid.R;
+import com.cwlarson.deviceid.databinding.Item;
 
 public class ItemClickDialog extends AppCompatDialogFragment {
     public ItemClickDialog() {
         //Empty
     }
 
-    public static ItemClickDialog newInstance(String title, String subTitle) {
+    public static ItemClickDialog newInstance(Item item) {
         Bundle bundle = new Bundle();
-        bundle.putString("title",title);
-        bundle.putString("subTitle",subTitle);
+        bundle.putParcelable("item",item);
         ItemClickDialog dialog = new ItemClickDialog();
         dialog.setArguments(bundle);
         return dialog;
@@ -27,12 +27,13 @@ public class ItemClickDialog extends AppCompatDialogFragment {
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        builder.setTitle(getArguments().getString("title"));
-        builder.setMessage(getArguments().getString("subTitle"));
+        final Item item = getArguments().getParcelable("item");
+        builder.setTitle(item==null ? "" : item.getTitle());
+        builder.setMessage(item==null ? "" : item.getSubTitle());
         builder.setPositiveButton(R.string.dialog_long_press_positive_button, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-                ItemMoreButtonDialog.newInstance(getArguments().getString("title"),getArguments().getString("subTitle")).show(getActivity().getSupportFragmentManager(),"itemMoreButtonDialog");
+                ItemMoreButtonDialog.newInstance(item).show(getActivity().getSupportFragmentManager(),"itemMoreButtonDialog");
                 dialogInterface.dismiss();
             }
         });

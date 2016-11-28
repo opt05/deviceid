@@ -23,8 +23,7 @@ public class Permissions {
         this.context = activity.getApplicationContext();
     }
 
-    @SuppressWarnings("SameParameterValue")
-    public Boolean hasPermission(int MY_PERMISSION){
+    Boolean hasPermission(int MY_PERMISSION){
         switch (MY_PERMISSION){
             case MY_PERMISSIONS_REQUEST_READ_PHONE_STATE:
                 return ContextCompat.checkSelfPermission(activity, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED;
@@ -33,7 +32,6 @@ public class Permissions {
         }
     }
 
-    @SuppressWarnings("SameParameterValue")
     public void getPermissionClickAdapter(final int MY_PERMISSION, String itemTitle){
         final String permission;
         switch (MY_PERMISSION){

@@ -32,8 +32,8 @@ public class SystemProperty {
         }
     }
 
-    public class NoSuchPropertyException extends Exception {
-        public NoSuchPropertyException(Exception e) {
+    private class NoSuchPropertyException extends Exception {
+        NoSuchPropertyException(Exception e) {
             super(e);
         }
     }

@@ -2,173 +2,129 @@ package com.cwlarson.deviceid.util;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.databinding.DataBindingUtil;
+import android.databinding.ViewDataBinding;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.util.SortedList;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.util.SortedListAdapterCallback;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageButton;
-import android.widget.ImageView;
+import android.widget.AdapterView;
 import android.widget.TextView;
 
+import com.cwlarson.deviceid.BR;
 import com.cwlarson.deviceid.R;
-import com.cwlarson.deviceid.data.Item;
-import com.cwlarson.deviceid.dialog.ItemMoreButtonDialog;
+import com.cwlarson.deviceid.databinding.Item;
 
-import java.util.List;
-
-public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+public class MyAdapter extends RecyclerView.Adapter<MyAdapter.CustomViewHolder> {
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private final String TAG = "MyAdapter";
     private Context context;
-    private final AppCompatActivity activity;
+    private AppCompatActivity activity;
+    AdapterView.OnItemClickListener onItemClickListener
 
     private final SortedList<Item> visibleObjects;
-    private final TextView mNoItemsTextView;
+    private final View mNoItemsTextView;
+    private final RecyclerView.AdapterDataObserver dataObserver = new RecyclerView.AdapterDataObserver() {
+        @Override
+        public void onItemRangeRemoved(int positionStart, int itemCount) {
+            super.onItemRangeRemoved(positionStart, itemCount);
+            checkAdapterIsEmpty();
+        }
+
+        @Override
+        public void onChanged() {
+            super.onChanged();
+            checkAdapterIsEmpty();
+        }
+
+        @Override
+        public void onItemRangeInserted(int positionStart, int itemCount) {
+            super.onItemRangeInserted(positionStart, itemCount);
+            checkAdapterIsEmpty();
+        }
+    };
+
+    private void checkAdapterIsEmpty() {
+        if(getItemCount()==0) {
+            mNoItemsTextView.setVisibility(View.VISIBLE);
+        } else {
+            mNoItemsTextView.setVisibility(View.GONE);
+        }
+    }
+
+    private final View.OnAttachStateChangeListener mAttachListener = new View.OnAttachStateChangeListener() {
+
+        private boolean isRegistered;
+
+        @Override
+        public void onViewAttachedToWindow(final View v) {
+            if (!isRegistered) {
+                isRegistered = true;
+                registerAdapterDataObserver(dataObserver);
+            }
+        }
+
+        @Override
+        public void onViewDetachedFromWindow(final View v) {
+            if (isRegistered) {
+                isRegistered = false;
+                unregisterAdapterDataObserver(dataObserver);
+            }
+        }
+    };
+
+    @Override
+    public void onDetachedFromRecyclerView(RecyclerView recyclerView) {
+        super.onDetachedFromRecyclerView(recyclerView);
+        recyclerView.removeOnAttachStateChangeListener(mAttachListener);
+    }
+
+    @Override
+    public void onAttachedToRecyclerView(RecyclerView recyclerView) {
+        super.onAttachedToRecyclerView(recyclerView);
+        recyclerView.addOnAttachStateChangeListener(mAttachListener);
+    }
 
     public MyAdapter(AppCompatActivity parentActivity, TextView noItemsTextView) {
-        activity = parentActivity;
-        context = activity.getApplicationContext();
+        activity=parentActivity;
+        context = parentActivity.getApplicationContext();
         mNoItemsTextView = noItemsTextView;
-        visibleObjects = new SortedList<>(Item.class, new SortedList.Callback<Item>() {
-
+        visibleObjects = new SortedList<>(Item.class, new SortedListAdapterCallback<Item>(this) {
             @Override
             public int compare(Item o1, Item o2) {
-                return o1.getTitle().compareTo(o2.getTitle());
-            }
-
-            @Override
-            public void onInserted(int position, int count) {
-                setNoItemsTextViewVisible();
-                notifyItemRangeInserted(position, count);
-            }
-
-            @Override
-            public void onRemoved(int position, int count) {
-                setNoItemsTextViewVisible();
-                notifyItemRangeRemoved(position, count);
-            }
-
-            @Override
-            public void onMoved(int fromPosition, int toPosition) {
-                setNoItemsTextViewVisible();
-                notifyItemMoved(fromPosition, toPosition);
-            }
-
-            @Override
-            public void onChanged(int position, int count) {
-                notifyItemRangeChanged(position, count);
+                return o1.compareTo(o2);
             }
 
             @Override
             public boolean areContentsTheSame(Item oldItem, Item newItem) {
-                return oldItem.getTitle().equals(newItem.getTitle());
+                return oldItem.equals(newItem);
             }
 
             @Override
             public boolean areItemsTheSame(Item item1, Item item2) {
-                return item1.getTitle().equals(item2.getTitle()) &&
-                        item1.getSubTitle().equals(item2.getSubTitle());
+                return item1.equals(item2);
             }
         });
-        setNoItemsTextViewVisible();
+        checkAdapterIsEmpty();
     }
 
-    // Provide a reference to the views for each data item
-    // Complex data items may need more than one view per item, and
-    // you provide access to all the views for a data item in a view holder
-    private class ViewHolderItem extends RecyclerView.ViewHolder {
-        // each data item is just a string in this case
-        final TextView mTextView;
-        final TextView mTextViewBody;
-        final ImageButton mMoreButton;
-        final ImageView mFavStar;
-        ViewHolderItem(final View v) {
-            super(v);
-            this.mTextView = (TextView) v.findViewById(R.id.item_title);
-            this.mTextViewBody = (TextView) v.findViewById(R.id.item_body);
-            this.mMoreButton = (ImageButton) v.findViewById(R.id.item_more_button);
-            this.mFavStar = (ImageView) v.findViewById(R.id.item_fav_star);
-            context = v.getContext();
-            // Single click of the recyclerview item
-            v.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    new DataUtil(activity).onClickAdapter(mTextView.getText().toString(), mTextViewBody.getText().toString(), mMoreButton);
-                }
-            });
-            // Long click of recyclerview item
-            v.setOnLongClickListener(new View.OnLongClickListener() {
-                @Override
-                public boolean onLongClick(View v) {
-                // This isn't a valid body so we shouldn't do anything and inform the user
-                if (!isNotRealItem(mTextViewBody.getText().toString())) {
-                    DataUtil dataUtil = new DataUtil(activity);
-                    dataUtil.copyToClipboard(mTextView.getText().toString(),mTextViewBody.getText().toString());
-                    return true;
-                }
-                return false;
-                }
-            });
-            // Set more button click event
-            mMoreButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    ItemMoreButtonDialog.newInstance(mTextView.getText().toString(),mTextViewBody.getText().toString()).show(activity.getSupportFragmentManager(),"itemMoreButtonDialog");
-                }
-            });
-        }
+    public void setOnItemClickListener(AdapterView.OnItemClickListener onItemClickListener) {
+        this.onItemClickListener = onItemClickListener;
     }
 
-    /*public Item get(int position){
-        return visibleObjects.get(position);
-    }*/
+    public void onItemHolderClick(CustomViewHolder holder) {
+        if(onItemClickListener!=null) onItemClickListener.onItemClick(null, holder.itemView, holder.getAdapterPosition(), holder.getItemId());
+    }
 
     public void add(Item item){
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+        if(sharedPreferences.getBoolean("hide_unables",false) && !item.getHasOptions(context)) return;
         visibleObjects.add(item);
     }
-
-    /*public int indexOf(Item item){
-        return visibleObjects.indexOf(item);
-    }
-
-    public void updateItemAt(int index, Item item){
-        visibleObjects.updateItemAt(index,item);
-    }*/
-
-    public void addAll(List<Item> items){
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
-        visibleObjects.beginBatchedUpdates();
-        for (Item item : items){
-            // Skips current item if not real and hide setting is on
-            if(sharedPreferences.getBoolean("hide_unables",false)&&isNotRealItem(item.getSubTitle())) continue;
-            visibleObjects.add(item);
-        }
-        visibleObjects.endBatchedUpdates();
-    }
-
-    /*public void addAll(Item[] items){
-        addAll(Arrays.asList(items));
-    }*/
-
-    public void remove(Item item){
-        visibleObjects.remove(item);
-    }
-
-    public void setFavStar(Item item){
-        // Set view of fav star icon
-        int index = visibleObjects.indexOf(item);
-        if(index>=0) {
-            visibleObjects.removeItemAt(index);
-            visibleObjects.add(item);
-        }
-    }
-
-    /*public Item removeItemAt(int index){
-        return visibleObjects.removeItemAt(index);
-    }*/
 
     public void clear(){
         visibleObjects.beginBatchedUpdates();
@@ -180,47 +136,19 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     // Create new views (invoked by the layout manager)
     @Override
-    public RecyclerView.ViewHolder onCreateViewHolder(final ViewGroup parent, int viewType) {
-            View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.my_text_view, parent, false);
-            return new ViewHolderItem(v);
-    }
-
-    private Boolean isNotRealItem(String textviewBody){
-        return textviewBody.equals(context.getResources().getString(R.string.not_found))
-                || textviewBody.equals(context.getResources().getString(R.string.phone_permission_denied))
-                || textviewBody.startsWith(context.getResources().getString(R.string.no_longer_possible).replace("%s", ""))
-                || textviewBody.startsWith(context.getResources().getString(R.string.not_possible_yet).replace("%s", ""));
+    public CustomViewHolder onCreateViewHolder(final ViewGroup parent, int viewType) {
+        ViewDataBinding viewDataBinding = DataBindingUtil.inflate(LayoutInflater.from(parent.getContext()), R.layout.my_text_view, parent, false);
+        return new CustomViewHolder(viewDataBinding);
     }
 
     // Replace the contents of a view (invoked by the layout manager)
     @Override
-    public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+    public void onBindViewHolder(CustomViewHolder holder, int position) {
         // - get element from your dataset at this position
         // - replace the contents of the view with that element
-        if (holder instanceof ViewHolderItem) { //Item
-            try { //Title
-                ((ViewHolderItem) holder).mTextView.setText(visibleObjects.get(position).getTitle());
-                // Set view of fav star icon
-                DataUtil dataUtil = new DataUtil(activity);
-                if (dataUtil.isFavoriteItem(((ViewHolderItem) holder).mTextView.getText().toString()))
-                    ((ViewHolderItem) holder).mFavStar.setVisibility(View.VISIBLE);
-                else
-                    ((ViewHolderItem) holder).mFavStar.setVisibility(View.GONE);
-            } catch (ArrayIndexOutOfBoundsException e) {
-                ((ViewHolderItem) holder).mTextView.setText("");
-            }
-            try { //Body
-                ((ViewHolderItem) holder).mTextViewBody.setText(visibleObjects.get(position).getSubTitle());
-                // Hide the more button if it is unavailable
-                if(isNotRealItem(((ViewHolderItem) holder).mTextViewBody.getText().toString()))
-                    ((ViewHolderItem) holder).mMoreButton.setVisibility(View.GONE);
-                else
-                    ((ViewHolderItem) holder).mMoreButton.setVisibility(View.VISIBLE);
-            } catch (ArrayIndexOutOfBoundsException e) {
-                ((ViewHolderItem) holder).mTextViewBody.setText("");
-            }
-
-        }
+        ViewDataBinding viewDataBinding = holder.getViewDataBinding();
+        viewDataBinding.setVariable(BR.item, visibleObjects.get(position));
+        viewDataBinding.setVariable(BR.activity, activity);
     }
 
     // Return the size of your dataset (invoked by the layout manager)
@@ -229,10 +157,24 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         return visibleObjects.size();
     }
 
-    private void setNoItemsTextViewVisible() {
-        if (getItemCount()<=0)
-            mNoItemsTextView.setVisibility(View.VISIBLE);
-        else
-            mNoItemsTextView.setVisibility(View.GONE);
+    class CustomViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+
+        private ViewDataBinding mViewDataBinding;
+
+        CustomViewHolder(ViewDataBinding viewDataBinding) {
+            super(viewDataBinding.getRoot());
+
+            mViewDataBinding = viewDataBinding;
+            mViewDataBinding.executePendingBindings();
+        }
+
+        ViewDataBinding getViewDataBinding() {
+            return mViewDataBinding;
+        }
+
+        @Override
+        public void onClick(View view) {
+            notifyItemRangeChanged(0, );
+        }
     }
 }

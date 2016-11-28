@@ -2,31 +2,29 @@ package com.cwlarson.deviceid;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.databinding.DataBindingUtil;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.design.widget.AppBarLayout;
-import android.support.design.widget.TabLayout;
 import android.support.v4.view.MotionEventCompat;
-import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.AppCompatDelegate;
-import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 
 import com.cwlarson.deviceid.data.Permissions;
+import com.cwlarson.deviceid.databinding.ActivityMainBinding;
 import com.cwlarson.deviceid.util.TabsViewPagerAdapter;
 
 
 public class MainActivity extends AppCompatActivity implements AppBarLayout.OnOffsetChangedListener {
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private final String TAG = "MainActivity";
-    private AppBarLayout appBarLayout;
-    private static ViewPager mViewPager;
-    private static TabsViewPagerAdapter mAdapter;
+    private TabsViewPagerAdapter mAdapter;
+    private ActivityMainBinding binding;
     private int index = 0;
     static {
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_AUTO);
@@ -39,7 +37,7 @@ public class MainActivity extends AppCompatActivity implements AppBarLayout.OnOf
             case MotionEvent.ACTION_DOWN:
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
-                TabFragment tabFragment = mAdapter.getFragment(mViewPager.getCurrentItem());
+                TabFragment tabFragment = mAdapter.getFragment(binding.viewpager.getCurrentItem());
                 if(tabFragment!=null) {
                     if(index==0)
                         tabFragment.setSwipeToRefreshEnabled(true);
@@ -53,18 +51,19 @@ public class MainActivity extends AppCompatActivity implements AppBarLayout.OnOf
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        setTheme(R.style.AppTheme); //Removes splash screen
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        binding = DataBindingUtil.setContentView(this,R.layout.activity_main);
 
         // Get the ViewPager and set it's PagerAdapter so that it can display items
-        mViewPager = (ViewPager) findViewById(R.id.viewpager);
-        mAdapter = new TabsViewPagerAdapter(getSupportFragmentManager(), MainActivity.this);
-        mViewPager.setAdapter(mAdapter);
-        appBarLayout = (AppBarLayout) findViewById(R.id.myToolbarLayout);
+        mAdapter = new TabsViewPagerAdapter(getSupportFragmentManager(), this);
+        binding.viewpager.setAdapter(mAdapter);
+        binding.viewpager.setOffscreenPageLimit(mAdapter.getCount()); //Prevent reloading of views on tab switching
 
         // Give the TabLayout the ViewPager
-        TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
-        if(tabLayout!=null) tabLayout.setupWithViewPager(mViewPager);
+        binding.tabs.setupWithViewPager(binding.viewpager);
+
+        setSupportActionBar(binding.myToolbar);
     }
 
     @Override
@@ -80,7 +79,7 @@ public class MainActivity extends AppCompatActivity implements AppBarLayout.OnOf
     @Override
     protected void onStart() {
         super.onStart();
-        appBarLayout.addOnOffsetChangedListener(this);
+        binding.myToolbarLayout.addOnOffsetChangedListener(this);
     }
 
     @Override
@@ -97,7 +96,7 @@ public class MainActivity extends AppCompatActivity implements AppBarLayout.OnOf
                 editor.putBoolean("hide_unables",item.isChecked());
                 editor.apply();
                 // Refresh tabs due to data added/removed
-                mViewPager.getAdapter().notifyDataSetChanged();
+                mAdapter.notifyDataSetChanged();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -105,21 +104,8 @@ public class MainActivity extends AppCompatActivity implements AppBarLayout.OnOf
     }
 
     @Override
-    protected void onPostCreate(Bundle savedInstanceState) {
-        super.onPostCreate(savedInstanceState);
-        setUpToolbar();
-    }
-
-    private void setUpToolbar() {
-        Toolbar mToolbar = (Toolbar) findViewById(R.id.myToolbar);
-        if (mToolbar != null) {
-            setSupportActionBar(mToolbar);
-        }
-    }
-
-    @Override
     protected void onStop() {
-        appBarLayout.removeOnOffsetChangedListener(this);
+        binding.myToolbarLayout.removeOnOffsetChangedListener(this);
         super.onStop();
     }
 
@@ -132,7 +118,7 @@ public class MainActivity extends AppCompatActivity implements AppBarLayout.OnOf
     // Request permission for IMEI/MEID for Android M+
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
-        new Permissions(this).onRequestPermissionsResult(requestCode, grantResults,(TabsViewPagerAdapter) mViewPager.getAdapter());
+        new Permissions(this).onRequestPermissionsResult(requestCode, grantResults, mAdapter);
     }
 
     @Override

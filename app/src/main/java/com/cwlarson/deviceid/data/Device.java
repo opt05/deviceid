@@ -2,33 +2,64 @@ package com.cwlarson.deviceid.data;
 
 import android.app.Activity;
 import android.content.Context;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import com.cwlarson.deviceid.R;
+import com.cwlarson.deviceid.databinding.Item;
+import com.cwlarson.deviceid.util.DataUtil;
 import com.cwlarson.deviceid.util.MyAdapter;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class Device {
     private final String TAG = "Network";
     private final Activity activity;
     private final Context context;
+    private DataUtil dataUtil;
 
     public Device(Activity activity){
         this.activity = activity;
         this.context = activity.getApplicationContext();
+        this.dataUtil = new DataUtil(activity);
     }
 
-    public List<Item> setDeviceTiles(MyAdapter mAdapter){
-        List<Item> items = new ArrayList<>();
-        items.add(getDeviceModel());
-        items.add(getIMEI());
-        items.add(getSerial());
-        if(mAdapter!=null) mAdapter.addAll(items);
-        return items;
+    public void setDeviceTiles(final MyAdapter mAdapter, final boolean favsOnly){
+        new AsyncTask<Void, Item, Void>() {
+            @Override
+            protected void onProgressUpdate(Item... values) {
+                if(mAdapter!=null && (!favsOnly || dataUtil.isFavoriteItem(values[0].getTitle()))) {
+                        mAdapter.add(values[0]);
+                }
+            }
+
+            @Override
+            protected Void doInBackground(Void... aVoid) {
+                publishProgress(getDeviceModel());
+                publishProgress(getIMEI());
+                publishProgress(getSerial());
+                return null;
+            }
+        }.execute();
+    }
+
+    public void setDeviceTiles(final MyAdapter mAdapter, final String searchString) {
+        new AsyncTask<Void, Item, Void>() {
+            @Override
+            protected void onProgressUpdate(Item... values) {
+                if(mAdapter!=null && values[0].matchesSearchText(searchString,activity)) {
+                    mAdapter.add(values[0]);
+                }
+            }
+
+            @Override
+            protected Void doInBackground(Void... aVoid) {
+                publishProgress(getDeviceModel());
+                publishProgress(getIMEI());
+                publishProgress(getSerial());
+                return null;
+            }
+        }.execute();
     }
 
     private Item getIMEI() {
@@ -45,7 +76,7 @@ public class Device {
             e.printStackTrace();
             Log.w(TAG, "Null in getIMEI");
         }
-        Item item = new Item(context);
+        Item item = new Item();
         item.setTitle("IMEI / MEID");
         item.setSubTitle(device); 
         return item;
@@ -67,7 +98,7 @@ public class Device {
             Log.w(TAG, "Null in getDeviceModel");
         }
         device=Character.isUpperCase(device.charAt(0)) ? device : Character.toUpperCase(device.charAt(0))+device.substring(1);
-        Item item = new Item(context);
+        Item item = new Item();
         item.setTitle("Model Number");
         item.setSubTitle(device);
         return item;
@@ -75,7 +106,7 @@ public class Device {
 
     private Item getSerial() {
         String device=Build.SERIAL;
-        Item item = new Item(context);
+        Item item = new Item();
         item.setTitle("Serial");
         item.setSubTitle(device);
         return item;

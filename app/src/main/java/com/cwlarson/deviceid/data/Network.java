@@ -6,56 +6,105 @@ import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import com.cwlarson.deviceid.R;
+import com.cwlarson.deviceid.databinding.Item;
+import com.cwlarson.deviceid.util.DataUtil;
 import com.cwlarson.deviceid.util.MyAdapter;
 
 import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.List;
 
 public class Network {
     private final String TAG = "Network";
     private final Activity activity;
     private final Context context;
     private final WifiInfo mWifiConnectionInfo;
+    private DataUtil dataUtil;
 
     public Network(Activity activity){
         this.activity=activity;
         this.context=activity.getApplicationContext();
         this.mWifiConnectionInfo = ((WifiManager) context.getSystemService(Context.WIFI_SERVICE)).getConnectionInfo();
+        this.dataUtil = new DataUtil(activity);
     }
 
-    public List<Item> setNetworkTiles(MyAdapter mAdapter){
-        List<Item> items = new ArrayList<>();
-        items.add(getWifiMac());
-        items.add(getWifiBSSID());
-        items.add(getWifiSSID());
-        items.add(getWifiFrequency());
-        items.add(getWifiHiddenSSID());
-        items.add(getWifiIpAddress());
-        items.add(getWifiLinkSpeed());
-        items.add(getWifiNetworkID());
-        items.add(getWifiRSSI());
-        items.add(getWifiHostname());
-        items.add(getBluetoothMac());
-        items.add(getBluetoothHostname());
-        items.add(getSimSerial());
-        items.add(getSimOperatorName());
-        items.add(getSimCountry());
-        items.add(getSimState());
-        items.add(getPhoneNumber());
-        items.add(getVoicemailNumber());
-        items.add(getCellNetworkName());
-        items.add(getCellNetworkType());
-        if(mAdapter!=null) mAdapter.addAll(items);
-        return items;
+    public void setNetworkTiles(final MyAdapter mAdapter, final boolean favsOnly){
+        new AsyncTask<Void, Item, Void>() {
+            @Override
+            protected void onProgressUpdate(Item... values) {
+                if(mAdapter!=null && (!favsOnly || dataUtil.isFavoriteItem(values[0].getTitle()))) {
+                    mAdapter.add(values[0]);
+                }
+            }
+
+            @Override
+            protected Void doInBackground(Void... aVoid) {
+                publishProgress(getWifiMac());
+                publishProgress(getWifiBSSID());
+                publishProgress(getWifiSSID());
+                publishProgress(getWifiFrequency());
+                publishProgress(getWifiHiddenSSID());
+                publishProgress(getWifiIpAddress());
+                publishProgress(getWifiLinkSpeed());
+                publishProgress(getWifiNetworkID());
+                publishProgress(getWifiRSSI());
+                publishProgress(getWifiHostname());
+                publishProgress(getBluetoothMac());
+                publishProgress(getBluetoothHostname());
+                publishProgress(getSimSerial());
+                publishProgress(getSimOperatorName());
+                publishProgress(getSimCountry());
+                publishProgress(getSimState());
+                publishProgress(getPhoneNumber());
+                publishProgress(getVoicemailNumber());
+                publishProgress(getCellNetworkName());
+                publishProgress(getCellNetworkType());
+                return null;
+            }
+        }.execute();
+    }
+
+    public void setNetworkTiles(final MyAdapter mAdapter, final String searchString) {
+        new AsyncTask<Void, Item, Void>() {
+            @Override
+            protected void onProgressUpdate(Item... values) {
+                if(mAdapter!=null && values[0].matchesSearchText(searchString,activity)) {
+                    mAdapter.add(values[0]);
+                }
+            }
+
+            @Override
+            protected Void doInBackground(Void... aVoid) {
+                publishProgress(getWifiMac());
+                publishProgress(getWifiBSSID());
+                publishProgress(getWifiSSID());
+                publishProgress(getWifiFrequency());
+                publishProgress(getWifiHiddenSSID());
+                publishProgress(getWifiIpAddress());
+                publishProgress(getWifiLinkSpeed());
+                publishProgress(getWifiNetworkID());
+                publishProgress(getWifiRSSI());
+                publishProgress(getWifiHostname());
+                publishProgress(getBluetoothMac());
+                publishProgress(getBluetoothHostname());
+                publishProgress(getSimSerial());
+                publishProgress(getSimOperatorName());
+                publishProgress(getSimCountry());
+                publishProgress(getSimState());
+                publishProgress(getPhoneNumber());
+                publishProgress(getVoicemailNumber());
+                publishProgress(getCellNetworkName());
+                publishProgress(getCellNetworkType());
+                return null;
+            }
+        }.execute();
     }
 
     private Item getWifiMac(){
@@ -74,7 +123,7 @@ public class Network {
             */
             network=context.getResources().getString(R.string.no_longer_possible,"6.0");
         }
-        Item item = new Item(context);
+        Item item = new Item();
         item.setTitle("Wi-Fi MAC Address");
         item.setSubTitle(network);
         return item;
@@ -88,7 +137,7 @@ public class Network {
             e.printStackTrace();
             Log.w(TAG, "Null in getWiFiBSSID");
         }
-        Item item = new Item(context);
+        Item item = new Item();
         item.setTitle("Wi-Fi BSSID");
         item.setSubTitle(network);
         return item;
@@ -102,7 +151,7 @@ public class Network {
             e.printStackTrace();
             Log.w(TAG, "Null in getWiFiSSID");
         }
-        Item item = new Item(context);
+        Item item = new Item();
         item.setTitle("Wi-Fi SSID");
         item.setSubTitle(network);
         return item;
@@ -120,7 +169,7 @@ public class Network {
         } else {
             network = context.getResources().getString(R.string.not_found);
         }
-        Item item = new Item(context);
+        Item item = new Item();
         item.setTitle("Wi-Fi Frequency");
         item.setSubTitle(network);
         return item;
@@ -134,7 +183,7 @@ public class Network {
             e.printStackTrace();
             Log.w(TAG, "Null in getWiFiMac");
         }
-        Item item = new Item(context);
+        Item item = new Item();
         item.setTitle("Wi-Fi Hidden SSID");
         item.setSubTitle(network);
         return item;
@@ -151,7 +200,7 @@ public class Network {
         } catch (Exception e){
             Log.w(TAG, "Exception in getWiFiMac");
         }
-        Item item = new Item(context);
+        Item item = new Item();
         item.setTitle("Wi-Fi IP Address");
         item.setSubTitle(network);
         return item;
@@ -165,7 +214,7 @@ public class Network {
             e.printStackTrace();
             Log.w(TAG, "Null in getWiFiMac");
         }
-        Item item = new Item(context);
+        Item item = new Item();
         item.setTitle("Wi-Fi Link Speed");
         item.setSubTitle(network);
         return item;
@@ -179,7 +228,7 @@ public class Network {
             e.printStackTrace();
             Log.w(TAG, "Null in getWiFiMac");
         }
-        Item item = new Item(context);
+        Item item = new Item();
         item.setTitle("Wi-Fi Network ID");
         item.setSubTitle(network);
         return item;
@@ -193,7 +242,7 @@ public class Network {
             e.printStackTrace();
             Log.w(TAG, "Null in getWiFiMac");
         }
-        Item item = new Item(context);
+        Item item = new Item();
         item.setTitle("Wi-Fi RSSI");
         item.setSubTitle(network);
         return item;
@@ -209,7 +258,7 @@ public class Network {
             e.printStackTrace();
             Log.w(TAG, "Null in getWiFiMac");
         }
-        Item item = new Item(context);
+        Item item = new Item();
         item.setTitle("Wi-Fi Hostname");
         item.setSubTitle(network);
         return item;
@@ -236,7 +285,7 @@ public class Network {
             */
             network=context.getResources().getString(R.string.no_longer_possible,"6.0");
         }
-        Item item = new Item(context);
+        Item item = new Item();
         item.setTitle("Bluetooth MAC Address");
         item.setSubTitle(network);
         return item;
@@ -255,7 +304,7 @@ public class Network {
             e.printStackTrace();
             Log.w(TAG, "Null in getBluetoothHostname");
         }
-        Item item = new Item(context);
+        Item item = new Item();
         item.setTitle("Bluetooth Hostname");
         item.setSubTitle(network);
         return item;
@@ -270,7 +319,7 @@ public class Network {
             e.printStackTrace();
             Log.w(TAG, "Null in getBluetoothHostname");
         }
-        Item item = new Item(context);
+        Item item = new Item();
         item.setTitle("Sim Serial");
         item.setSubTitle(network);
         return item;
@@ -285,7 +334,7 @@ public class Network {
             e.printStackTrace();
             Log.w(TAG, "Null in getBluetoothHostname");
         }
-        Item item = new Item(context);
+        Item item = new Item();
         item.setTitle("Sim Operator Name");
         item.setSubTitle(network);
         return item;
@@ -300,7 +349,7 @@ public class Network {
             e.printStackTrace();
             Log.w(TAG, "Null in getBluetoothHostname");
         }
-        Item item = new Item(context);
+        Item item = new Item();
         item.setTitle("Sim Country");
         item.setSubTitle(network);
         return item;
@@ -335,7 +384,7 @@ public class Network {
             e.printStackTrace();
             Log.w(TAG, "Null in getBluetoothHostname");
         }
-        Item item = new Item(context);
+        Item item = new Item();
         item.setTitle("Sim State");
         item.setSubTitle(network);
         return item;
@@ -354,7 +403,7 @@ public class Network {
             e.printStackTrace();
             Log.w(TAG, "Null in getPhoneNumber");
         }
-        Item item = new Item(context);
+        Item item = new Item();
         item.setTitle("Phone Number");
         item.setSubTitle(network);
         return item;
@@ -373,7 +422,7 @@ public class Network {
             e.printStackTrace();
             Log.w(TAG, "Null in getPhoneStrength");
         }
-        Item item = new Item(context);
+        Item item = new Item();
         item.setTitle("Voicemail Number");
         item.setSubTitle(network);
         return item;
@@ -388,7 +437,7 @@ public class Network {
             e.printStackTrace();
             Log.w(TAG, "Null in getPhoneNumber");
         }
-        Item item = new Item(context);
+        Item item = new Item();
         item.setTitle("Cell Network Name");
         item.setSubTitle(network);
         return item;
@@ -429,7 +478,7 @@ public class Network {
             e.printStackTrace();
             Log.w(TAG, "Null in getPhoneNumber");
         }
-        Item item = new Item(context);
+        Item item = new Item();
         item.setTitle("Cell Network Type");
         item.setSubTitle(network);
         return item;

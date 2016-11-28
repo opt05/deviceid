@@ -2,6 +2,7 @@ package com.cwlarson.deviceid.data;
 
 import android.app.Activity;
 import android.content.Context;
+import android.os.AsyncTask;
 import android.provider.Settings;
 import android.support.v4.content.ContextCompat;
 import android.text.format.Formatter;
@@ -11,6 +12,8 @@ import android.view.Display;
 import android.view.WindowManager;
 
 import com.cwlarson.deviceid.R;
+import com.cwlarson.deviceid.databinding.Item;
+import com.cwlarson.deviceid.util.DataUtil;
 import com.cwlarson.deviceid.util.MyAdapter;
 
 import java.io.File;
@@ -18,8 +21,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -27,21 +28,54 @@ public class Hardware {
     private final String TAG = "Hardware";
     private final Activity activity;
     private final Context context;
+    private DataUtil dataUtil;
 
     public Hardware(Activity activity){
         this.activity = activity;
         this.context = activity.getApplicationContext();
+        this.dataUtil = new DataUtil(activity);
     }
 
-    public List<Item> setHardwareTiles(MyAdapter mAdapter){
-        List<Item> items = new ArrayList<>();
-        items.add(getDeviceScreenDensity());
-        items.add(getAndroidID());
-        items.add(getRamSize());
-        items.add(getFormattedInternalMemory());
-        items.add(getFormattedExternalMemory());
-        if(mAdapter!=null) mAdapter.addAll(items);
-        return items;
+    public void setHardwareTiles(final MyAdapter mAdapter, final boolean favsOnly){
+        new AsyncTask<Void, Item, Void>() {
+            @Override
+            protected void onProgressUpdate(Item... values) {
+                if(mAdapter!=null && (!favsOnly || dataUtil.isFavoriteItem(values[0].getTitle()))) {
+                    mAdapter.add(values[0]);
+                }
+            }
+
+            @Override
+            protected Void doInBackground(Void... aVoid) {
+                publishProgress(getDeviceScreenDensity());
+                publishProgress(getAndroidID());
+                publishProgress(getRamSize());
+                publishProgress(getFormattedInternalMemory());
+                publishProgress(getFormattedExternalMemory());
+                return null;
+            }
+        }.execute();
+    }
+
+    public void setHardwareTiles(final MyAdapter mAdapter, final String searchString){
+        new AsyncTask<Void, Item, Void>() {
+            @Override
+            protected void onProgressUpdate(Item... values) {
+                if(mAdapter!=null  && values[0].matchesSearchText(searchString,activity)) {
+                    mAdapter.add(values[0]);
+                }
+            }
+
+            @Override
+            protected Void doInBackground(Void... aVoid) {
+                publishProgress(getDeviceScreenDensity());
+                publishProgress(getAndroidID());
+                publishProgress(getRamSize());
+                publishProgress(getFormattedInternalMemory());
+                publishProgress(getFormattedExternalMemory());
+                return null;
+            }
+        }.execute();
     }
 
     private Item getDeviceScreenDensity() {
@@ -110,7 +144,7 @@ public class Hardware {
                 hardware = context.getResources().getString(R.string.not_found);
                 break;
         }
-        Item item = new Item(context);
+        Item item = new Item();
         item.setTitle("Screen Density");
         item.setSubTitle(hardware); 
         return item;
@@ -124,7 +158,7 @@ public class Hardware {
             e.printStackTrace();
             Log.w(TAG, "Null in getAndroidID");
         }
-        Item item = new Item(context);
+        Item item = new Item();
         item.setTitle("Android/Hardware ID");
         item.setSubTitle(hardware); 
         return item;
@@ -151,7 +185,7 @@ public class Hardware {
         } catch (IOException ex) {
             ex.printStackTrace();
         }
-        Item item = new Item(context);
+        Item item = new Item();
         item.setTitle("RAM Size");
         item.setSubTitle(hardware); 
         return item;
@@ -159,7 +193,7 @@ public class Hardware {
 
     private Item getFormattedInternalMemory() {
         String hardware = context.getResources().getString(R.string.hardware_storage_output_format, getAvailableInternalMemory(), getTotalInternalMemory());
-        Item item = new Item(context);
+        Item item = new Item();
         item.setTitle("Internal Storage");
         item.setSubTitle(hardware); 
         return item;
@@ -175,7 +209,7 @@ public class Hardware {
 
     private Item getFormattedExternalMemory() {
         String hardware = (getTotalExternalMemory().startsWith("0.00"))?context.getResources().getString(R.string.not_found):context.getResources().getString(R.string.hardware_storage_output_format, getAvailableExternalMemory(), getTotalExternalMemory());
-        Item item = new Item(context);
+        Item item = new Item();
         item.setTitle("External Storage");
         item.setSubTitle(hardware); 
         return item;

@@ -6,10 +6,10 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.AppCompatDialogFragment;
 
 import com.cwlarson.deviceid.R;
+import com.cwlarson.deviceid.databinding.Item;
 import com.cwlarson.deviceid.util.DataUtil;
 
 import java.util.ArrayList;
@@ -21,10 +21,9 @@ public class ItemMoreButtonDialog extends AppCompatDialogFragment {
         // Empty
     }
 
-    public static ItemMoreButtonDialog newInstance(String title, String subTitle) {
+    public static ItemMoreButtonDialog newInstance(Item item) {
         Bundle bundle = new Bundle();
-        bundle.putString("title",title);
-        bundle.putString("subTitle",subTitle);
+        bundle.putParcelable("item",item);
         ItemMoreButtonDialog dialog = new ItemMoreButtonDialog();
         dialog.setArguments(bundle);
         return dialog;
@@ -34,13 +33,14 @@ public class ItemMoreButtonDialog extends AppCompatDialogFragment {
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        builder.setTitle(getArguments().getString("title"));
+        final Item item  = getArguments().getParcelable("item");
+        builder.setTitle(item==null ? "" : item.getTitle());
         //Get menu list
         final List<String> list = new ArrayList<>();
         list.addAll(Arrays.asList(getActivity().getResources().getStringArray(R.array.item_menu)));
         //Get favorite item
-        final DataUtil dataUtil = new DataUtil((AppCompatActivity) getActivity());
-        if (dataUtil.isFavoriteItem(getArguments().getString("title"))) {
+        final DataUtil dataUtil = new DataUtil(getActivity());
+        if (dataUtil.isFavoriteItem(item==null ? "" : item.getTitle())) {
             list.add(getActivity().getResources().getString(R.string.item_menu_unfavorite));
         } else {
             list.add(getActivity().getResources().getString(R.string.item_menu_favorite));
@@ -52,21 +52,21 @@ public class ItemMoreButtonDialog extends AppCompatDialogFragment {
                     case 0: //Share
                         Intent sendIntent = new Intent();
                         sendIntent.setAction(Intent.ACTION_SEND);
-                        sendIntent.putExtra(Intent.EXTRA_TEXT, getArguments().getString("subTitle"));
+                        sendIntent.putExtra(Intent.EXTRA_TEXT, item==null ? "" : item.getSubTitle());
                         sendIntent.setType("text/plain");
                         getActivity().startActivity(Intent.createChooser(sendIntent, getActivity().getResources().getText(R.string.send_to)));
                         break;
                     case 1: //Copy to clipboard
-                        dataUtil.copyToClipboard(getArguments().getString("title"), getArguments().getString("subTitle"));
+                        dataUtil.copyToClipboard(item==null ? "" : item.getTitle(), item==null ? "" : item.getSubTitle());
                         break;
                     case 2: //Favorite item stuff
                         if (list.get(i).equals(getActivity().getResources().getString(R.string.item_menu_favorite))) {
                             // is not a favorite currently
-                            DataUtil dataUtil = new DataUtil((AppCompatActivity) getActivity());
-                            dataUtil.saveFavoriteItem(getArguments().getString("title"), getArguments().getString("subTitle"));
+                            DataUtil dataUtil = new DataUtil(getActivity());
+                            dataUtil.saveFavoriteItem(item==null ? "" : item.getTitle(), item==null ? "" : item.getSubTitle());
                         } else { // is a favorite
-                            DataUtil dataUtil = new DataUtil((AppCompatActivity) getActivity());
-                            dataUtil.removeFavoriteItem(getArguments().getString("title"), getArguments().getString("subTitle"));
+                            DataUtil dataUtil = new DataUtil(getActivity());
+                            dataUtil.removeFavoriteItem(item==null ? "" : item.getTitle(), item==null ? "" : item.getSubTitle());
                         }
                         break;
                     default:

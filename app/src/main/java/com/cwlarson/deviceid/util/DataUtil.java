@@ -1,21 +1,15 @@
 package com.cwlarson.deviceid.util;
 
+import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
-import android.support.design.widget.Snackbar;
-import android.support.v4.content.LocalBroadcastManager;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.widget.ImageButton;
 import android.widget.Toast;
 
 import com.cwlarson.deviceid.R;
-import com.cwlarson.deviceid.data.Permissions;
-import com.cwlarson.deviceid.dialog.ItemClickDialog;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -23,13 +17,11 @@ import java.util.Set;
 public class DataUtil {
     private final String TAG = "DataUtil";
     private static final String favItemKey = "FAV_ITEMS";
-    public static final String BROADCAST_UPDATE_FAV="BROADCAST_UPDATE_FAV";
+    //public static final String BROADCAST_UPDATE_FAV="BROADCAST_UPDATE_FAV";
     private Toast toast;
-    private final AppCompatActivity activity;
     private final Context context;
 
-    public DataUtil(AppCompatActivity activity){
-        this.activity=activity;
+    public DataUtil(Activity activity){
         this.context=activity.getApplicationContext();
     }
 
@@ -41,7 +33,7 @@ public class DataUtil {
         sharedPref.edit().putStringSet(favItemKey, in).apply();
         Log.i(TAG, "saveFavoriteItems = "+ getAllFavoriteItems());
         //Send a broadcast that a fav was removed
-        LocalBroadcastManager.getInstance(context).sendBroadcast(new Intent(BROADCAST_UPDATE_FAV).putExtra("ACTION", "ADD").putExtra("ITEM_TITLE", itemID).putExtra("ITEM_SUB",itemSub));
+        //LocalBroadcastManager.getInstance(context).sendBroadcast(new Intent(BROADCAST_UPDATE_FAV).putExtra("ACTION", "ADD").putExtra("ITEM_TITLE", itemID).putExtra("ITEM_SUB",itemSub));
     }
 
     private Set<String> getAllFavoriteItems() {
@@ -52,9 +44,7 @@ public class DataUtil {
     public boolean isFavoriteItem(String itemID) {
         Set<String> allFavs = getAllFavoriteItems();
         for (String s:allFavs){
-            if (s.equals(itemID)){
-                return true;
-            }
+            if (s.equals(itemID)) return true;
         }
         return false;
     }
@@ -73,18 +63,7 @@ public class DataUtil {
         sharedPref.edit().putStringSet(favItemKey, newFavoriteItemsList).apply();
         Log.i(TAG, "removeFavoriteItems = " + getAllFavoriteItems());
         //Send a broadcast that a fav was removed
-        LocalBroadcastManager.getInstance(context).sendBroadcast(new Intent(BROADCAST_UPDATE_FAV).putExtra("ACTION", "REMOVE").putExtra("ITEM_TITLE",itemID).putExtra("ITEM_SUB",itemSub));
-    }
-    // Returns true if method already takes care of the click, false if the parent should
-    public void onClickAdapter(String itemTitle, String itemSubTitle, final ImageButton itemMoreButton){
-        if(itemSubTitle.equals(context.getResources().getString(R.string.phone_permission_denied))) {
-            Permissions permissions = new Permissions(activity);
-            permissions.getPermissionClickAdapter(Permissions.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE, itemTitle);
-        } else if(itemSubTitle.equals(context.getResources().getString(R.string.not_found))||itemSubTitle.startsWith(context.getResources().getString(R.string.no_longer_possible).replace("%s", ""))||itemSubTitle.startsWith(context.getResources().getString(R.string.not_possible_yet).replace("%s", ""))) {
-            Snackbar.make(activity.findViewById(R.id.main_activity_layout), activity.getResources().getString(R.string.snackbar_not_found_adapter, itemTitle), Snackbar.LENGTH_LONG).show();
-        } else { // This is a valid body so we should do something and inform the user
-            ItemClickDialog.newInstance(itemTitle,itemSubTitle).show(activity.getSupportFragmentManager(),"itemClickDialog");
-        }
+        //LocalBroadcastManager.getInstance(context).sendBroadcast(new Intent(BROADCAST_UPDATE_FAV).putExtra("ACTION", "REMOVE").putExtra("ITEM_TITLE",itemID).putExtra("ITEM_SUB",itemSub));
     }
     //Copy to clipboard
     public void copyToClipboard(String headerText, String bodyText){
