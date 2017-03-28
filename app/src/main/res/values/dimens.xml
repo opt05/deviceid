@@ -3,4 +3,5 @@
     <dimen name="activity_horizontal_margin">8dp</dimen>
     <dimen name="activity_vertical_margin">8dp</dimen>
     <integer name="grid_layout_columns">1</integer>
+    <dimen name="bottom_sheet_width">0dp</dimen>
 </resources>

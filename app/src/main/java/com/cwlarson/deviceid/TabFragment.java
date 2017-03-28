@@ -5,13 +5,13 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import com.cwlarson.deviceid.data.Device;
+import com.cwlarson.deviceid.data.Favorites;
 import com.cwlarson.deviceid.data.Hardware;
 import com.cwlarson.deviceid.data.Network;
 import com.cwlarson.deviceid.data.Software;
@@ -45,23 +45,31 @@ public class TabFragment extends Fragment {
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        getData();
+    }
+
+    private void getData() {
         switch (getArguments().getInt("tab")){
             case 0:
-                new Device(getActivity()).setDeviceTiles(mAdapter, false);
+                new Device(getActivity()).setDeviceTiles(mAdapter);
                 break;
             case 1:
-                new Network(getActivity()).setNetworkTiles(mAdapter, false);
+                new Network(getActivity()).setNetworkTiles(mAdapter);
                 break;
             case 2:
-                new Software(getActivity()).setSoftwareTiles(mAdapter, false);
+                new Software(getActivity()).setSoftwareTiles(mAdapter);
                 break;
             case 3:
-                new Hardware(getActivity()).setHardwareTiles(mAdapter, false);
+                new Hardware(getActivity()).setHardwareTiles(mAdapter);
+                break;
+            case 4:
+                new Favorites(getActivity()).setFavoritesTiles(mAdapter);
                 break;
             default:
-                new Device(getActivity()).setDeviceTiles(mAdapter, false);
+                new Device(getActivity()).setDeviceTiles(mAdapter);
                 break;
         }
+        if(binding.swipeToRefreshLayout.isRefreshing()) binding.swipeToRefreshLayout.setRefreshing(false);
     }
 
     @Nullable
@@ -75,15 +83,14 @@ public class TabFragment extends Fragment {
         binding.recyclerView.setLayoutManager(mLayoutManager);
 
         // specify an adapter (see also next example)
-        mAdapter = new MyAdapter((AppCompatActivity) getActivity(), binding.textviewRecyclerviewNoItems);
+        mAdapter = new MyAdapter((MainActivity) getActivity(), binding.textviewRecyclerviewNoItems, getArguments().getInt("tab")==4);
         binding.recyclerView.setAdapter(mAdapter);
 
         // Setup SwipeToRefresh
         binding.swipeToRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                binding.recyclerView.setAdapter(mAdapter);
-                if(binding.swipeToRefreshLayout.isRefreshing()) binding.swipeToRefreshLayout.setRefreshing(false);
+                getData();
             }
         });
         binding.swipeToRefreshLayout.setColorSchemeResources(R.color.accent_color);

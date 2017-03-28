@@ -7,19 +7,15 @@
     <string name="not_possible_yet_start">Available starting on Android</string>
     <string name="copy_to_clipboard">Copied %s to clipboard!</string>
     <string name="send_to">Share text to…</string>
-    <string name="menu_search">Search</string>
-    <string name="menu_copy_to_clipboard">Copy to clipboard</string>
+    <string name="menu_search">@android:string/search_go</string>
+    <string name="menu_copy_to_clipboard">@android:string/copy</string>
     <string name="menu_share">Share</string>
     <string name="menu_hide_unable">Hide not applicable</string>
     <string name="phone_permission_denied">Please enable the Phone permission</string>
     <string name="phone_permission_snackbar">The phone permission is required to display %s</string>
     <string name="snackbar_not_found_adapter">Unable to retrieve %s from this device</string>
-    <string name="phone_permission_snackbar_button">OK</string>
+    <string name="phone_permission_snackbar_button">@android:string/ok</string>
     <string name="textview_recyclerview_no_items">There are no items to display\n¯\\_(ツ)_/¯</string>
-    <string-array name="item_menu">
-        <item>Share</item>
-        <item>Copy to clipboard</item>
-    </string-array>
     <string name="item_menu_favorite">Favorite item</string>
     <string name="item_menu_unfavorite">Unfavorite item</string>
     <string name="dialog_long_press_positive_button">Actions</string>
@@ -29,6 +25,7 @@
         <item>Network</item>
         <item>Software</item>
         <item>Hardware</item>
+        <item>Favorites</item>
     </string-array>
     <string name="hardware_storage_output_format">%1$s of %2$s free</string>
     <string name="title_activity_search">Item Search</string>
@@ -36,4 +33,17 @@
     <string name="item_favorite_star_desc">item favorite</string>
     <string name="favorite">Favorite</string>
     <string name="not_favorite">Not a Favorite</string>
+    <string name="search_shortcut_short_label">@string/menu_search</string>
+    <string name="search_shortcut_long_label">@string/menu_search</string>
+    <string name="search_disabled_message">Search (disabled)</string>
+    <string name="appwidget_text">EXAMPLE</string>
+    <string name="configure">Configure</string>
+    <string name="add_widget">Add widget</string>
+    <string name="BATTERY_STATUS_CHARGING">Charging</string>
+    <string name="BATTERY_STATUS_FULL">Full</string>
+    <string name="BATTERY_STATUS_DISCHARGING">Discharging</string>
+    <string name="BATTERY_STATUS_NOT_CHARGING">Not Charging</string>
+    <string name="BATTERY_STATUS_UNKNOWN">@string/not_found</string>
+    <string name="BATTERY_PLUGGED_USB">over USB</string>
+    <string name="BATTERY_PLUGGED_AC">on AC</string>
 </resources>

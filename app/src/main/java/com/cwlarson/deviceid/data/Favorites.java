@@ -13,10 +13,10 @@ public class Favorites {
         this.activity = activity;
     }
 
-    public void setFavoritesTiles(MyAdapter mAdapter){
-        new Device(activity).setDeviceTiles(mAdapter,true);
-        new Network(activity).setNetworkTiles(mAdapter,true);
-        new Software(activity).setSoftwareTiles(mAdapter,true);
-        new Hardware(activity).setHardwareTiles(mAdapter,true);
+    public void setFavoritesTiles(MyAdapter mAdapter) {
+        new Device(activity).setDeviceTiles(mAdapter);
+        new Network(activity).setNetworkTiles(mAdapter);
+        new Software(activity).setSoftwareTiles(mAdapter);
+        new Hardware(activity).setHardwareTiles(mAdapter);
     }
 }

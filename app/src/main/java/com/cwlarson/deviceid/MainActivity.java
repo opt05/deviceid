@@ -5,30 +5,23 @@ import android.content.SharedPreferences;
 import android.databinding.DataBindingUtil;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.annotation.NonNull;
 import android.support.design.widget.AppBarLayout;
 import android.support.v4.view.MotionEventCompat;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.app.AppCompatDelegate;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 
-import com.cwlarson.deviceid.data.Permissions;
 import com.cwlarson.deviceid.databinding.ActivityMainBinding;
 import com.cwlarson.deviceid.util.TabsViewPagerAdapter;
 
 
-public class MainActivity extends AppCompatActivity implements AppBarLayout.OnOffsetChangedListener {
+public class MainActivity extends PermissionsActivity implements AppBarLayout.OnOffsetChangedListener {
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
-    private final String TAG = "MainActivity";
+    private final String TAG = MainActivity.class.getSimpleName();
     private TabsViewPagerAdapter mAdapter;
     private ActivityMainBinding binding;
     private int index = 0;
-    static {
-        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_AUTO);
-    }
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
@@ -59,10 +52,8 @@ public class MainActivity extends AppCompatActivity implements AppBarLayout.OnOf
         mAdapter = new TabsViewPagerAdapter(getSupportFragmentManager(), this);
         binding.viewpager.setAdapter(mAdapter);
         binding.viewpager.setOffscreenPageLimit(mAdapter.getCount()); //Prevent reloading of views on tab switching
-
         // Give the TabLayout the ViewPager
         binding.tabs.setupWithViewPager(binding.viewpager);
-
         setSupportActionBar(binding.myToolbar);
     }
 
@@ -113,12 +104,6 @@ public class MainActivity extends AppCompatActivity implements AppBarLayout.OnOf
     protected void onDestroy() {
         mAdapter.destroy();
         super.onDestroy();
-    }
-
-    // Request permission for IMEI/MEID for Android M+
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
-        new Permissions(this).onRequestPermissionsResult(requestCode, grantResults, mAdapter);
     }
 
     @Override

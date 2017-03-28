@@ -2,8 +2,6 @@ package com.cwlarson.deviceid;
 
 import android.databinding.DataBindingUtil;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.app.AppCompatDelegate;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.SearchView;
 import android.util.DisplayMetrics;
@@ -17,16 +15,12 @@ import com.cwlarson.deviceid.data.Software;
 import com.cwlarson.deviceid.databinding.ActivitySearchBinding;
 import com.cwlarson.deviceid.util.MyAdapter;
 
-public class SearchActivity extends AppCompatActivity implements SearchView.OnQueryTextListener {
+public class SearchActivity extends PermissionsActivity implements SearchView.OnQueryTextListener {
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private static final String TAG = "SearchActivity", KEY_SAVED_FILTER_CONSTRAINT ="KEY_SAVED_FILTER_CONSTRAINT";
     private MyAdapter mAdapter;
     private SearchView searchView;
     private String restoredSearch;
-
-    static {
-        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_AUTO);
-    }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
@@ -49,7 +43,10 @@ public class SearchActivity extends AppCompatActivity implements SearchView.OnQu
         // specify an adapter (see also next example)
         mAdapter = new MyAdapter(this, binding.contextSearch.textviewRecyclerviewNoItems);
         binding.contextSearch.searchRecyclerView.setAdapter(mAdapter);
-
+        new Device(this).setDeviceTiles(mAdapter);
+        new Network(this).setNetworkTiles(mAdapter);
+        new Software(this).setSoftwareTiles(mAdapter);
+        new Hardware(this).setHardwareTiles(mAdapter);
         if(savedInstanceState!=null && savedInstanceState.getString(KEY_SAVED_FILTER_CONSTRAINT)!=null) restoredSearch=savedInstanceState.getString(KEY_SAVED_FILTER_CONSTRAINT);
     }
 
@@ -69,7 +66,7 @@ public class SearchActivity extends AppCompatActivity implements SearchView.OnQu
         searchView.setOnCloseListener(new SearchView.OnCloseListener() {
             @Override
             public boolean onClose() {
-                mAdapter.clear();
+                mAdapter.filter("");
                 return false;
             }
         });
@@ -90,18 +87,14 @@ public class SearchActivity extends AppCompatActivity implements SearchView.OnQu
     @Override
     public boolean onQueryTextSubmit(String s) {
         //Log.d(TAG, s);
-        mAdapter.clear();
-        new Device(this).setDeviceTiles(mAdapter,s);
-        new Network(this).setNetworkTiles(mAdapter,s);
-        new Software(this).setSoftwareTiles(mAdapter,s);
-        new Hardware(this).setHardwareTiles(mAdapter,s);
+        mAdapter.filter(s);
         return true;
     }
 
     @Override
     public boolean onQueryTextChange(String s) {
         //Log.d(TAG, s);
-        mAdapter.clear();
+        mAdapter.filter(s);
         return true;
     }
 }
