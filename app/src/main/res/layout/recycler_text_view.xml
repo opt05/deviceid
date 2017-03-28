@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <data>
+        <import type="android.view.View" />
+        <import type="android.text.TextUtils" />
+        <variable name="handler" type="com.cwlarson.deviceid.PermissionsActivity" />
+        <variable name="item" type="com.cwlarson.deviceid.databinding.Item"/>
+    </data>
+    <RelativeLayout android:layout_height="wrap_content"
+        android:maxHeight="76dp"
+        android:layout_width="match_parent"
+        android:background="?android:attr/selectableItemBackground"
+        android:clickable="true"
+        android:onClick="@{() -> handler.onItemClick(item)}"
+        android:longClickable="true"
+        android:onLongClick="@{() -> item.onLongClick(context)}">
+        <!--<ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            app:srcCompat="@drawable/ic_star_grey"
+            android:contentDescription="@string/item_favorite_star_desc"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentEnd="true"
+            android:visibility="@{item.isFavorite(activity) ? View.VISIBLE : View.GONE}"
+            android:scaleType="fitEnd" />-->
+        <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal">
+            <!-- title -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:paddingStart="16dp"
+                android:paddingLeft="16dp"
+                android:paddingRight="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
+                android:layout_gravity="center_vertical">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="18sp"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:lines="1"
+                    android:ellipsize="end"
+                    android:text="@{item.title}"/>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="?android:attr/textColorSecondary"
+                    android:textSize="16sp"
+                    android:maxLines="2"
+                    android:ellipsize="end"
+                    android:text='@{TextUtils.isEmpty(item.subTitle) ? @string/not_found : item.subTitle}'/>
+            </LinearLayout>
+            <ImageView
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:layout_marginTop="8dp"
+                android:padding="16dp"
+                android:visibility="@{item.isFavorite ? View.VISIBLE : View.GONE}"
+                app:srcCompat="@drawable/ic_star_filled"
+                android:clickable="true"
+                android:onClick="@{() -> item.onFavoriteClick(context,false)}"
+                android:contentDescription="@string/favorite"/>
+            <ImageView
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:layout_marginTop="8dp"
+                android:padding="16dp"
+                android:visibility="@{item.isFavorite ? View.GONE : View.VISIBLE}"
+                app:srcCompat="@drawable/ic_star_unfilled"
+                android:clickable="true"
+                android:onClick="@{() -> item.onFavoriteClick(context,true)}"
+                android:contentDescription="@string/not_favorite"/>
+            <!--<ImageButton
+                android:visibility="@{item.getHasOptions(context) ? View.VISIBLE : View.GONE}"
+                android:onClick="@{() -> item.onOptionsClick(activity)}"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:layout_marginTop="8dp"
+                app:srcCompat="@drawable/ic_info_outline"
+                style="@style/Widget.AppCompat.Button.Borderless"
+                android:contentDescription="@string/item_more_button_desc" />-->
+        </LinearLayout>
+    </RelativeLayout>
+</layout>

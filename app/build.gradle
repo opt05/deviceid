@@ -1,16 +1,20 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 24
-    buildToolsVersion "24.0.1"
+    compileSdkVersion 25
+    buildToolsVersion "25.0.2"
+
+    dataBinding {
+        enabled = true
+    }
 
     defaultConfig {
         vectorDrawables.useSupportLibrary = true
         applicationId "com.cwlarson.deviceid"
         minSdkVersion 16
-        targetSdkVersion 24
-        versionCode 8
-        versionName "1.1.2"
+        targetSdkVersion 25
+        versionCode 9
+        versionName "1.2.0"
     }
 
     signingConfigs {
@@ -19,18 +23,14 @@ android {
             def props = new Properties()
             props.load(new FileInputStream(rootProject.file("release.properties")))
             storeFile rootProject.file(props.keyStore)
-            //noinspection GroovyAssignabilityCheck
             storePassword props.keyStorePassword
-            //noinspection GroovyAssignabilityCheck
             keyAlias props.keyAlias
-            //noinspection GroovyAssignabilityCheck
             keyPassword props.keyAliasPassword
         }
 
     }
     buildTypes {
         release {
-            //noinspection GroovyAssignabilityCheck
             signingConfig signingConfigs.release
             minifyEnabled true
             shrinkResources true
@@ -41,8 +41,8 @@ android {
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
-    compile 'com.android.support:appcompat-v7:24.1.1'
-    compile 'com.android.support:recyclerview-v7:24.1.1'
-    compile 'com.android.support:cardview-v7:24.1.1'
-    compile 'com.android.support:design:24.1.1'
+    compile 'com.android.support:appcompat-v7:25.3.1'
+    compile 'com.android.support:recyclerview-v7:25.3.1'
+    compile 'com.android.support:design:25.3.1'
+    compile 'com.android.support:cardview-v7:25.3.1'
 }

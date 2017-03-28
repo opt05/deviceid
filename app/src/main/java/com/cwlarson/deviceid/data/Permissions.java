@@ -4,37 +4,29 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.support.annotation.NonNull;
-import android.support.design.widget.Snackbar;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.view.View;
 
-import com.cwlarson.deviceid.R;
-import com.cwlarson.deviceid.util.TabsViewPagerAdapter;
+import static com.cwlarson.deviceid.MainActivity.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE;
 
 public class Permissions {
-    public static final int MY_PERMISSIONS_REQUEST_READ_PHONE_STATE = 1;
-    private final Activity activity;
+    //public static final int MY_PERMISSIONS_REQUEST_READ_PHONE_STATE = 1;
     private final Context context;
 
     public Permissions(Activity activity) {
-        this.activity = activity;
+
         this.context = activity.getApplicationContext();
     }
 
-    @SuppressWarnings("SameParameterValue")
-    public Boolean hasPermission(int MY_PERMISSION){
+    Boolean hasPermission(int MY_PERMISSION){
         switch (MY_PERMISSION){
             case MY_PERMISSIONS_REQUEST_READ_PHONE_STATE:
-                return ContextCompat.checkSelfPermission(activity, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED;
+                return ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED;
             default:
                 return false;
         }
     }
 
-    @SuppressWarnings("SameParameterValue")
-    public void getPermissionClickAdapter(final int MY_PERMISSION, String itemTitle){
+    /*public void getPermissionClickAdapter(final int MY_PERMISSION, String itemTitle){
         final String permission;
         switch (MY_PERMISSION){
             case MY_PERMISSIONS_REQUEST_READ_PHONE_STATE:
@@ -70,6 +62,6 @@ public class Permissions {
                     break; // DENIED: We do nothing (it is handled by the ViewAdapter)
             }
         }
-    }
+    }*/
 
 }

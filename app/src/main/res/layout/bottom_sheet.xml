@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <data>
+        <import type="android.text.TextUtils"/>
+        <import type="com.cwlarson.deviceid.R"/>
+        <variable name="act" type="android.app.Activity" />
+        <variable name="item" type="com.cwlarson.deviceid.databinding.Item" />
+    </data>
+    <LinearLayout
+        android:background="?android:attr/windowBackground"
+        android:orientation="vertical"
+        android:layout_marginStart="@dimen/activity_horizontal_margin"
+        android:layout_marginEnd="@dimen/activity_horizontal_margin"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        app:layout_behavior="android.support.design.widget.BottomSheetBehavior">
+        <TextView
+            android:textSize="18sp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@{item.title}"
+            android:textColor="?android:attr/textColorPrimary"/>
+        <TextView
+            android:textSize="16sp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text='@{TextUtils.isEmpty(item.subTitle) ? @string/not_found : item.subTitle}'
+            android:textColor="?android:attr/textColorSecondary"/>
+        <View
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="?android:attr/dividerVertical"/>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <android.support.v7.widget.AppCompatButton
+                android:onClick="@{() -> item.onShareClick(act)}"
+                android:layout_weight="1"
+                app:buttonImageAbove="@{R.drawable.ic_action_share}"
+                style="@style/Widget.AppCompat.Button.Borderless"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="@string/menu_share"/>
+            <android.support.v7.widget.AppCompatButton
+                android:onClick="@{() -> item.onLongClick(context)}"
+                android:layout_weight="1"
+                style="@style/Widget.AppCompat.Button.Borderless"
+                app:buttonImageAbove="@{R.drawable.ic_action_copy}"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="@string/menu_copy_to_clipboard"/>
+            <android.support.v7.widget.AppCompatButton
+                android:onClick="@{() -> item.onFavoriteClick(context,!item.isFavorite)}"
+                android:layout_weight="1"
+                app:buttonImageAbove="@{item.isFavorite?R.drawable.ic_star_filled_big:R.drawable.ic_star_unfilled_big}"
+                style="@style/Widget.AppCompat.Button.Borderless"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="@string/favorite"/>
+        </LinearLayout>
+    </LinearLayout>
+</layout>

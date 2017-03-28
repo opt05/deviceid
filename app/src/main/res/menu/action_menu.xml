@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:deviceid="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".MainActivity">
+    <item android:id="@+id/action_share"
+        android:title="@string/menu_share"
+        android:icon="@drawable/ic_action_share"
+        deviceid:showAsAction="ifRoom"/>
+    <item android:id="@+id/action_copy_to_clipboard"
+        android:title="@string/menu_copy_to_clipboard"
+        android:icon="@drawable/ic_action_copy"
+        deviceid:showAsAction="ifRoom" />
+</menu>

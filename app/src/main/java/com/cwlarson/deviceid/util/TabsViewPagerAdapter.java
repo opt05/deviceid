@@ -5,16 +5,14 @@ import android.content.Context;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
+import android.util.SparseArray;
 
 import com.cwlarson.deviceid.R;
 import com.cwlarson.deviceid.TabFragment;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class TabsViewPagerAdapter extends FragmentPagerAdapter {
     private final String[] tabTitles;
-    private final Map<Integer, TabFragment> mTabReferenceMap = new HashMap<>();
+    private final SparseArray<TabFragment> mTabReferenceMap = new SparseArray<>();
 
     public TabsViewPagerAdapter(FragmentManager fm, Activity activity) {
         super(fm);
@@ -22,14 +20,12 @@ public class TabsViewPagerAdapter extends FragmentPagerAdapter {
         this.tabTitles = context.getResources().getStringArray(R.array.tab_item_titles);
     }
 
-    public TabFragment getFragment(int key){
-        return mTabReferenceMap.get(key);
+    public void update() {
+        notifyDataSetChanged();
     }
 
-    @Override
-    public int getItemPosition(Object object) {
-        //return super.getItemPosition(object);
-        return POSITION_NONE;
+    public TabFragment getFragment(int key){
+        return mTabReferenceMap.get(key);
     }
 
     @Override

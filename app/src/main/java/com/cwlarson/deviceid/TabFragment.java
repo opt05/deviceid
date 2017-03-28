@@ -1,44 +1,33 @@
 package com.cwlarson.deviceid;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
+import android.databinding.DataBindingUtil;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
 
 import com.cwlarson.deviceid.data.Device;
 import com.cwlarson.deviceid.data.Favorites;
 import com.cwlarson.deviceid.data.Hardware;
-import com.cwlarson.deviceid.data.Item;
 import com.cwlarson.deviceid.data.Network;
 import com.cwlarson.deviceid.data.Software;
-import com.cwlarson.deviceid.util.DataUtil;
+import com.cwlarson.deviceid.databinding.FragmentTabsBinding;
 import com.cwlarson.deviceid.util.MyAdapter;
 
 public class TabFragment extends Fragment {
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private static final String TAG = "TabFragment";
-    private RecyclerView mRecyclerView;
     private MyAdapter mAdapter;
-    private BroadcastReceiver mReceiver;
-    private SwipeRefreshLayout mSwipeRefreshLayout;
+    private FragmentTabsBinding binding;
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        mRecyclerView.clearOnScrollListeners(); //avoid possible memory leak
+        binding.recyclerView.clearOnScrollListeners(); //avoid possible memory leak
     }
 
     public static TabFragment newInstance(int tabInteger) {
@@ -50,12 +39,16 @@ public class TabFragment extends Fragment {
     }
 
     public void setSwipeToRefreshEnabled(Boolean enabled){
-        mSwipeRefreshLayout.setEnabled(enabled);
+        binding.swipeToRefreshLayout.setEnabled(enabled);
     }
 
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        getData();
+    }
+
+    private void getData() {
         switch (getArguments().getInt("tab")){
             case 0:
                 new Device(getActivity()).setDeviceTiles(mAdapter);
@@ -70,78 +63,37 @@ public class TabFragment extends Fragment {
                 new Hardware(getActivity()).setHardwareTiles(mAdapter);
                 break;
             case 4:
-                new Favorites((AppCompatActivity) getActivity()).setFavoritesTiles(mAdapter);
+                new Favorites(getActivity()).setFavoritesTiles(mAdapter);
                 break;
             default:
                 new Device(getActivity()).setDeviceTiles(mAdapter);
                 break;
         }
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        LocalBroadcastManager.getInstance(getActivity().getApplicationContext()).unregisterReceiver(mReceiver);
-    }
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        mReceiver = new DataUpdateReceiver();
-        LocalBroadcastManager.getInstance(getActivity().getApplicationContext()).registerReceiver(mReceiver, new IntentFilter(DataUtil.BROADCAST_UPDATE_FAV));
+        if(binding.swipeToRefreshLayout.isRefreshing()) binding.swipeToRefreshLayout.setRefreshing(false);
     }
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        final View v = inflater.inflate(R.layout.fragment_tabs, container,false);
-
-        mRecyclerView = (RecyclerView) v.findViewById(R.id.recycler_view);
+        binding = DataBindingUtil.inflate(inflater,R.layout.fragment_tabs,container,false);
+        View view = binding.getRoot();
 
         // use a linear layout manager
-        final GridLayoutManager mLayoutManager = new GridLayoutManager(getActivity(),getResources().getInteger(R.integer.grid_layout_columns));
-        mRecyclerView.setLayoutManager(mLayoutManager);
+        GridLayoutManager mLayoutManager = new GridLayoutManager(getActivity(),getResources().getInteger(R.integer.grid_layout_columns));
+        binding.recyclerView.setLayoutManager(mLayoutManager);
 
         // specify an adapter (see also next example)
-        mAdapter = new MyAdapter((AppCompatActivity) getActivity(), (TextView)v.findViewById(R.id.textview_recyclerview_no_items));
-        mRecyclerView.setAdapter(mAdapter);
+        mAdapter = new MyAdapter((MainActivity) getActivity(), binding.textviewRecyclerviewNoItems, getArguments().getInt("tab")==4);
+        binding.recyclerView.setAdapter(mAdapter);
 
         // Setup SwipeToRefresh
-        mSwipeRefreshLayout = (SwipeRefreshLayout) v.findViewById(R.id.swipe_to_refresh_layout);
-        mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+        binding.swipeToRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                mRecyclerView.setAdapter(mAdapter);
-                if (mSwipeRefreshLayout.isRefreshing()) mSwipeRefreshLayout.setRefreshing(false);
+                getData();
             }
         });
-        mSwipeRefreshLayout.setColorSchemeResources(R.color.accent_color);
-        return v;
-    }
-
-    public class DataUpdateReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if(intent.getStringExtra("ACTION").equals("REMOVE")) {
-            Log.d(TAG, "REMOVE");
-            Item item = new Item(context);
-            item.setTitle(intent.getStringExtra("ITEM_TITLE"));
-            item.setSubTitle(intent.getStringExtra("ITEM_SUB"));
-            if(getArguments().getInt("tab") == 4){
-                mAdapter.remove(item);}
-            else {
-                mAdapter.setFavStar(item);
-            }
-            }else if(intent.getStringExtra("ACTION").equals("ADD")){
-                Log.d(TAG,"ADD");
-                Item item = new Item(context);
-                item.setTitle(intent.getStringExtra("ITEM_TITLE"));
-                item.setSubTitle(intent.getStringExtra("ITEM_SUB"));
-                if(getArguments().getInt("tab") == 4){
-                    mAdapter.add(item);}
-                else {
-                    mAdapter.setFavStar(item);
-                }
-            }
-        }
+        binding.swipeToRefreshLayout.setColorSchemeResources(R.color.accent_color);
+        return view;
     }
 }
