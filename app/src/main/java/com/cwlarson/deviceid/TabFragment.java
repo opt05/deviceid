@@ -1,7 +1,13 @@
 package com.cwlarson.deviceid;
 
+import android.arch.lifecycle.Observer;
+import android.arch.lifecycle.ViewModelProviders;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.databinding.DataBindingUtil;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -10,25 +16,28 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.cwlarson.deviceid.data.Device;
-import com.cwlarson.deviceid.data.Favorites;
-import com.cwlarson.deviceid.data.Hardware;
-import com.cwlarson.deviceid.data.Network;
-import com.cwlarson.deviceid.data.Software;
+import com.cwlarson.deviceid.database.AllItemsViewModel;
+import com.cwlarson.deviceid.database.AppDatabase;
+import com.cwlarson.deviceid.database.DatabaseInitializer;
+import com.cwlarson.deviceid.database.Status;
 import com.cwlarson.deviceid.databinding.FragmentTabsBinding;
+import com.cwlarson.deviceid.databinding.Item;
+import com.cwlarson.deviceid.databinding.ItemType;
 import com.cwlarson.deviceid.util.MyAdapter;
+import com.cwlarson.deviceid.util.SystemUtils;
 
-public class TabFragment extends Fragment {
+import java.util.List;
+
+public class TabFragment extends Fragment implements SharedPreferences
+    .OnSharedPreferenceChangeListener, DatabaseInitializer.OnPopulate {
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private static final String TAG = "TabFragment";
     private MyAdapter mAdapter;
     private FragmentTabsBinding binding;
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding.recyclerView.clearOnScrollListeners(); //avoid possible memory leak
-    }
+    private Context appContext;
+    private SharedPreferences mPreferences;
+    private ItemType itemType;
+    private AllItemsViewModel mModel;
 
     public static TabFragment newInstance(int tabInteger) {
         TabFragment dtf = new TabFragment();
@@ -38,62 +47,108 @@ public class TabFragment extends Fragment {
         return dtf;
     }
 
-    public void setSwipeToRefreshEnabled(Boolean enabled){
-        binding.swipeToRefreshLayout.setEnabled(enabled);
-    }
-
     @Override
-    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        getData();
-    }
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        this.appContext = context.getApplicationContext();
+        this.mPreferences = PreferenceManager.getDefaultSharedPreferences(appContext);
+        mPreferences.registerOnSharedPreferenceChangeListener(this);
 
-    private void getData() {
+        if(getArguments()==null) return;
         switch (getArguments().getInt("tab")){
             case 0:
-                new Device(getActivity()).setDeviceTiles(mAdapter);
+                itemType = ItemType.DEVICE;
                 break;
             case 1:
-                new Network(getActivity()).setNetworkTiles(mAdapter);
+                itemType = ItemType.NETWORK;
                 break;
             case 2:
-                new Software(getActivity()).setSoftwareTiles(mAdapter);
+                itemType = ItemType.SOFTWARE;
                 break;
             case 3:
-                new Hardware(getActivity()).setHardwareTiles(mAdapter);
-                break;
-            case 4:
-                new Favorites(getActivity()).setFavoritesTiles(mAdapter);
-                break;
-            default:
-                new Device(getActivity()).setDeviceTiles(mAdapter);
+                itemType = ItemType.HARDWARE;
                 break;
         }
-        if(binding.swipeToRefreshLayout.isRefreshing()) binding.swipeToRefreshLayout.setRefreshing(false);
+
+        mModel = ViewModelProviders.of(this).get(AllItemsViewModel.class);
+        mModel.setHideUnavailable(mPreferences.getBoolean("hide_unables",false));
+    }
+
+    /**
+     * Called when the fragment is no longer attached to its activity.  This
+     * is called after {@link #onDestroy()}.
+     */
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        if(mPreferences!=null)
+            mPreferences.unregisterOnSharedPreferenceChangeListener(this);
+    }
+
+    /**
+     * Loads the data into Room
+     */
+    private void loadData() {
+        DatabaseInitializer.populateAsync(getActivity(), AppDatabase.getDatabase
+            (appContext), itemType,TabFragment.this);
     }
 
     @Nullable
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         binding = DataBindingUtil.inflate(inflater,R.layout.fragment_tabs,container,false);
-        View view = binding.getRoot();
 
-        // use a linear layout manager
-        GridLayoutManager mLayoutManager = new GridLayoutManager(getActivity(),getResources().getInteger(R.integer.grid_layout_columns));
+        GridLayoutManager mLayoutManager;
+        if(getContext()!=null) {
+            mLayoutManager = new GridLayoutManager(getActivity(),
+                SystemUtils.calculateNoOfColumns(getContext()));
+        } else {
+            mLayoutManager = new GridLayoutManager(getActivity(),1);
+        }
         binding.recyclerView.setLayoutManager(mLayoutManager);
 
         // specify an adapter (see also next example)
-        mAdapter = new MyAdapter((MainActivity) getActivity(), binding.textviewRecyclerviewNoItems, getArguments().getInt("tab")==4);
+        mAdapter = new MyAdapter((MainActivity) getActivity());
         binding.recyclerView.setAdapter(mAdapter);
 
         // Setup SwipeToRefresh
         binding.swipeToRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                getData();
+                loadData();
             }
         });
         binding.swipeToRefreshLayout.setColorSchemeResources(R.color.accent_color);
-        return view;
+        mModel.getAllItems(itemType).observe(this, new
+            Observer<List<Item>>() {
+            @Override
+            public void onChanged(@Nullable List<Item> items) {
+                mAdapter.setItems(items);
+                binding.setItemsCount(items==null?0:items.size());
+                // Espresso does not know how to wait for data binding's loop so we execute changes sync.
+                binding.executePendingBindings();
+            }
+        });
+        mModel.getStatus().observe(this, new Observer<Status>() {
+            @Override
+            public void onChanged(@Nullable Status status) {
+                binding.swipeToRefreshLayout.setRefreshing(status!=null
+                    && status == Status.LOADING);
+            }
+        });
+        loadData();
+        return binding.getRoot();
+    }
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String s) {
+        if(s.equals("hide_unables")) {
+            mModel.setHideUnavailable(sharedPreferences.getBoolean("hide_unables",false));
+        }
+    }
+
+    @Override
+    public void status(Status status) {
+        mModel.setStatus(status);
     }
 }

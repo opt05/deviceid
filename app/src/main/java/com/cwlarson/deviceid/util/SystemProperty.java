@@ -1,5 +1,6 @@
 package com.cwlarson.deviceid.util;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 
 import java.lang.reflect.Method;
@@ -15,6 +16,7 @@ public class SystemProperty {
     private String getOrThrow(String key) throws NoSuchPropertyException {
         try {
             ClassLoader classLoader = mContext.getClassLoader();
+            @SuppressLint("PrivateApi")
             Class SystemProperties = classLoader.loadClass("android.os.SystemProperties");
             Method methodGet = SystemProperties.getMethod("get", String.class);
             return (String) methodGet.invoke(SystemProperties, key);
