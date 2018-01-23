@@ -30,7 +30,7 @@
                 android:theme="@style/AppTheme.AppBarOverlay"
                 app:popupTheme="@style/AppTheme.PopupThemeOverlay"
                 app:tabMode="fixed"
-                app:tabGravity="fill"
+                app:tabGravity="center"
                 app:tabBackground="?colorPrimary"
                 app:tabIndicatorColor="?colorAccent"
                 app:tabIndicatorHeight="4dp"
