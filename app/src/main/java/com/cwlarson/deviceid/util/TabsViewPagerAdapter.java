@@ -20,14 +20,6 @@ public class TabsViewPagerAdapter extends FragmentPagerAdapter {
         this.tabTitles = context.getResources().getStringArray(R.array.tab_item_titles);
     }
 
-    public void update() {
-        notifyDataSetChanged();
-    }
-
-    public TabFragment getFragment(int key){
-        return mTabReferenceMap.get(key);
-    }
-
     @Override
     public int getCount() {
         return tabTitles.length;

@@ -10,11 +10,15 @@ Licensed under the MIT License. For complete licensing information see [LICENSE.
 * v1.1.2
 
 ### Build Tools ###
+<<<<<<< HEAD
 * JDK 1.8
 * Android Studio 2.1.2 (Gradle 2.1.0)
 * Android build tools 24.0.1
+=======
+* Android Studio 3.0.1 (Gradle 3.4.1)
+>>>>>>> develop
 * Android support library 24.1.1
-* Android 4.1 (API 16) or above (built against 7.0/API 23)
+* Android 4.0 (API 14) or above (built against 8.1/API 27)
 * Built on a Windows PC, but should be OS agnostic
 
 ### Bugs and Features ###
