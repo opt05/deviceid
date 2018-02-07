@@ -43,14 +43,14 @@ class Hardware {
 
     private Item getDeviceScreenDensity() {
         Item item = new Item("Screen Density", ItemType.HARDWARE);
-        int density = context.getResources().getDisplayMetrics().densityDpi;
-        int width = 0, height = 0;
-        final DisplayMetrics metrics = new DisplayMetrics();
-        WindowManager windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-        Display display = windowManager.getDefaultDisplay();
-        Method mGetRawH, mGetRawW;
-
         try {
+            int density = context.getResources().getDisplayMetrics().densityDpi;
+            int width = 0, height = 0;
+            final DisplayMetrics metrics = new DisplayMetrics();
+            WindowManager windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+            Display display = windowManager.getDefaultDisplay();
+            Method mGetRawH, mGetRawW;
+
             // For JellyBean 4.2 (API 17) and onward
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1) {
                 display.getRealMetrics(metrics);
@@ -60,49 +60,44 @@ class Hardware {
             } else {
                 mGetRawH = Display.class.getMethod("getRawHeight");
                 mGetRawW = Display.class.getMethod("getRawWidth");
-
-                try {
-                    width = (Integer) mGetRawW.invoke(display);
-                    height = (Integer) mGetRawH.invoke(display);
-                } catch (Exception e) {
-                    Log.e(TAG, "IllegalArgumentException in getDeviceScreenDensity");
-                }
+                width = (Integer) mGetRawW.invoke(display);
+                height = (Integer) mGetRawH.invoke(display);
             }
-        } catch (Exception e3) {
-            Log.e(TAG, "NoSuchMethodException in getDeviceScreenDensity");
-        }
-        String sizeInPixels = " ("+Integer.toString(height)+"x"+Integer.toString(width)+")";
+            String sizeInPixels = " ("+Integer.toString(height)+"x"+Integer.toString(width)+")";
 
-        switch (density) {
-            case DisplayMetrics.DENSITY_LOW:
-                item.setSubtitle("LDPI"+sizeInPixels);
-                break;
-            case DisplayMetrics.DENSITY_MEDIUM:
-                item.setSubtitle("MDPI"+sizeInPixels);
-                break;
-            case DisplayMetrics.DENSITY_HIGH:
-                item.setSubtitle("HDPI"+sizeInPixels);
-                break;
-            case DisplayMetrics.DENSITY_XHIGH:
-                item.setSubtitle("XHDPI"+sizeInPixels);
-                break;
-            case DisplayMetrics.DENSITY_XXHIGH:
-                item.setSubtitle("XXHDPI"+sizeInPixels);
-                break;
-            case DisplayMetrics.DENSITY_XXXHIGH:
-                item.setSubtitle("XXXHDPI"+sizeInPixels);
-                break;
-            case DisplayMetrics.DENSITY_TV:
-                item.setSubtitle("TVDPI"+sizeInPixels);
-                break;
-            case DisplayMetrics.DENSITY_400:
-                item.setSubtitle("400DPI"+sizeInPixels);
-                break;
-            case DisplayMetrics.DENSITY_560:
-                item.setSubtitle("560DPI"+sizeInPixels);
-                break;
-            default:
-                break;
+            switch (density) {
+                case DisplayMetrics.DENSITY_LOW:
+                    item.setSubtitle("LDPI"+sizeInPixels);
+                    break;
+                case DisplayMetrics.DENSITY_MEDIUM:
+                    item.setSubtitle("MDPI"+sizeInPixels);
+                    break;
+                case DisplayMetrics.DENSITY_HIGH:
+                    item.setSubtitle("HDPI"+sizeInPixels);
+                    break;
+                case DisplayMetrics.DENSITY_XHIGH:
+                    item.setSubtitle("XHDPI"+sizeInPixels);
+                    break;
+                case DisplayMetrics.DENSITY_XXHIGH:
+                    item.setSubtitle("XXHDPI"+sizeInPixels);
+                    break;
+                case DisplayMetrics.DENSITY_XXXHIGH:
+                    item.setSubtitle("XXXHDPI"+sizeInPixels);
+                    break;
+                case DisplayMetrics.DENSITY_TV:
+                    item.setSubtitle("TVDPI"+sizeInPixels);
+                    break;
+                case DisplayMetrics.DENSITY_400:
+                    item.setSubtitle("400DPI"+sizeInPixels);
+                    break;
+                case DisplayMetrics.DENSITY_560:
+                    item.setSubtitle("560DPI"+sizeInPixels);
+                    break;
+                default:
+                    break;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "NoSuchMethodException in getDeviceScreenDensity");
         }
         return item;
     }
@@ -176,19 +171,28 @@ class Hardware {
         }
     }
     private static class ProcessInfoBroadcastAsync extends AsyncTask<Void, Void, Void> {
-        private final Context context;
+        private final AppDatabase database;
         private final Intent intent;
         private final BroadcastReceiver.PendingResult result;
+        private final String charging, full, discharging, notcharging, unknown, usb, ac;
 
         ProcessInfoBroadcastAsync(Context context, Intent intent, BroadcastReceiver
             .PendingResult result) {
-            this.context = context;
+            this.database = AppDatabase.getDatabase(context);
             this.intent = intent;
             this.result = result;
+            this.charging = context.getString(R.string.BATTERY_STATUS_CHARGING);
+            this.full = context.getString(R.string.BATTERY_STATUS_FULL);
+            this.discharging = context.getString(R.string.BATTERY_STATUS_DISCHARGING);
+            this.notcharging = context.getString(R.string.BATTERY_STATUS_NOT_CHARGING);
+            this.unknown = context.getString(R.string.BATTERY_STATUS_UNKNOWN);
+            this.usb = context.getString(R.string.BATTERY_PLUGGED_USB);
+            this.ac = context.getString(R.string.BATTERY_PLUGGED_AC);
         }
 
         @Override
         protected Void doInBackground(Void... voids) {
+            if(intent.getAction()==null) return null;
             if(intent.getAction().equalsIgnoreCase(Intent.ACTION_BATTERY_CHANGED)) {
                 //int temperature = intent.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, 0)/10;
                 int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
@@ -197,19 +201,19 @@ class Hardware {
                 // Are we charging / charged?
                 switch (intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1)) {
                     case BatteryManager.BATTERY_STATUS_CHARGING:
-                        subtitle.append(context.getString(R.string.BATTERY_STATUS_CHARGING));
+                        subtitle.append(charging);
                         break;
                     case BatteryManager.BATTERY_STATUS_FULL:
-                        subtitle.append(context.getString(R.string.BATTERY_STATUS_FULL));
+                        subtitle.append(full);
                         break;
                     case BatteryManager.BATTERY_STATUS_DISCHARGING:
-                        subtitle.append(context.getString(R.string.BATTERY_STATUS_DISCHARGING));
+                        subtitle.append(discharging);
                         break;
                     case BatteryManager.BATTERY_STATUS_NOT_CHARGING:
-                        subtitle.append(context.getString(R.string.BATTERY_STATUS_NOT_CHARGING));
+                        subtitle.append(notcharging);
                         break;
                     default:
-                        subtitle.append(context.getString(R.string.BATTERY_STATUS_UNKNOWN));
+                        subtitle.append(unknown);
                         break;
                 }
                 // How are we charging?
@@ -218,14 +222,14 @@ class Hardware {
                 boolean acCharge = chargePlug == BatteryManager.BATTERY_PLUGGED_AC;
                 subtitle.append(" ");
                 if(usbCharge)
-                    subtitle.append(context.getString(R.string.BATTERY_PLUGGED_USB));
+                    subtitle.append(usb);
                 else if(acCharge)
-                    subtitle.append(context.getString(R.string.BATTERY_PLUGGED_AC));
+                    subtitle.append(ac);
                 //subTitle = String.valueOf(temperature+"\u00b0C");
                 Item item = new Item("Battery", ItemType.HARDWARE);
                 item.setSubtitle(subtitle.toString());
                 item.setChartitem(new ChartItem(100-level,100,R.drawable.ic_battery));
-                AppDatabase.getDatabase(context).itemDao().insertItems(item);
+                database.itemDao().insertItems(item);
                 // Must call finish() so the BroadcastReceiver can be recycled.
                 result.finish();
             }

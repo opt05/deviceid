@@ -7,11 +7,11 @@ Licensed under the MIT License. For complete licensing information see [LICENSE.
 ### What is this repository for? ###
 
 * This is a repository for the Android Device Info app that displays specific info about your Android device
-* v1.1.2
+* v1.1.3
 
 ### Build Tools ###
 * Android Studio 3.0.1 (Gradle 3.4.1)
-* Android support library 24.1.1
+* Android support library
 * Android 4.0 (API 14) or above (built against 8.1/API 27)
 * Built on a Windows PC, but should be OS agnostic
 

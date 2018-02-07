@@ -47,6 +47,9 @@ class Software {
         itemAdder.addItems(getBuildType());
         itemAdder.addItems(getBuildUser());
         itemAdder.addItems(getOpenGLVersion());
+        itemAdder.addItems(getGooglePlayServicesVersion());
+        itemAdder.addItems(getGooglePlayServicesInstallDate());
+        itemAdder.addItems(getGooglePlayServicesUpdatedDate());
     }
 
     private enum Codenames {
@@ -293,6 +296,40 @@ class Software {
             item.setSubtitle(configurationInfo.getGlEsVersion());
         } catch (Exception e) {
             Log.e(TAG, "Exception in getOpenGLVersion");
+        }
+        return item;
+    }
+
+    private Item getGooglePlayServicesVersion() {
+        Item item = new Item("Google Play Services Version", ItemType.SOFTWARE);
+        try {
+            String n = context.getPackageManager().getPackageInfo("com.google.android.gms", 0).versionName;
+            int v = context.getPackageManager().getPackageInfo("com.google.android.gms", 0).versionCode;
+            item.setSubtitle(n+" ("+String.valueOf(v)+")");
+        } catch (Exception e) {
+            Log.e(TAG, "Exception in getGooglePlayServicesVersion");
+        }
+        return item;
+    }
+
+    private Item getGooglePlayServicesInstallDate() {
+        Item item = new Item("Google Play Services Installed", ItemType.SOFTWARE);
+        try {
+            long t = context.getPackageManager().getPackageInfo("com.google.android.gms", 0).firstInstallTime;
+            item.setSubtitle(DateFormat.getDateFormat(context).format(t));
+        } catch (Exception e) {
+            Log.e(TAG, "Exception in getGooglePlayServicesVersion");
+        }
+        return item;
+    }
+
+    private Item getGooglePlayServicesUpdatedDate() {
+        Item item = new Item("Google Play Services Updated", ItemType.SOFTWARE);
+        try {
+            long t = context.getPackageManager().getPackageInfo("com.google.android.gms", 0).lastUpdateTime;
+            item.setSubtitle(DateFormat.getDateFormat(context).format(t));
+        } catch (Exception e) {
+            Log.e(TAG, "Exception in getGooglePlayServicesVersion");
         }
         return item;
     }
