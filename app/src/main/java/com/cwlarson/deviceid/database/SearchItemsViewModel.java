@@ -33,9 +33,9 @@ public class SearchItemsViewModel extends AndroidViewModel {
         @Override
         public LiveData<List<Item>> apply(Boolean hideUnavailable) {
           if (hideUnavailable) {
-            return mDatabase.itemDao().getAllAvailableSearchItems(searchString);
+            return mDatabase.itemDao().getAllAvailableSearchItems("%"+searchString+"%");
           } else {
-            return mDatabase.itemDao().getAllSearchItems(searchString);
+            return mDatabase.itemDao().getAllSearchItems("%"+searchString+"%");
           }
         }
       });

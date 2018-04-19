@@ -43,6 +43,7 @@ class SearchActivity : PermissionsActivity(), OnSharedPreferenceChangeListener {
             title = getString(R.string.search_activity_title, query)
             mModel = ViewModelProviders.of(this)
                     .get(SearchItemsViewModel::class.java)
+            mModel.setHideUnavailable(mPreferences.getBoolean("hide_unables", false))
             mModel.getAllSearchItems(query).observe(this, Observer { itemModels ->
                 mAdapter.setItems(itemModels)
                 binding.itemsCount = itemModels?.size ?: 0
