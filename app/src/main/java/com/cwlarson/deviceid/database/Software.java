@@ -69,7 +69,7 @@ class Software {
         NOUGAT, NOUGAT_MR1,
         OREO, OREO_MR1;
 
-        public static Codenames getCodename()
+        static Codenames getCodename()
         {
             int api = Build.VERSION.SDK_INT;
             switch (api) {

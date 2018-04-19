@@ -45,7 +45,7 @@ class Hardware {
         Item item = new Item("Screen Density", ItemType.HARDWARE);
         try {
             int density = context.getResources().getDisplayMetrics().densityDpi;
-            int width = 0, height = 0;
+            int width, height;
             final DisplayMetrics metrics = new DisplayMetrics();
             WindowManager windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
             Display display = windowManager.getDefaultDisplay();

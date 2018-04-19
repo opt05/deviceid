@@ -3,6 +3,8 @@ package com.cwlarson.deviceid.database;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
 import android.telephony.TelephonyManager;
@@ -27,6 +29,7 @@ class Device {
         itemAdder.addItems(getDeviceModel());
         itemAdder.addItems(getSerial());
         itemAdder.addItems(getAndroidID());
+        itemAdder.addItems(getGSFID());
     }
 
     @SuppressLint({"HardwareIds", "MissingPermission"})
@@ -82,6 +85,32 @@ class Device {
             item.setSubtitle(Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID));
         } catch (Exception e){
             Log.w(TAG, "Null in getAndroidID");
+        }
+        return item;
+    }
+
+    private Item getGSFID() {
+        Item item = new Item("Google Service Framework (GSF) ID",ItemType.DEVICE);
+        try {
+            Uri URI = Uri.parse("content://com.google.android.gsf.gservices");
+            String ID_KEY = "android_id";
+            String params[] = {ID_KEY};
+            Cursor c = context.getContentResolver().query(URI, null, null, params, null);
+            if (c != null && (!c.moveToFirst() || c.getColumnCount() < 2)){
+                if(!c.isClosed()) c.close();
+            } else {
+                try {
+                    if (c != null) {
+                        String result = Long.toHexString(Long.parseLong(c.getString(1)));
+                        if (!c.isClosed()) c.close();
+                        item.setSubtitle(result);
+                    }
+                } catch (Exception e) {
+                    if (!c.isClosed()) c.close();
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Null in getGSFID");
         }
         return item;
     }

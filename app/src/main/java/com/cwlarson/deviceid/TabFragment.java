@@ -4,6 +4,7 @@ import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.databinding.DataBindingUtil;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -28,8 +29,7 @@ import com.cwlarson.deviceid.util.SystemUtils;
 
 import java.util.List;
 
-public class TabFragment extends Fragment implements SharedPreferences
-    .OnSharedPreferenceChangeListener, DatabaseInitializer.OnPopulate {
+public class TabFragment extends Fragment implements OnSharedPreferenceChangeListener, DatabaseInitializer.OnPopulate {
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private static final String TAG = "TabFragment";
     private MyAdapter mAdapter;

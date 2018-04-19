@@ -2,6 +2,7 @@ package com.cwlarson.deviceid.util;
 
 import android.databinding.DataBindingUtil;
 import android.databinding.ViewDataBinding;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -30,8 +31,9 @@ public class MyAdapter extends DiffUtilAdapter<Item, MyAdapter.CustomViewHolder>
     }
 
     // Create new views (invoked by the layout manager)
+    @NonNull
     @Override
-    public CustomViewHolder onCreateViewHolder(final ViewGroup parent, int viewType) {
+    public CustomViewHolder onCreateViewHolder(@NonNull final ViewGroup parent, int viewType) {
         ViewDataBinding viewDataBinding;
         if(viewType==CHART_VIEWTYPE)
             viewDataBinding = DataBindingUtil.inflate(LayoutInflater.from(parent.getContext()), R.layout.recycler_chart_view, parent, false);
@@ -50,7 +52,7 @@ public class MyAdapter extends DiffUtilAdapter<Item, MyAdapter.CustomViewHolder>
 
     // Replace the contents of a view (invoked by the layout manager)
     @Override
-    public void onBindViewHolder(CustomViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull CustomViewHolder holder, int position) {
         // - get element from your dataset at this position
         // - replace the contents of the view with that element
         holder.bind(getDataset().get(position),handler.get());
