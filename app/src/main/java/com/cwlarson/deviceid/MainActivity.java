@@ -2,11 +2,13 @@ package com.cwlarson.deviceid;
 
 import android.app.SearchManager;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.databinding.DataBindingUtil;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v7.widget.SearchView;
+import android.text.TextUtils;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -18,8 +20,16 @@ import com.cwlarson.deviceid.util.TabsViewPagerAdapter;
 
 public class MainActivity extends PermissionsActivity {
     @SuppressWarnings({"FieldCanBeLocal", "unused"})
-    private final String TAG = MainActivity.class.getSimpleName();
+    private static final String TAG = MainActivity.class.getSimpleName();
+    private static final String ACTION_SEARCH = "com.cwlarson.deviceid.SEARCH";
+    private static final String SEARCH_KEY = "SEARCH_KEY";
+    private static final String SEARCH_FOCUS_KEY = "SEARCH_FOCUS_KEY";
     private TabsViewPagerAdapter mAdapter;
+    private MenuItem mSearchViewMenuItem;
+    private SearchView mSearchView;
+    private boolean launchSearch;
+    private String mSearchString;
+    private boolean mSearchFocus;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,12 +38,46 @@ public class MainActivity extends PermissionsActivity {
         ActivityMainBinding binding = DataBindingUtil.setContentView(this, R.layout.activity_main);
         setSupportActionBar(binding.myToolbar);
 
+        if (savedInstanceState != null) {
+          mSearchString = savedInstanceState.getString(SEARCH_KEY);
+          mSearchFocus = savedInstanceState.getBoolean(SEARCH_FOCUS_KEY);
+        }
+
         // Get the ViewPager and set it's PagerAdapter so that it can display items
         mAdapter = new TabsViewPagerAdapter(getSupportFragmentManager(), this);
         binding.viewpager.setAdapter(mAdapter);
         binding.viewpager.setOffscreenPageLimit(mAdapter.getCount()); //Prevent reloading of views on tab switching
         // Give the TabLayout the ViewPager
         binding.tabs.setupWithViewPager(binding.viewpager);
+        handleIntent(getIntent());
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if(mSearchView!=null) {
+            mSearchString = mSearchView.getQuery().toString();
+            mSearchFocus = mSearchView.hasFocus();
+            outState.putString(SEARCH_KEY, mSearchString);
+            outState.putBoolean(SEARCH_FOCUS_KEY, mSearchFocus);
+        }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        handleIntent(intent);
+    }
+
+    private void handleIntent(Intent intent) {
+        if(intent!=null && ACTION_SEARCH.equals(intent.getAction())) {
+            //Shortcut launched for search
+            if(mSearchViewMenuItem==null)
+                launchSearch = true;
+            else {
+                mSearchViewMenuItem.expandActionView();
+            }
+        }
     }
 
     @Override
@@ -47,9 +91,19 @@ public class MainActivity extends PermissionsActivity {
 
         // Associate searchable configuration with the SearchView
         SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
-        SearchView searchView = (SearchView) menu.findItem(R.id.search).getActionView();
+        mSearchViewMenuItem = menu.findItem(R.id.search);
+        mSearchView = (SearchView) mSearchViewMenuItem.getActionView();
         if(searchManager!=null)
-            searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
+            mSearchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
+        if(launchSearch) {
+            mSearchViewMenuItem.expandActionView();
+            launchSearch = false;
+        }
+        if(!TextUtils.isEmpty(mSearchString)) {
+            mSearchViewMenuItem.expandActionView();
+            mSearchView.setQuery(mSearchString, false);
+            if(!mSearchFocus) mSearchView.clearFocus();
+        }
         return true;
     }
 

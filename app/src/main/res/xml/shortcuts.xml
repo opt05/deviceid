@@ -9,13 +9,9 @@
         android:shortcutDisabledMessage="@string/search_disabled_message"
         tools:targetApi="n_mr1">
         <intent
-            android:action="android.intent.action.VIEW"
+            android:action="com.cwlarson.deviceid.SEARCH"
             android:targetPackage="com.cwlarson.deviceid"
             android:targetClass="com.cwlarson.deviceid.MainActivity" />
-        <intent
-            android:action="android.intent.action.VIEW"
-            android:targetPackage="com.cwlarson.deviceid"
-            android:targetClass="com.cwlarson.deviceid.SearchActivityOld" />
         <!-- If your shortcut is associated with multiple intents, include them
              here. The last intent in the list determines what the user sees when
              they launch this shortcut. -->

@@ -34,6 +34,7 @@ gen/
 .idea/modules.xml
 .idea/scopes/scope_settings.xml
 .idea/vcs.xml
+.idea/assetWizardSettings.xml
 *.iml
  
 # OS-specific files
