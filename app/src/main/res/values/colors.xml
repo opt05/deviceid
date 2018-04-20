@@ -4,5 +4,4 @@
     <color name="primary_dark">#263238</color><!--700-->
     <color name="accent_color">#009688</color><!--500-->
     <color name="chart_bar_background">#E0E0E0</color>
-    <color name="primary_background_material_light_default">#ffeeeeee</color>
 </resources>

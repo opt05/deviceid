@@ -34,18 +34,18 @@ class UnavailablePermissionConverter {
 }
 
 @TypeConverters(UnavailableTypeConverter::class, UnavailablePermissionConverter::class)
-class UnavailableItem(
+data class UnavailableItem(
         @get:Bindable
         @TypeConverters(UnavailableTypeConverter::class)
-        var unavailabletype : UnavailableType? = null,
+        var unavailabletype : UnavailableType?,
         @get:Bindable
-        var unavailablesupporttext : String? = null,
+        var unavailablesupporttext : String?,
         @get:Bindable
         @TypeConverters(UnavailablePermissionConverter::class)
-        var unavailablepermissioncode : UnavailablePermission? = null) : BaseObservable() {
+        var unavailablepermissioncode : UnavailablePermission?) : BaseObservable() {
 
         @Ignore
-        constructor(type: UnavailableType, text: String) : this(unavailabletype = type,
+        constructor(type: UnavailableType?, text: String?) : this(unavailabletype = type,
                 unavailablesupporttext = text, unavailablepermissioncode = null)
 
 }
