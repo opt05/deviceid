@@ -91,20 +91,22 @@ class ItemAdder internal constructor(context: Context, database: AppDatabase) {
         this.db = database
     }
 
-    fun addItems(item: Item?) {
-        if(context==null || item==null) return
-        if (TextUtils.isEmpty(item.subtitle) && item.unavailableitem == null) {
-            item.unavailableitem = UnavailableItem(UnavailableType.NOT_FOUND,
-                    context?.getString(R.string.not_found))
-        } else if(TextUtils.isEmpty(item.subtitle) && item.unavailableitem != null) {
-            if(item.unavailableitem?.unavailabletype == UnavailableType.NO_LONGER_POSSIBLE) {
-                item.unavailableitem?.unavailablesupporttext =
-                        context?.resources?.getString(R.string.no_longer_possible, item.unavailableitem?.unavailablesupporttext)
-            } else if (item.unavailableitem?.unavailabletype == UnavailableType.NOT_POSSIBLE_YET) {
-                item.unavailableitem?.unavailablesupporttext =
-                        context?.resources?.getString(R.string.not_possible_yet, item.unavailableitem?.unavailablesupporttext)
+    fun addItems(vararg items: Item) {
+        if(context==null) return
+        for(item in items) {
+            if (TextUtils.isEmpty(item.subtitle) && item.unavailableitem == null) {
+                item.unavailableitem = UnavailableItem(UnavailableType.NOT_FOUND,
+                        context?.getString(R.string.not_found))
+            } else if (TextUtils.isEmpty(item.subtitle) && item.unavailableitem != null) {
+                if (item.unavailableitem?.unavailabletype == UnavailableType.NO_LONGER_POSSIBLE) {
+                    item.unavailableitem?.unavailablesupporttext =
+                            context?.resources?.getString(R.string.no_longer_possible, item.unavailableitem?.unavailablesupporttext)
+                } else if (item.unavailableitem?.unavailabletype == UnavailableType.NOT_POSSIBLE_YET) {
+                    item.unavailableitem?.unavailablesupporttext =
+                            context?.resources?.getString(R.string.not_possible_yet, item.unavailableitem?.unavailablesupporttext)
+                }
             }
+            db.itemDao().insertItems(item)
         }
-        db.itemDao().insertItems(item)
     }
 }

@@ -22,29 +22,29 @@ internal class Software(activity: Activity, db: AppDatabase) {
     init {
         //Set Software Tiles
         val itemAdder = ItemAdder(context, db)
-        itemAdder.addItems(androidVersion)
-        itemAdder.addItems(patchLevel)
-        itemAdder.addItems(previewSDKInt)
-        itemAdder.addItems(deviceBuildVersion)
-        itemAdder.addItems(buildBaseband)
-        itemAdder.addItems(buildKernel)
-        itemAdder.addItems(buildDate)
-        itemAdder.addItems(buildNumber)
-        itemAdder.addItems(buildBoard)
-        itemAdder.addItems(buildBootloader)
-        itemAdder.addItems(buildBrand)
-        itemAdder.addItems(buildDevice)
-        itemAdder.addItems(buildDisplay)
-        itemAdder.addItems(buildFingerprint)
-        itemAdder.addItems(buildHardware)
-        itemAdder.addItems(buildHost)
-        itemAdder.addItems(buildTags)
-        itemAdder.addItems(buildType)
-        itemAdder.addItems(buildUser)
-        itemAdder.addItems(openGLVersion)
-        itemAdder.addItems(googlePlayServicesVersion)
-        itemAdder.addItems(googlePlayServicesInstallDate)
-        itemAdder.addItems(googlePlayServicesUpdatedDate)
+        itemAdder.addItems(androidVersion())
+        itemAdder.addItems(patchLevel())
+        itemAdder.addItems(previewSDKInt())
+        itemAdder.addItems(deviceBuildVersion())
+        itemAdder.addItems(buildBaseband())
+        itemAdder.addItems(buildKernel())
+        itemAdder.addItems(buildDate())
+        itemAdder.addItems(buildNumber())
+        itemAdder.addItems(buildBoard())
+        itemAdder.addItems(buildBootloader())
+        itemAdder.addItems(buildBrand())
+        itemAdder.addItems(buildDevice())
+        itemAdder.addItems(buildDisplay())
+        itemAdder.addItems(buildFingerprint())
+        itemAdder.addItems(buildHardware())
+        itemAdder.addItems(buildHost())
+        itemAdder.addItems(buildTags())
+        itemAdder.addItems(buildType())
+        itemAdder.addItems(buildUser())
+        itemAdder.addItems(openGLVersion())
+        itemAdder.addItems(googlePlayServicesVersion())
+        itemAdder.addItems(googlePlayServicesInstallDate())
+        itemAdder.addItems(googlePlayServicesUpdatedDate())
     }
 
     private enum class Codenames {
@@ -104,229 +104,206 @@ internal class Software(activity: Activity, db: AppDatabase) {
         }
     }
 
-    private val androidVersion: Item
-        get() {
-            val item = Item("Android Version", ItemType.SOFTWARE)
-            try {
-                val versionName = Codenames.codename?.toString() ?: ""
-                item.subtitle = Build.VERSION.RELEASE + " (" + Build.VERSION.SDK_INT.toString() + ") " +
-                        versionName
-            } catch (e: Exception) {
-                Log.w(tag, "Null in getAndroidVersion")
-            }
-
-            return item
+    private fun androidVersion(): Item {
+        val item = Item("Android Version", ItemType.SOFTWARE)
+        try {
+            val versionName = Codenames.codename?.toString() ?: ""
+            item.subtitle = Build.VERSION.RELEASE + " (" + Build.VERSION.SDK_INT.toString() + ") " +
+                    versionName
+        } catch (e: Exception) {
+            Log.w(tag, "Null in getAndroidVersion")
         }
 
-    private val patchLevel: Item
-        get() {
-            val item = Item("Security Patch Level", ItemType.SOFTWARE)
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    try {
-                        val template = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                        val patchDate = template.parse(Build.VERSION.SECURITY_PATCH)
-                        val format = DateFormat.getBestDateTimePattern(Locale.getDefault(), "dMMMMyyyy")
-                        item.subtitle = DateFormat.format(format, patchDate).toString()
-                    } catch (e: ParseException) {
-                        e.printStackTrace()
-                        item.subtitle = Build.VERSION.SECURITY_PATCH
-                    }
+        return item
+    }
 
-                } else {
-                    item.unavailableitem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET, "6.0")
+    private fun patchLevel(): Item {
+        val item = Item("Security Patch Level", ItemType.SOFTWARE)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                try {
+                    val template = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                    val patchDate = template.parse(Build.VERSION.SECURITY_PATCH)
+                    val format = DateFormat.getBestDateTimePattern(Locale.getDefault(), "dMMMMyyyy")
+                    item.subtitle = DateFormat.format(format, patchDate).toString()
+                } catch (e: ParseException) {
+                    e.printStackTrace()
+                    item.subtitle = Build.VERSION.SECURITY_PATCH
                 }
-            } catch (e: Exception) {
-                Log.w(tag, "Null in getAndroidVersion")
+
+            } else {
+                item.unavailableitem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET, "6.0")
             }
-
-            return item
+        } catch (e: Exception) {
+            Log.w(tag, "Null in getAndroidVersion")
         }
 
-    private val previewSDKInt: Item
-        get() {
-            val item = Item("Preview SDK Number", ItemType.SOFTWARE)
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    val sdk = Build.VERSION.PREVIEW_SDK_INT
-                    if (sdk == 0)
-                        item.subtitle = "Non-Preview"
-                    else
-                        item.subtitle = "Preview " + Integer.toString(sdk)
-                } else {
-                    item.unavailableitem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET, "6.0")
-                }
-            } catch (e: Exception) {
-                Log.w(tag, "Null in getPreviewSDKInt")
+        return item
+    }
+
+    private fun previewSDKInt(): Item {
+        val item = Item("Preview SDK Number", ItemType.SOFTWARE)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                val sdk = Build.VERSION.PREVIEW_SDK_INT
+                if (sdk == 0)
+                    item.subtitle = "Non-Preview"
+                else
+                    item.subtitle = "Preview " + Integer.toString(sdk)
+            } else {
+                item.unavailableitem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET, "6.0")
             }
-
-            return item
+        } catch (e: Exception) {
+            Log.w(tag, "Null in getPreviewSDKInt")
         }
 
-    private//Get Moto specific build version if available
-    val deviceBuildVersion: Item
-        get() {
-            val item = Item("Build Version", ItemType.SOFTWARE)
-            val sp = SystemProperty(context)
-            item.subtitle = if (sp["ro.build.version.full"] == null || sp["ro.build.version.full"] == "") Build.DISPLAY else sp["ro.build.version.full"]
-            return item
+        return item
+    }
+
+    //Get Moto specific build version if available
+    private fun deviceBuildVersion(): Item {
+        val item = Item("Build Version", ItemType.SOFTWARE)
+        val sp = SystemProperty(context)
+        item.subtitle = if (sp["ro.build.version.full"] == null || sp["ro.build.version.full"] == "") Build.DISPLAY else sp["ro.build.version.full"]
+        return item
+    }
+
+    private fun buildBaseband(): Item {
+        val item = Item("Build Baseband", ItemType.SOFTWARE)
+        item.subtitle = Build.getRadioVersion()
+        return item
+    }
+
+    private fun buildKernel(): Item {
+        val item = Item("Kernel Version", ItemType.SOFTWARE)
+        item.subtitle = System.getProperty("os.version")
+        return item
+    }
+
+    private fun buildDate(): Item {
+        val item = Item("Build Date", ItemType.SOFTWARE)
+        item.subtitle = SimpleDateFormat.getInstance().format(Date(Build.TIME))
+        return item
+    }
+
+    private fun buildNumber(): Item {
+        val item = Item("Build Number", ItemType.SOFTWARE)
+        item.subtitle = Build.ID
+        return item
+    }
+
+    private fun buildBoard(): Item  {
+        val item = Item("Build Board", ItemType.SOFTWARE)
+        item.subtitle = Build.BOARD
+        return item
+    }
+
+    private fun buildBootloader(): Item {
+        val item = Item("Build Bootloader", ItemType.SOFTWARE)
+        item.subtitle = Build.BOOTLOADER
+        return item
+    }
+
+    private fun buildBrand(): Item {
+        val item = Item("Build Brand", ItemType.SOFTWARE)
+        item.subtitle = Build.BRAND
+        return item
+    }
+
+    private fun buildDevice(): Item {
+        val item = Item("Build Brand", ItemType.SOFTWARE)
+        item.subtitle = Build.DEVICE
+        return item
+    }
+
+    private fun buildDisplay(): Item {
+        val item = Item("Build Display", ItemType.SOFTWARE)
+        item.subtitle = Build.DISPLAY
+        return item
+    }
+
+    private fun buildFingerprint(): Item {
+        val item = Item("Build Fingerprint", ItemType.SOFTWARE)
+        item.subtitle = Build.FINGERPRINT
+        return item
+    }
+
+    private fun buildHardware(): Item {
+        val item = Item("Build Hardware", ItemType.SOFTWARE)
+        item.subtitle = Build.HARDWARE
+        return item
+    }
+
+    private fun buildHost(): Item {
+        val item = Item("Build Host", ItemType.SOFTWARE)
+        item.subtitle = Build.HOST
+        return item
+    }
+
+    private fun buildTags(): Item {
+        val item = Item("Build Tags", ItemType.SOFTWARE)
+        item.subtitle = Build.TAGS
+        return item
+    }
+
+    private fun buildType(): Item {
+        val item = Item("Build Type", ItemType.SOFTWARE)
+        item.subtitle = Build.TYPE
+        return item
+    }
+
+    private fun buildUser(): Item {
+        val item = Item("Build User", ItemType.SOFTWARE)
+        item.subtitle = Build.USER
+        return item
+    }
+
+    private fun openGLVersion(): Item {
+        val item = Item("OpenGL Version", ItemType.SOFTWARE)
+        try {
+            val configurationInfo = (context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).deviceConfigurationInfo
+            item.subtitle = configurationInfo.glEsVersion
+        } catch (e: Exception) {
+            Log.e(tag, "Exception in getOpenGLVersion")
         }
 
-    private val buildBaseband: Item
-        get() {
-            val item = Item("Build Baseband", ItemType.SOFTWARE)
-            item.subtitle = Build.getRadioVersion()
-            return item
+        return item
+    }
+
+    private fun googlePlayServicesVersion(): Item {
+        val item = Item("Google Play Services Version", ItemType.SOFTWARE)
+        try {
+            val n = context.packageManager.getPackageInfo("com.google.android.gms", 0).versionName
+            val v = context.packageManager.getPackageInfo("com.google.android.gms", 0).versionCode
+            item.subtitle = n + " (" + v.toString() + ")"
+        } catch (e: Exception) {
+            Log.e(tag, "Exception in getGooglePlayServicesVersion")
         }
 
-    private val buildKernel: Item
-        get() {
-            val item = Item("Kernel Version", ItemType.SOFTWARE)
-            item.subtitle = System.getProperty("os.version")
-            return item
+        return item
+    }
+
+    private fun googlePlayServicesInstallDate(): Item {
+        val item = Item("Google Play Services Installed", ItemType.SOFTWARE)
+        try {
+            val t = context.packageManager.getPackageInfo("com.google.android.gms", 0).firstInstallTime
+            item.subtitle = DateFormat.getDateFormat(context).format(t)
+        } catch (e: Exception) {
+            Log.e(tag, "Exception in getGooglePlayServicesVersion")
         }
 
-    private val buildDate: Item
-        get() {
-            val item = Item("Build Date", ItemType.SOFTWARE)
-            item.subtitle = SimpleDateFormat.getInstance().format(Date(Build.TIME))
-            return item
+        return item
+    }
+
+    private fun googlePlayServicesUpdatedDate(): Item {
+        val item = Item("Google Play Services Updated", ItemType.SOFTWARE)
+        try {
+            val t = context.packageManager.getPackageInfo("com.google.android.gms", 0).lastUpdateTime
+            item.subtitle = DateFormat.getDateFormat(context).format(t)
+        } catch (e: Exception) {
+            Log.e(tag, "Exception in getGooglePlayServicesVersion")
         }
 
-    private val buildNumber: Item
-        get() {
-            val item = Item("Build Number", ItemType.SOFTWARE)
-            item.subtitle = Build.ID
-            return item
-        }
-
-    private val buildBoard: Item
-        get() {
-            val item = Item("Build Board", ItemType.SOFTWARE)
-            item.subtitle = Build.BOARD
-            return item
-        }
-
-    private val buildBootloader: Item
-        get() {
-            val item = Item("Build Bootloader", ItemType.SOFTWARE)
-            item.subtitle = Build.BOOTLOADER
-            return item
-        }
-
-    private val buildBrand: Item
-        get() {
-            val item = Item("Build Brand", ItemType.SOFTWARE)
-            item.subtitle = Build.BRAND
-            return item
-        }
-
-    private val buildDevice: Item
-        get() {
-            val item = Item("Build Brand", ItemType.SOFTWARE)
-            item.subtitle = Build.DEVICE
-            return item
-        }
-
-    private val buildDisplay: Item
-        get() {
-            val item = Item("Build Display", ItemType.SOFTWARE)
-            item.subtitle = Build.DISPLAY
-            return item
-        }
-
-    private val buildFingerprint: Item
-        get() {
-            val item = Item("Build Fingerprint", ItemType.SOFTWARE)
-            item.subtitle = Build.FINGERPRINT
-            return item
-        }
-
-    private val buildHardware: Item
-        get() {
-            val item = Item("Build Hardware", ItemType.SOFTWARE)
-            item.subtitle = Build.HARDWARE
-            return item
-        }
-
-    private val buildHost: Item
-        get() {
-            val item = Item("Build Host", ItemType.SOFTWARE)
-            item.subtitle = Build.HOST
-            return item
-        }
-
-    private val buildTags: Item
-        get() {
-            val item = Item("Build Tags", ItemType.SOFTWARE)
-            item.subtitle = Build.TAGS
-            return item
-        }
-
-    private val buildType: Item
-        get() {
-            val item = Item("Build Type", ItemType.SOFTWARE)
-            item.subtitle = Build.TYPE
-            return item
-        }
-
-    private val buildUser: Item
-        get() {
-            val item = Item("Build User", ItemType.SOFTWARE)
-            item.subtitle = Build.USER
-            return item
-        }
-
-    private val openGLVersion: Item
-        get() {
-            val item = Item("OpenGL Version", ItemType.SOFTWARE)
-            try {
-                val configurationInfo = (context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).deviceConfigurationInfo
-                item.subtitle = configurationInfo.glEsVersion
-            } catch (e: Exception) {
-                Log.e(tag, "Exception in getOpenGLVersion")
-            }
-
-            return item
-        }
-
-    private val googlePlayServicesVersion: Item
-        get() {
-            val item = Item("Google Play Services Version", ItemType.SOFTWARE)
-            try {
-                val n = context.packageManager.getPackageInfo("com.google.android.gms", 0).versionName
-                val v = context.packageManager.getPackageInfo("com.google.android.gms", 0).versionCode
-                item.subtitle = n + " (" + v.toString() + ")"
-            } catch (e: Exception) {
-                Log.e(tag, "Exception in getGooglePlayServicesVersion")
-            }
-
-            return item
-        }
-
-    private val googlePlayServicesInstallDate: Item
-        get() {
-            val item = Item("Google Play Services Installed", ItemType.SOFTWARE)
-            try {
-                val t = context.packageManager.getPackageInfo("com.google.android.gms", 0).firstInstallTime
-                item.subtitle = DateFormat.getDateFormat(context).format(t)
-            } catch (e: Exception) {
-                Log.e(tag, "Exception in getGooglePlayServicesVersion")
-            }
-
-            return item
-        }
-
-    private val googlePlayServicesUpdatedDate: Item
-        get() {
-            val item = Item("Google Play Services Updated", ItemType.SOFTWARE)
-            try {
-                val t = context.packageManager.getPackageInfo("com.google.android.gms", 0).lastUpdateTime
-                item.subtitle = DateFormat.getDateFormat(context).format(t)
-            } catch (e: Exception) {
-                Log.e(tag, "Exception in getGooglePlayServicesVersion")
-            }
-
-            return item
-        }
+        return item
+    }
 }

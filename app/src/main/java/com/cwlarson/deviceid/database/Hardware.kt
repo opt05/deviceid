@@ -30,116 +30,112 @@ internal class Hardware(activity: Activity, db: AppDatabase) {
     //Set Hardware Tiles
     init {
         val itemAdder = ItemAdder(context, db)
-        itemAdder.addItems(deviceScreenDensity)
-        itemAdder.addItems(ramSize)
-        itemAdder.addItems(formattedInternalMemory)
-        itemAdder.addItems(formattedExternalMemory)
+        itemAdder.addItems(deviceScreenDensity())
+        itemAdder.addItems(ramSize())
+        itemAdder.addItems(formattedInternalMemory())
+        itemAdder.addItems(formattedExternalMemory())
         getBattery()
     }
 
     // For JellyBean 4.2 (API 17) and onward
-    private val deviceScreenDensity: Item
-        get() {
-            val item = Item("Screen Density", ItemType.HARDWARE)
-            try {
-                val density = context.resources.displayMetrics.densityDpi
-                val width: Int
-                val height: Int
-                val metrics = DisplayMetrics()
-                val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-                val display = windowManager.defaultDisplay
-                val mGetRawH: Method
-                val mGetRawW: Method
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                    display.getRealMetrics(metrics)
+    private fun deviceScreenDensity(): Item {
+        val item = Item("Screen Density", ItemType.HARDWARE)
+        try {
+            val density = context.resources.displayMetrics.densityDpi
+            val width: Int
+            val height: Int
+            val metrics = DisplayMetrics()
+            val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+            val display = windowManager.defaultDisplay
+            val mGetRawH: Method
+            val mGetRawW: Method
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                display.getRealMetrics(metrics)
 
-                    width = metrics.widthPixels
-                    height = metrics.heightPixels
-                } else {
-                    mGetRawH = Display::class.java.getMethod("getRawHeight")
-                    mGetRawW = Display::class.java.getMethod("getRawWidth")
-                    width = mGetRawW.invoke(display) as Int
-                    height = mGetRawH.invoke(display) as Int
-                }
-                val sizeInPixels = " (" + Integer.toString(height) + "x" + Integer.toString(width) + ")"
-
-                when (density) {
-                    DisplayMetrics.DENSITY_LOW -> item.subtitle = "LDPI$sizeInPixels"
-                    DisplayMetrics.DENSITY_MEDIUM -> item.subtitle = "MDPI$sizeInPixels"
-                    DisplayMetrics.DENSITY_HIGH -> item.subtitle = "HDPI$sizeInPixels"
-                    DisplayMetrics.DENSITY_XHIGH -> item.subtitle = "XHDPI$sizeInPixels"
-                    DisplayMetrics.DENSITY_XXHIGH -> item.subtitle = "XXHDPI$sizeInPixels"
-                    DisplayMetrics.DENSITY_XXXHIGH -> item.subtitle = "XXXHDPI$sizeInPixels"
-                    DisplayMetrics.DENSITY_TV -> item.subtitle = "TVDPI$sizeInPixels"
-                    DisplayMetrics.DENSITY_400 -> item.subtitle = "400DPI$sizeInPixels"
-                    DisplayMetrics.DENSITY_560 -> item.subtitle = "560DPI$sizeInPixels"
-                    else -> {
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(tag, "NoSuchMethodException in getDeviceScreenDensity")
+                width = metrics.widthPixels
+                height = metrics.heightPixels
+            } else {
+                mGetRawH = Display::class.java.getMethod("getRawHeight")
+                mGetRawW = Display::class.java.getMethod("getRawWidth")
+                width = mGetRawW.invoke(display) as Int
+                height = mGetRawH.invoke(display) as Int
             }
+            val sizeInPixels = " (" + Integer.toString(height) + "x" + Integer.toString(width) + ")"
 
-            return item
+            when (density) {
+                DisplayMetrics.DENSITY_LOW -> item.subtitle = "LDPI$sizeInPixels"
+                DisplayMetrics.DENSITY_MEDIUM -> item.subtitle = "MDPI$sizeInPixels"
+                DisplayMetrics.DENSITY_HIGH -> item.subtitle = "HDPI$sizeInPixels"
+                DisplayMetrics.DENSITY_XHIGH -> item.subtitle = "XHDPI$sizeInPixels"
+                DisplayMetrics.DENSITY_XXHIGH -> item.subtitle = "XXHDPI$sizeInPixels"
+                DisplayMetrics.DENSITY_XXXHIGH -> item.subtitle = "XXXHDPI$sizeInPixels"
+                DisplayMetrics.DENSITY_TV -> item.subtitle = "TVDPI$sizeInPixels"
+                DisplayMetrics.DENSITY_400 -> item.subtitle = "400DPI$sizeInPixels"
+                DisplayMetrics.DENSITY_560 -> item.subtitle = "560DPI$sizeInPixels"
+                else -> {
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(tag, "NoSuchMethodException in getDeviceScreenDensity")
         }
+
+        return item
+    }
 
     //Total memory is only available on API 16+
-    private val ramSize: Item
-        get() {
-            val item = Item("Memory", ItemType.HARDWARE)
-            try {
-                val mi = ActivityManager.MemoryInfo()
-                val activityManager = context.getSystemService(ACTIVITY_SERVICE) as ActivityManager
-                activityManager.getMemoryInfo(mi)
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
-                    item.subtitle = context.resources.getString(R.string
-                            .hardware_storage_output_format_api15,
-                            Formatter.formatFileSize(context, mi.availMem))
-                    item.chartitem = ChartItem(mi.availMem.toFloat(), 0f, R.drawable.ic_memory)
-                } else {
-                    item.subtitle = if (mi.totalMem <= 0)
-                        context.resources.getString(R.string.not_found)
-                    else
-                        context.resources.getString(R.string.hardware_storage_output_format,
-                                Formatter.formatFileSize(context, mi.availMem),
-                                Formatter.formatFileSize(context, mi.totalMem))
-                    item.chartitem = ChartItem(mi.availMem.toFloat(), mi.totalMem.toFloat(), R.drawable.ic_memory)
-                }
-            } catch (e: Exception) {
-                Log.w(tag, "Exception in getRamSize")
+    private fun ramSize(): Item {
+        val item = Item("Memory", ItemType.HARDWARE)
+        try {
+            val mi = ActivityManager.MemoryInfo()
+            val activityManager = context.getSystemService(ACTIVITY_SERVICE) as ActivityManager
+            activityManager.getMemoryInfo(mi)
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+                item.subtitle = context.resources.getString(R.string
+                        .hardware_storage_output_format_api15,
+                        Formatter.formatFileSize(context, mi.availMem))
+                item.chartitem = ChartItem(mi.availMem.toFloat(), 0f, R.drawable.ic_memory)
+            } else {
+                item.subtitle = if (mi.totalMem <= 0)
+                    context.resources.getString(R.string.not_found)
+                else
+                    context.resources.getString(R.string.hardware_storage_output_format,
+                            Formatter.formatFileSize(context, mi.availMem),
+                            Formatter.formatFileSize(context, mi.totalMem))
+                item.chartitem = ChartItem(mi.availMem.toFloat(), mi.totalMem.toFloat(), R.drawable.ic_memory)
             }
-
-            return item
+        } catch (e: Exception) {
+            Log.w(tag, "Exception in getRamSize")
         }
 
-    private val formattedInternalMemory: Item
-        get() {
-            val item = Item("Internal Storage", ItemType.HARDWARE)
-            val available = File(context.filesDir.absoluteFile.toString()).freeSpace
-            val total = File(context.filesDir.absoluteFile.toString()).totalSpace
-            if (total > 0L)
-                item.subtitle = context.resources.getString(R.string.hardware_storage_output_format, Formatter.formatFileSize(context, available), Formatter.formatFileSize(context, total))
-            item.chartitem = ChartItem(available.toFloat(), total.toFloat(), R.drawable.ic_storage)
-            return item
-        }
+        return item
+    }
 
-    private val formattedExternalMemory: Item
-        get() {
-            val item = Item("External Storage", ItemType.HARDWARE)
-            var availSize = 0L
-            var totalSize = 0L
-            val appsDir = ContextCompat.getExternalFilesDirs(context, null)
-            for (file in appsDir) {
-                availSize += file.parentFile.parentFile.parentFile.parentFile.freeSpace
-                totalSize += file.parentFile.parentFile.parentFile.parentFile.totalSpace
-            }
-            availSize -= File(context.filesDir.absoluteFile.toString()).freeSpace
-            totalSize -= File(context.filesDir.absoluteFile.toString()).totalSpace
-            if (totalSize > 0L)
-                item.subtitle = context.resources.getString(R.string.hardware_storage_output_format, Formatter.formatFileSize(context, availSize), Formatter.formatFileSize(context, totalSize))
-            item.chartitem = ChartItem(availSize.toFloat(), totalSize.toFloat(), R.drawable.ic_storage)
-            return item
+    private fun formattedInternalMemory(): Item {
+        val item = Item("Internal Storage", ItemType.HARDWARE)
+        val available = File(context.filesDir.absoluteFile.toString()).freeSpace
+        val total = File(context.filesDir.absoluteFile.toString()).totalSpace
+        if (total > 0L)
+            item.subtitle = context.resources.getString(R.string.hardware_storage_output_format, Formatter.formatFileSize(context, available), Formatter.formatFileSize(context, total))
+        item.chartitem = ChartItem(available.toFloat(), total.toFloat(), R.drawable.ic_storage)
+        return item
+    }
+
+    private fun formattedExternalMemory(): Item {
+        val item = Item("External Storage", ItemType.HARDWARE)
+        var availSize = 0L
+        var totalSize = 0L
+        val appsDir = ContextCompat.getExternalFilesDirs(context, null)
+        for (file in appsDir) {
+            availSize += file.parentFile.parentFile.parentFile.parentFile.freeSpace
+            totalSize += file.parentFile.parentFile.parentFile.parentFile.totalSpace
         }
+        availSize -= File(context.filesDir.absoluteFile.toString()).freeSpace
+        totalSize -= File(context.filesDir.absoluteFile.toString()).totalSpace
+        if (totalSize > 0L)
+            item.subtitle = context.resources.getString(R.string.hardware_storage_output_format, Formatter.formatFileSize(context, availSize), Formatter.formatFileSize(context, totalSize))
+        item.chartitem = ChartItem(availSize.toFloat(), totalSize.toFloat(), R.drawable.ic_storage)
+        return item
+    }
 
     private fun getBattery() {
         //Item item = new Item("Battery", ItemType.HARDWARE);
