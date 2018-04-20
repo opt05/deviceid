@@ -19,7 +19,7 @@
         <ProgressBar
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            style="?progressBarStyle"
+            style="@style/Widget.AppCompat.ProgressBar"
             android:visibility="@{isLoading?View.VISIBLE:View.GONE}"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
