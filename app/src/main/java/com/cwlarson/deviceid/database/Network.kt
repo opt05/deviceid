@@ -1,7 +1,6 @@
 package com.cwlarson.deviceid.database
 
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.content.Context
@@ -10,42 +9,42 @@ import android.net.wifi.WifiManager
 import android.os.Build
 import android.telephony.TelephonyManager
 import android.util.Log
+import androidx.annotation.WorkerThread
 import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.databinding.*
 import java.math.BigInteger
 import java.net.InetAddress
 import java.nio.ByteOrder
 
-internal class Network(activity: Activity, db: AppDatabase) {
+@WorkerThread
+internal class Network(context: Context, db: AppDatabase) {
     private val tag = Network::class.java.simpleName
-    private val context: Context = activity.applicationContext
-    private val mWifiConnectionInfo: WifiInfo =
-            (activity.applicationContext.getSystemService(Context.WIFI_SERVICE)
-                    as WifiManager).connectionInfo
+    private val context: Context = context.applicationContext
+    private val wifiConnectionInfo: WifiInfo =
+            (this.context.getSystemService(Context.WIFI_SERVICE) as WifiManager).connectionInfo
 
     init {
         //Set Network Tiles
-        val itemAdder = ItemAdder(context, db)
-        itemAdder.addItems(wifiMac())
-        itemAdder.addItems(wifiBSSID())
-        itemAdder.addItems(wifiSSID())
-        itemAdder.addItems(wifiFrequency())
-        itemAdder.addItems(wifiHiddenSSID())
-        itemAdder.addItems(wifiIpAddress())
-        itemAdder.addItems(wifiLinkSpeed())
-        itemAdder.addItems(wifiNetworkID())
-        itemAdder.addItems(wifiRSSI())
-        itemAdder.addItems(wifiHostname())
-        itemAdder.addItems(bluetoothMac())
-        itemAdder.addItems(bluetoothHostname())
-        itemAdder.addItems(simSerial())
-        itemAdder.addItems(simOperatorName())
-        itemAdder.addItems(simCountry())
-        itemAdder.addItems(simState())
-        itemAdder.addItems(phoneNumber())
-        itemAdder.addItems(voicemailNumber())
-        itemAdder.addItems(cellNetworkName())
-        itemAdder.addItems(cellNetworkType())
+        db.addItems(context,wifiMac())
+        db.addItems(context,wifiBSSID())
+        db.addItems(context,wifiSSID())
+        db.addItems(context,wifiFrequency())
+        db.addItems(context,wifiHiddenSSID())
+        db.addItems(context,wifiIpAddress())
+        db.addItems(context,wifiLinkSpeed())
+        db.addItems(context,wifiNetworkID())
+        db.addItems(context,wifiRSSI())
+        db.addItems(context,wifiHostname())
+        db.addItems(context,bluetoothMac())
+        db.addItems(context,bluetoothHostname())
+        db.addItems(context,simSerial())
+        db.addItems(context,simOperatorName())
+        db.addItems(context,simCountry())
+        db.addItems(context,simState())
+        db.addItems(context,phoneNumber())
+        db.addItems(context,voicemailNumber())
+        db.addItems(context,cellNetworkName())
+        db.addItems(context,cellNetworkType())
     }
 
     /*
@@ -57,7 +56,7 @@ internal class Network(activity: Activity, db: AppDatabase) {
         val item = Item("Wi-Fi MAC Address", ItemType.NETWORK)
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
             try {
-                item.subtitle = mWifiConnectionInfo.macAddress
+                item.subtitle = wifiConnectionInfo.macAddress
             } catch (e: Exception) {
                 Log.w(tag, "Null in getWiFiMac")
             }
@@ -71,7 +70,7 @@ internal class Network(activity: Activity, db: AppDatabase) {
     private fun wifiBSSID(): Item {
         val item = Item("Wi-Fi BSSID", ItemType.NETWORK)
         try {
-            item.subtitle = mWifiConnectionInfo.bssid
+            item.subtitle = wifiConnectionInfo.bssid
         } catch (e: Exception) {
             Log.w(tag, "Null in getWiFiBSSID")
         }
@@ -82,7 +81,7 @@ internal class Network(activity: Activity, db: AppDatabase) {
     private fun wifiSSID(): Item {
         val item = Item("Wi-Fi SSID", ItemType.NETWORK)
         try {
-            item.subtitle = mWifiConnectionInfo.ssid
+            item.subtitle = wifiConnectionInfo.ssid
         } catch (e: Exception) {
             Log.w(tag, "Null in getWiFiSSID")
         }
@@ -94,7 +93,7 @@ internal class Network(activity: Activity, db: AppDatabase) {
         val item = Item("Wi-Fi Frequency", ItemType.NETWORK)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             try {
-                item.subtitle = Integer.toString(mWifiConnectionInfo.frequency)
+                item.subtitle = Integer.toString(wifiConnectionInfo.frequency)
             } catch (e: Exception) {
                 Log.w(tag, "Null in getWiFiMac")
             }
@@ -106,7 +105,7 @@ internal class Network(activity: Activity, db: AppDatabase) {
     private fun wifiHiddenSSID(): Item {
         val item = Item("Wi-Fi Hidden SSID", ItemType.NETWORK)
         try {
-            item.subtitle = java.lang.Boolean.toString(mWifiConnectionInfo.hiddenSSID)
+            item.subtitle = java.lang.Boolean.toString(wifiConnectionInfo.hiddenSSID)
         } catch (e: Exception) {
             Log.w(tag, "Null in getWiFiMac")
         }
@@ -118,7 +117,7 @@ internal class Network(activity: Activity, db: AppDatabase) {
     private fun wifiIpAddress(): Item {
         val item = Item("Wi-Fi IP Address", ItemType.NETWORK)
         try {
-            var ipAddress = mWifiConnectionInfo.ipAddress
+            var ipAddress = wifiConnectionInfo.ipAddress
             if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN) ipAddress = Integer.reverseBytes(ipAddress)
             val ipByteArray = BigInteger.valueOf(ipAddress.toLong()).toByteArray()
             item.subtitle = InetAddress.getByAddress(ipByteArray).hostAddress
@@ -132,7 +131,7 @@ internal class Network(activity: Activity, db: AppDatabase) {
     private fun wifiLinkSpeed(): Item  {
         val item = Item("Wi-Fi Link Speed", ItemType.NETWORK)
         try {
-            item.subtitle = Integer.toString(mWifiConnectionInfo.linkSpeed)
+            item.subtitle = Integer.toString(wifiConnectionInfo.linkSpeed)
         } catch (e: Exception) {
             Log.w(tag, "Null in getWiFiMac")
         }
@@ -143,7 +142,7 @@ internal class Network(activity: Activity, db: AppDatabase) {
     private fun wifiNetworkID(): Item {
         val item = Item("Wi-Fi Network ID", ItemType.NETWORK)
         try {
-            item.subtitle = Integer.toString(mWifiConnectionInfo.networkId)
+            item.subtitle = Integer.toString(wifiConnectionInfo.networkId)
         } catch (e: NullPointerException) {
             Log.w(tag, "Null in getWiFiMac")
         }
@@ -154,7 +153,7 @@ internal class Network(activity: Activity, db: AppDatabase) {
     private fun wifiRSSI(): Item {
         val item = Item("Wi-Fi RSSI", ItemType.NETWORK)
         try {
-            item.subtitle = Integer.toString(mWifiConnectionInfo.rssi)
+            item.subtitle = Integer.toString(wifiConnectionInfo.rssi)
         } catch (e: Exception) {
             Log.w(tag, "Null in getWiFiMac")
         }

@@ -1,28 +1,28 @@
 package com.cwlarson.deviceid.database
 
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.telephony.TelephonyManager
 import android.util.Log
+import androidx.annotation.WorkerThread
 import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.databinding.*
 
-internal class Device(activity: Activity, db: AppDatabase) {
+@WorkerThread
+internal class Device(context: Context, db: AppDatabase) {
     private val tag = Device::class.java.simpleName
-    private val context: Context = activity.applicationContext
+    private val context: Context = context.applicationContext
 
     init {
         //Set Device Tiles
-        val itemAdder = ItemAdder(context, db)
-        itemAdder.addItems(*imei())
-        itemAdder.addItems(deviceModel())
-        itemAdder.addItems(serial())
-        itemAdder.addItems(androidID())
-        itemAdder.addItems(gsfid())
+        db.addItems(context,*imei())
+        db.addItems(context,deviceModel())
+        db.addItems(context,serial())
+        db.addItems(context,androidID())
+        db.addItems(context,gsfid())
     }
 
     // Request permission for IMEI/MEID for Android M+

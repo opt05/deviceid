@@ -4,34 +4,21 @@ package com.cwlarson.deviceid.util
 import android.annotation.SuppressLint
 import android.content.Context
 import android.view.ViewGroup
-import java.lang.ref.WeakReference
-import kotlin.properties.ReadWriteProperty
-import kotlin.reflect.KProperty
 
-fun calculateNoOfColumns(context: Context?): Int {
-    context?.let {
+fun Context?.calculateNoOfColumns(): Int {
+    this?.let {
         val displayMetrics = it.resources.displayMetrics
         val dpWidth = displayMetrics.widthPixels / displayMetrics.density
         return (dpWidth / 300).toInt()
     } ?: return 1
 }
 
-fun calculateBottomSheetMaxWidth(context: Context?): Int {
-    context?.let {
+fun Context?.calculateBottomSheetMaxWidth(): Int {
+    this?.let {
         val displayMetrics = it.resources.displayMetrics
         val dpWidth = displayMetrics.widthPixels / displayMetrics.density
         return if(dpWidth > 750) 750 else ViewGroup.LayoutParams.MATCH_PARENT
     } ?: return ViewGroup.LayoutParams.MATCH_PARENT
-}
-
-class WeakReferenceDelegate<T>(initialValue: T? = null) : ReadWriteProperty<Any, T?> {
-    private var reference = WeakReference(initialValue)
-
-    override fun getValue(thisRef: Any, property: KProperty<*>): T? = reference.get()
-
-    override fun setValue(thisRef: Any, property: KProperty<*>, value: T?) {
-        reference = WeakReference(value)
-    }
 }
 
 class SystemProperty(private val context: Context) {
@@ -60,5 +47,4 @@ class SystemProperty(private val context: Context) {
     }
 
     private inner class NoSuchPropertyException internal constructor(e: Exception) : Exception(e)
-
 }

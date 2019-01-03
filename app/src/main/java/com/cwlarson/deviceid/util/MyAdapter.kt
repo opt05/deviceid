@@ -1,53 +1,55 @@
 package com.cwlarson.deviceid.util
 
-import android.databinding.DataBindingUtil
-import android.databinding.ViewDataBinding
-import android.support.v7.recyclerview.extensions.ListAdapter
-import android.support.v7.util.DiffUtil
-import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.databinding.DataBindingUtil
+import androidx.databinding.ViewDataBinding
+import androidx.paging.PagedListAdapter
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.RecyclerView
 import com.cwlarson.deviceid.BR
 import com.cwlarson.deviceid.PermissionsActivity
 import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.databinding.Item
 
-internal class MyAdapter(parentActivity: PermissionsActivity) : ListAdapter<Item, MyAdapter.CustomViewHolder>(
-        object : DiffUtil.ItemCallback<Item>() {
-            override fun areItemsTheSame(oldItem: Item, newItem: Item): Boolean = oldItem.itemsTheSame(newItem)
-            override fun areContentsTheSame(oldItem: Item, newItem: Item): Boolean = oldItem == newItem})
-{
-    private var handler: PermissionsActivity? by WeakReferenceDelegate()
-
-    init {
-        handler = parentActivity
-    }
-
-    fun setItems(itemList: List<Item>?) {
-        submitList(itemList)
+internal class MyAdapter(private val handler: PermissionsActivity) : PagedListAdapter<Item, MyAdapter.CustomViewHolder>(DIFF_CALLBACK) {
+    companion object {
+        private const val TEXT_VIEW_TYPE = 0
+        private const val CHART_VIEW_TYPE = 1
+        private val DIFF_CALLBACK = object : DiffUtil.ItemCallback<Item>() {
+            override fun areItemsTheSame(oldItem: Item, newItem: Item): Boolean =
+                    oldItem.itemsTheSame(newItem)
+            override fun areContentsTheSame(oldItem: Item, newItem: Item): Boolean =
+                    oldItem == newItem
+        }
     }
 
     // Create new views (invoked by the layout manager)
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CustomViewHolder {
-        val viewDataBinding: ViewDataBinding = if (viewType == CHART_VIEWTYPE)
-            DataBindingUtil.inflate(LayoutInflater.from(parent.context), R.layout.recycler_chart_view, parent, false)
-        else
-            DataBindingUtil.inflate(LayoutInflater.from(parent.context), R.layout.recycler_text_view, parent, false)
+        val layout = if (viewType == CHART_VIEW_TYPE)
+            R.layout.recycler_chart_view else R.layout.recycler_text_view
+        val viewDataBinding = DataBindingUtil.inflate<ViewDataBinding>(
+                LayoutInflater.from(parent.context), layout, parent, false)
         return CustomViewHolder(viewDataBinding)
     }
 
-    override fun getItemViewType(position: Int): Int {
-        return if (getItem(position).chartitem != null)
-            CHART_VIEWTYPE
-        else
-            TEXT_VIEWTYPE
-    }
+    override fun getItemViewType(position: Int): Int =
+            getItem(position)?.chartitem?.let { CHART_VIEW_TYPE } ?: TEXT_VIEW_TYPE
 
     // Replace the contents of a view (invoked by the layout manager)
     override fun onBindViewHolder(holder: CustomViewHolder, position: Int) {
         // - get element from your dataset at this position
         // - replace the contents of the view with that element
-        holder.bind(getItem(position), handler)
+        val item = getItem(position)
+        if (item != null) {
+            holder.bind(item, handler)
+        } else {
+            // Null defines a placeholder item - PagedListAdapter automatically
+            // invalidates this row when the actual object is loaded from the
+            // database.
+            holder.clear()
+        }
+        getItem(position)?.let { holder.bind(it, handler) }
     }
 
     internal inner class CustomViewHolder(private val binding: ViewDataBinding) : RecyclerView.ViewHolder(binding.root) {
@@ -59,10 +61,11 @@ internal class MyAdapter(parentActivity: PermissionsActivity) : ListAdapter<Item
             }
             binding.executePendingBindings()
         }
-    }
 
-    companion object {
-        private const val TEXT_VIEWTYPE = 0
-        private const val CHART_VIEWTYPE = 1
+        fun clear() {
+            binding.setVariable(BR.item, null)
+            binding.setVariable(BR.handler, null)
+            binding.executePendingBindings()
+        }
     }
 }

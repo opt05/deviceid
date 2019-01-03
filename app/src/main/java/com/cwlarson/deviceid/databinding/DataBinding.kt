@@ -4,13 +4,13 @@ package com.cwlarson.deviceid.databinding
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.ObjectAnimator
-import android.databinding.BindingAdapter
 import android.os.Build
-import android.support.annotation.DrawableRes
-import android.support.graphics.drawable.VectorDrawableCompat
 import android.view.View
 import android.widget.Button
 import android.widget.ImageView
+import androidx.annotation.DrawableRes
+import androidx.databinding.BindingAdapter
+import androidx.vectordrawable.graphics.drawable.VectorDrawableCompat
 import com.cwlarson.deviceid.R
 
 @BindingAdapter("buttonImageAbove")

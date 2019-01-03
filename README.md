@@ -9,9 +9,9 @@ Licensed under the MIT License. For complete licensing information see [LICENSE.
 This is a repository for the Android Device Info app that displays specific info about your Android device
 
 ### Build Tools ###
-* Android Studio 3.1.1 (Gradle 4.4)
-* Android support library
-* Android 4.0 (API 14) or above (built against 8.1/API 27)
+* Android Studio 3.2.1 (Gradle 4.6)
+* AndroidX/Jetpack
+* Android 4.0 (API 14) or above (built against 9/API 28)
 
 ### Android Permissions ###
 1. ACCESS_NETWORK_STATE - to read SIM state

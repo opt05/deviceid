@@ -1,0 +1,82 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "01062f1bd460655076d1a2e76cfba3db",
+    "entities": [
+      {
+        "tableName": "item",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`subtitle` TEXT, `title` TEXT NOT NULL, `itemtype` INTEGER NOT NULL, `chartaxis1` REAL, `chartaxis2` REAL, `chartdrawable` INTEGER, `unavailabletype` INTEGER, `unavailablesupporttext` TEXT, `unavailablepermissioncode` INTEGER, PRIMARY KEY(`title`, `itemtype`))",
+        "fields": [
+          {
+            "fieldPath": "subtitle",
+            "columnName": "subtitle",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "itemtype",
+            "columnName": "itemtype",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "chartitem.chartaxis1",
+            "columnName": "chartaxis1",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "chartitem.chartaxis2",
+            "columnName": "chartaxis2",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "chartitem.chartdrawable",
+            "columnName": "chartdrawable",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "unavailableitem.unavailabletype",
+            "columnName": "unavailabletype",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "unavailableitem.unavailablesupporttext",
+            "columnName": "unavailablesupporttext",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "unavailableitem.unavailablepermissioncode",
+            "columnName": "unavailablepermissioncode",
+            "affinity": "INTEGER",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "title",
+            "itemtype"
+          ],
+          "autoGenerate": false
+        },
+        "indices": [],
+        "foreignKeys": []
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, \"01062f1bd460655076d1a2e76cfba3db\")"
+    ]
+  }
+}

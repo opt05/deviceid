@@ -1,10 +1,10 @@
 package com.cwlarson.deviceid.databinding
 
-import android.arch.persistence.room.Ignore
-import android.arch.persistence.room.TypeConverter
-import android.arch.persistence.room.TypeConverters
-import android.databinding.BaseObservable
-import android.databinding.Bindable
+import androidx.databinding.BaseObservable
+import androidx.databinding.Bindable
+import androidx.room.Ignore
+import androidx.room.TypeConverter
+import androidx.room.TypeConverters
 
 enum class UnavailableType(val value: Int) {
     NOT_FOUND(1), NO_LONGER_POSSIBLE(2), NOT_POSSIBLE_YET(3),

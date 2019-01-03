@@ -1,9 +1,9 @@
 package com.cwlarson.deviceid.databinding
 
-import android.arch.persistence.room.Ignore
-import android.databinding.BaseObservable
-import android.databinding.Bindable
-import android.support.annotation.DrawableRes
+import androidx.annotation.DrawableRes
+import androidx.databinding.BaseObservable
+import androidx.databinding.Bindable
+import androidx.room.Ignore
 
 data class ChartItem(
         @get:Bindable

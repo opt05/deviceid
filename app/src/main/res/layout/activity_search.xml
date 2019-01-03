@@ -6,11 +6,8 @@
     <data>
         <import type="android.view.View"/>
         <variable
-            name="itemsCount"
-            type="int"/>
-        <variable
-            name="isLoading"
-            type="boolean"/>
+            name="model"
+            type="com.cwlarson.deviceid.database.SearchItemsViewModel"/>
     </data>
     <FrameLayout
         android:layout_width="match_parent"
@@ -18,7 +15,7 @@
         <include
             android:id="@+id/search_recyclerview"
             layout="@layout/content_search"
-            app:isLoading="@{isLoading}"
-            app:itemsCount="@{itemsCount}"/>
+            app:isLoading="@{safeUnbox(model.isLoading)}"
+            app:itemsCount="@{safeUnbox(model.itemsCount)}"/>
     </FrameLayout>
 </layout>

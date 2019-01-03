@@ -1,11 +1,12 @@
 package com.cwlarson.deviceid.database
 
-import android.app.Activity
 import android.app.ActivityManager
 import android.content.Context
 import android.os.Build
 import android.text.format.DateFormat
 import android.util.Log
+import androidx.annotation.WorkerThread
+import androidx.core.content.pm.PackageInfoCompat
 import com.cwlarson.deviceid.databinding.Item
 import com.cwlarson.deviceid.databinding.ItemType
 import com.cwlarson.deviceid.databinding.UnavailableItem
@@ -15,36 +16,36 @@ import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.*
 
-internal class Software(activity: Activity, db: AppDatabase) {
+@WorkerThread
+internal class Software(context: Context, db: AppDatabase) {
     private val tag = Software::class.java.simpleName
-    private val context: Context = activity.applicationContext
+    private val context: Context = context.applicationContext
 
     init {
         //Set Software Tiles
-        val itemAdder = ItemAdder(context, db)
-        itemAdder.addItems(androidVersion())
-        itemAdder.addItems(patchLevel())
-        itemAdder.addItems(previewSDKInt())
-        itemAdder.addItems(deviceBuildVersion())
-        itemAdder.addItems(buildBaseband())
-        itemAdder.addItems(buildKernel())
-        itemAdder.addItems(buildDate())
-        itemAdder.addItems(buildNumber())
-        itemAdder.addItems(buildBoard())
-        itemAdder.addItems(buildBootloader())
-        itemAdder.addItems(buildBrand())
-        itemAdder.addItems(buildDevice())
-        itemAdder.addItems(buildDisplay())
-        itemAdder.addItems(buildFingerprint())
-        itemAdder.addItems(buildHardware())
-        itemAdder.addItems(buildHost())
-        itemAdder.addItems(buildTags())
-        itemAdder.addItems(buildType())
-        itemAdder.addItems(buildUser())
-        itemAdder.addItems(openGLVersion())
-        itemAdder.addItems(googlePlayServicesVersion())
-        itemAdder.addItems(googlePlayServicesInstallDate())
-        itemAdder.addItems(googlePlayServicesUpdatedDate())
+        db.addItems(context,androidVersion())
+        db.addItems(context,patchLevel())
+        db.addItems(context,previewSDKInt())
+        db.addItems(context,deviceBuildVersion())
+        db.addItems(context,buildBaseband())
+        db.addItems(context,buildKernel())
+        db.addItems(context,buildDate())
+        db.addItems(context,buildNumber())
+        db.addItems(context,buildBoard())
+        db.addItems(context,buildBootloader())
+        db.addItems(context,buildBrand())
+        db.addItems(context,buildDevice())
+        db.addItems(context,buildDisplay())
+        db.addItems(context,buildFingerprint())
+        db.addItems(context,buildHardware())
+        db.addItems(context,buildHost())
+        db.addItems(context,buildTags())
+        db.addItems(context,buildType())
+        db.addItems(context,buildUser())
+        db.addItems(context,openGLVersion())
+        db.addItems(context,googlePlayServicesVersion())
+        db.addItems(context,googlePlayServicesInstallDate())
+        db.addItems(context,googlePlayServicesUpdatedDate())
     }
 
     private enum class Codenames {
@@ -62,7 +63,8 @@ internal class Software(activity: Activity, db: AppDatabase) {
         LOLLIPOP, LOLLIPOP_MR1,
         MARSHMALLOW,
         NOUGAT, NOUGAT_MR1,
-        OREO, OREO_MR1;
+        OREO, OREO_MR1,
+        PIE;
 
 
         companion object {
@@ -97,6 +99,7 @@ internal class Software(activity: Activity, db: AppDatabase) {
                         25 -> return NOUGAT_MR1
                         26 -> return OREO
                         27 -> return OREO_MR1
+                        28 -> return PIE
                         1000 -> return CUR_DEVELOPMENT
                         else -> return null
                     }
@@ -108,8 +111,7 @@ internal class Software(activity: Activity, db: AppDatabase) {
         val item = Item("Android Version", ItemType.SOFTWARE)
         try {
             val versionName = Codenames.codename?.toString() ?: ""
-            item.subtitle = Build.VERSION.RELEASE + " (" + Build.VERSION.SDK_INT.toString() + ") " +
-                    versionName
+            item.subtitle = "${Build.VERSION.RELEASE} (${Build.VERSION.SDK_INT}) $versionName"
         } catch (e: Exception) {
             Log.w(tag, "Null in getAndroidVersion")
         }
@@ -273,9 +275,10 @@ internal class Software(activity: Activity, db: AppDatabase) {
     private fun googlePlayServicesVersion(): Item {
         val item = Item("Google Play Services Version", ItemType.SOFTWARE)
         try {
-            val n = context.packageManager.getPackageInfo("com.google.android.gms", 0).versionName
-            val v = context.packageManager.getPackageInfo("com.google.android.gms", 0).versionCode
-            item.subtitle = n + " (" + v.toString() + ")"
+            val pi = context.packageManager.getPackageInfo("com.google.android.gms", 0)
+            val n =  pi.versionName
+            val v = PackageInfoCompat.getLongVersionCode(pi)
+            item.subtitle = "$n ($v)"
         } catch (e: Exception) {
             Log.e(tag, "Exception in getGooglePlayServicesVersion")
         }

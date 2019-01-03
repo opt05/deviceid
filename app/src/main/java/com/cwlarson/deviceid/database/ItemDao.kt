@@ -1,7 +1,8 @@
 package com.cwlarson.deviceid.database
 
-import android.arch.lifecycle.LiveData
-import android.arch.persistence.room.*
+import androidx.lifecycle.LiveData
+import androidx.paging.DataSource
+import androidx.room.*
 import com.cwlarson.deviceid.databinding.Item
 import com.cwlarson.deviceid.databinding.ItemType
 import com.cwlarson.deviceid.databinding.ItemTypeConverter
@@ -11,21 +12,21 @@ abstract class ItemDao {
 
     @Query("SELECT * FROM item WHERE itemtype = :type order by title")
     @TypeConverters(ItemTypeConverter::class)
-    abstract fun getAllItems(type: ItemType): LiveData<List<Item>>
+    abstract fun getAllItems(type: ItemType): DataSource.Factory<Int, Item>
 
     @Query("SELECT * FROM item WHERE unavailabletype IS NULL AND itemtype = :type order by title")
     @TypeConverters(ItemTypeConverter::class)
-    abstract fun getAllAvailableItems(type: ItemType): LiveData<List<Item>>
+    abstract fun getAllAvailableItems(type: ItemType): DataSource.Factory<Int, Item>
 
     @Query("SELECT * FROM item WHERE (title LIKE :query OR subtitle LIKE :query) order by title")
     @TypeConverters(ItemTypeConverter::class)
-    abstract fun getAllSearchItems(query: String): LiveData<List<Item>>
+    abstract fun getAllSearchItems(query: String): DataSource.Factory<Int, Item>
 
     @Query("SELECT * FROM item WHERE" +
             " (title LIKE :query OR subtitle LIKE :query)" +
             " AND unavailabletype IS NULL order by title")
     @TypeConverters(ItemTypeConverter::class)
-    abstract fun getAllAvailableSearchItems(query: String): LiveData<List<Item>>
+    abstract fun getAllAvailableSearchItems(query: String): DataSource.Factory<Int, Item>
 
     @Transaction
     @Query("SELECT * FROM item WHERE title = :title AND itemtype = :type LIMIT 1")

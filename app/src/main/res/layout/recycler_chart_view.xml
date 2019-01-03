@@ -10,7 +10,7 @@
         <variable name="item" type="com.cwlarson.deviceid.databinding.Item"/>
     </data>
 
-    <android.support.constraint.ConstraintLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:clipToPadding="false"
         android:layout_width="match_parent"
         android:layout_height="?listPreferredItemHeight"
@@ -21,19 +21,19 @@
         android:longClickable="true"
         android:onLongClick="@{() -> handler.onLongClick()}">
 
-        <android.support.constraint.Guideline
+        <androidx.constraintlayout.widget.Guideline
             android:id="@+id/guideline_top"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:layout_constraintGuide_begin="8dp"
             android:orientation="horizontal"/>
-        <android.support.constraint.Guideline
+        <androidx.constraintlayout.widget.Guideline
             android:id="@+id/guideline_bottom"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:layout_constraintGuide_end="8dp"
             android:orientation="horizontal"/>
-        <android.support.constraint.Guideline
+        <androidx.constraintlayout.widget.Guideline
             android:id="@+id/guideline_end"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -102,5 +102,5 @@
             app:layout_constraintVertical_chainStyle="packed"
             app:layout_constraintHorizontal_weight="1"/>
 
-    </android.support.constraint.ConstraintLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

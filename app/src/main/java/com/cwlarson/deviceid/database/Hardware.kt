@@ -1,6 +1,5 @@
 package com.cwlarson.deviceid.database
 
-import android.app.Activity
 import android.app.ActivityManager
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -10,12 +9,13 @@ import android.content.IntentFilter
 import android.os.AsyncTask
 import android.os.BatteryManager
 import android.os.Build
-import android.support.v4.content.ContextCompat
 import android.text.format.Formatter
 import android.util.DisplayMetrics
 import android.util.Log
 import android.view.Display
 import android.view.WindowManager
+import androidx.annotation.WorkerThread
+import androidx.core.content.ContextCompat
 import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.databinding.ChartItem
 import com.cwlarson.deviceid.databinding.Item
@@ -23,17 +23,17 @@ import com.cwlarson.deviceid.databinding.ItemType
 import java.io.File
 import java.lang.reflect.Method
 
-internal class Hardware(activity: Activity, db: AppDatabase) {
+@WorkerThread
+internal class Hardware(context: Context, db: AppDatabase) {
     private val tag = Hardware::class.java.simpleName
-    private val context: Context = activity.applicationContext
+    private val context: Context = context.applicationContext
 
     //Set Hardware Tiles
     init {
-        val itemAdder = ItemAdder(context, db)
-        itemAdder.addItems(deviceScreenDensity())
-        itemAdder.addItems(ramSize())
-        itemAdder.addItems(formattedInternalMemory())
-        itemAdder.addItems(formattedExternalMemory())
+        db.addItems(context,deviceScreenDensity())
+        db.addItems(context,ramSize())
+        db.addItems(context,formattedInternalMemory())
+        db.addItems(context,formattedExternalMemory())
         getBattery()
     }
 
@@ -60,7 +60,7 @@ internal class Hardware(activity: Activity, db: AppDatabase) {
                 width = mGetRawW.invoke(display) as Int
                 height = mGetRawH.invoke(display) as Int
             }
-            val sizeInPixels = " (" + Integer.toString(height) + "x" + Integer.toString(width) + ")"
+            val sizeInPixels = " (${height}x$width)"
 
             when (density) {
                 DisplayMetrics.DENSITY_LOW -> item.subtitle = "LDPI$sizeInPixels"

@@ -9,7 +9,7 @@
         <variable name="handler" type="com.cwlarson.deviceid.util.ItemClickHandler"/>
         <variable name="item" type="com.cwlarson.deviceid.databinding.Item"/>
     </data>
-    <android.support.constraint.ConstraintLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:clipToPadding="false"
         android:layout_width="match_parent"
         android:layout_height="?listPreferredItemHeight"
@@ -19,13 +19,13 @@
         android:onClick="@{() -> handler.onClick()}"
         android:longClickable="true"
         android:onLongClick="@{() -> handler.onLongClick()}">
-        <android.support.constraint.Guideline
+        <androidx.constraintlayout.widget.Guideline
             android:id="@+id/guideline_start"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:layout_constraintGuide_begin="?listPreferredItemPaddingLeft"
             android:orientation="vertical"/>
-        <android.support.constraint.Guideline
+        <androidx.constraintlayout.widget.Guideline
             android:id="@+id/guideline_end"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -65,5 +65,5 @@
             app:layout_constraintVertical_chainStyle="packed"/>
         <!-- (TextUtils.isEmpty(item.subtitle) ? @string/not_found : item.subtitle) -->
 
-    </android.support.constraint.ConstraintLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

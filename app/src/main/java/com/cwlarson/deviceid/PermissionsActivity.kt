@@ -1,15 +1,16 @@
 package com.cwlarson.deviceid
 
 import android.content.pm.PackageManager
-import android.support.v7.app.AppCompatActivity
-import android.support.v7.app.AppCompatDelegate
-
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import com.cwlarson.deviceid.database.AppDatabase
-import com.cwlarson.deviceid.database.DatabaseInitializer
+import com.cwlarson.deviceid.database.populateAsync
 import com.cwlarson.deviceid.databinding.UnavailablePermission
 
 abstract class PermissionsActivity : AppCompatActivity() {
-
+    init {
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_AUTO)
+    }
     /**
      * Callback for the result from requesting permissions. This method
      * is invoked for every call on [.requestPermissions].
@@ -32,16 +33,10 @@ abstract class PermissionsActivity : AppCompatActivity() {
         if (requestCode == UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE.value) {
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // GRANTED: Force new data updates
-                DatabaseInitializer.populateAsync(this, AppDatabase.getDatabase(this))
+                AppDatabase.getDatabase(this).populateAsync(this)
             } else {
                 // DENIED: We do nothing (it is handled by the ViewAdapter)
             }
-        }
-    }
-
-    companion object {
-        init {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_AUTO)
         }
     }
 }

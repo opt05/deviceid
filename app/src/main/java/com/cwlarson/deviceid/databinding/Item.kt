@@ -1,11 +1,11 @@
 package com.cwlarson.deviceid.databinding
 
-import android.arch.persistence.room.Embedded
-import android.arch.persistence.room.Entity
-import android.arch.persistence.room.TypeConverter
-import android.arch.persistence.room.TypeConverters
-import android.databinding.BaseObservable
-import android.databinding.Bindable
+import androidx.databinding.BaseObservable
+import androidx.databinding.Bindable
+import androidx.room.Embedded
+import androidx.room.Entity
+import androidx.room.TypeConverter
+import androidx.room.TypeConverters
 
 enum class ItemType(val value: Int) {
     NONE(-1),

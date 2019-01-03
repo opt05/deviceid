@@ -6,18 +6,18 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.pm.PackageManager
-import android.support.design.widget.Snackbar
-import android.support.v4.app.ActivityCompat
-import android.support.v4.app.ShareCompat
-import android.support.v4.content.ContextCompat
-import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.View
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.app.ShareCompat
+import androidx.core.content.ContextCompat
 import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.databinding.Item
 import com.cwlarson.deviceid.databinding.UnavailablePermission
 import com.cwlarson.deviceid.dialog.ItemClickDialog
+import com.google.android.material.snackbar.Snackbar
 
 class ItemClickHandler(var activity: Activity?, var item: Item?) {
 
@@ -88,20 +88,19 @@ class ItemClickHandler(var activity: Activity?, var item: Item?) {
             else -> return
         }
 
-        activity?.let {
-            if (ContextCompat.checkSelfPermission(it, permission) != PackageManager.PERMISSION_GRANTED) {
-                if (ActivityCompat.shouldShowRequestPermissionRationale(it, permission)) {
-                    if (it.findViewById<View>(android.R.id.content) != null) {
-                        Snackbar.make(it.findViewById<View>(android.R.id.content),
-                                it.resources.getString(R.string.phone_permission_snackbar, itemTitle),
-                                Snackbar.LENGTH_INDEFINITE).setAction(R.string.phone_permission_snackbar_button,
-                                { _ ->
-                                    ActivityCompat.requestPermissions(it,
-                                            arrayOf(permission), MY_PERMISSION.value)
-                                }).show()
+        activity?.let { act ->
+            if (ContextCompat.checkSelfPermission(act, permission) != PackageManager.PERMISSION_GRANTED) {
+                if (ActivityCompat.shouldShowRequestPermissionRationale(act, permission)) {
+                    if (act.findViewById<View>(android.R.id.content) != null) {
+                        Snackbar.make(act.findViewById<View>(android.R.id.content),
+                                act.resources.getString(R.string.phone_permission_snackbar,
+                                        itemTitle),
+                                Snackbar.LENGTH_INDEFINITE).setAction(R.string.phone_permission_snackbar_button
+                        ) { ActivityCompat.requestPermissions(act,
+                                arrayOf(permission), MY_PERMISSION.value) }.show()
                     }
                 } else {
-                    ActivityCompat.requestPermissions(it, arrayOf(permission), MY_PERMISSION.value)
+                    ActivityCompat.requestPermissions(act, arrayOf(permission), MY_PERMISSION.value)
                 }
             }
         }
