@@ -16,9 +16,9 @@
         android:background="?android:attr/selectableItemBackground"
         android:clickable="true"
         android:focusable="true"
-        android:onClick="@{() -> handler.onClick()}"
+        android:onClick="@{() -> handler.onClick(item)}"
         android:longClickable="true"
-        android:onLongClick="@{() -> handler.onLongClick()}">
+        android:onLongClick="@{() -> handler.onLongClick(item)}">
         <androidx.constraintlayout.widget.Guideline
             android:id="@+id/guideline_start"
             android:layout_width="wrap_content"
@@ -31,39 +31,39 @@
             android:layout_height="wrap_content"
             app:layout_constraintGuide_end="?listPreferredItemPaddingRight"
             android:orientation="vertical"/>
+
         <TextView
             android:id="@+id/item_title"
-            tools:text="Item Title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:lines="1"
             android:ellipsize="end"
+            android:lines="1"
             android:text="@{item.title}"
             android:textAppearance="?textAppearanceListItem"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/guideline_start"
             app:layout_constraintBottom_toTopOf="@+id/item_subtitle"
             app:layout_constraintEnd_toStartOf="@+id/guideline_end"
             app:layout_constraintHorizontal_weight="1"
-            app:layout_constraintVertical_chainStyle="packed"/>
+            app:layout_constraintStart_toEndOf="@+id/guideline_start"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_chainStyle="packed"
+            tools:text="Item Title"/>
 
         <TextView
             android:id="@+id/item_subtitle"
-            tools:text="Item Subtitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:textColor="?android:textColorSecondary"
-            android:maxLines="2"
             android:ellipsize="end"
-            android:text='@{item.unavailableitem!=null ? item.unavailableitem.unavailablesupporttext : item.subtitle}'
+            android:maxLines="2"
+            android:text='@{item.unavailableItem!=null ? item.unavailableItem.unavailableSupportText : item.subtitle}'
             android:textAppearance="?textAppearanceListItemSecondary"
-            app:layout_constraintTop_toBottomOf="@+id/item_title"
-            app:layout_constraintStart_toEndOf="@+id/guideline_start"
+            android:textColor="?android:textColorSecondary"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_weight="1"
-            app:layout_constraintVertical_chainStyle="packed"/>
-        <!-- (TextUtils.isEmpty(item.subtitle) ? @string/not_found : item.subtitle) -->
+            app:layout_constraintStart_toEndOf="@+id/guideline_start"
+            app:layout_constraintTop_toBottomOf="@+id/item_title"
+            app:layout_constraintVertical_chainStyle="packed"
+            tools:text="Item Subtitle"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

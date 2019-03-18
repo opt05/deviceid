@@ -16,6 +16,7 @@ release.properties
 # Generated files
 bin/
 gen/
+captures/
 
 # Java class files
 *.class
@@ -26,6 +27,7 @@ gen/
 .idea/libraries/
 .idea/workspace.xml
 .idea/tasks.xml
+.idea/navEditor.xml
 .idea/.name
 .idea/compiler.xml
 .idea/copyright/profiles_settings.xml

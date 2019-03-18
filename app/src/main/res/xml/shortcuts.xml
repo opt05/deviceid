@@ -9,7 +9,7 @@
         android:shortcutDisabledMessage="@string/search_disabled_message"
         tools:targetApi="n_mr1">
         <intent
-            android:action="com.cwlarson.deviceid.SEARCH"
+            android:action="android.intent.action.SEARCH"
             android:targetPackage="com.cwlarson.deviceid"
             android:targetClass="com.cwlarson.deviceid.MainActivity" />
         <!-- If your shortcut is associated with multiple intents, include them

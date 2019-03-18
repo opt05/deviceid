@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.preference.PreferenceScreen
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <androidx.preference.PreferenceCategory
+        android:title="@string/pref_title_app_settings">
+        <androidx.preference.SwitchPreferenceCompat
+            android:icon="@drawable/ic_hide_unable"
+            android:key="@string/pref_hide_unavailable_key"
+            android:title="@string/pref_hide_unavailable_title"
+            android:defaultValue="false"
+            android:summaryOff="@string/pref_hide_unavailable_summary_off"
+            android:summaryOn="@string/pref_hide_unavailable_summary_on" />
+        <androidx.preference.SeekBarPreference
+            android:icon="@drawable/ic_autorenew"
+            android:key="@string/pref_auto_refresh_rate_key"
+            android:title="@string/pref_auto_refresh_rate_title"
+            android:summary="@string/pref_auto_refresh_rate_summary"
+            app:showSeekBarValue="true"
+            android:defaultValue="0"
+            android:max="10"
+            app:min="0"/>
+        <androidx.preference.ListPreference
+            android:icon="@drawable/ic_dark_mode"
+            android:key="@string/pref_daynight_mode_key"
+            android:title="@string/pref_daynight_mode_title"
+            app:useSimpleSummaryProvider="true"
+            android:entries="@array/pref_daynight_mode_entries"
+            android:entryValues="@array/pref_daynight_mode_values"
+            android:defaultValue="@string/pref_night_mode_system"/>
+        <androidx.preference.SwitchPreferenceCompat
+            android:icon="@drawable/ic_history_search"
+            android:key="@string/pref_search_history_key"
+            android:title="@string/pref_search_history_title"
+            android:defaultValue="false"
+            android:summaryOff="@string/pref_search_history_summary_off"
+            android:summaryOn="@string/pref_search_history_summary_on" />
+    </androidx.preference.PreferenceCategory>
+</androidx.preference.PreferenceScreen>

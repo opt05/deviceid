@@ -5,7 +5,6 @@ import androidx.databinding.Bindable
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.TypeConverter
-import androidx.room.TypeConverters
 
 enum class ItemType(val value: Int) {
     NONE(-1),
@@ -22,49 +21,17 @@ class ItemTypeConverter {
     fun toInt(type: ItemType?): Int? = type?.value
 }
 
-/**
- * Helper class for recyclerview items
- */
 @Entity(tableName = "item",
-        primaryKeys = ["title", "itemtype"])
-@TypeConverters(ItemTypeConverter::class)
-open class Item(
+        primaryKeys = ["title", "itemType"])
+data class Item(
         @get:Bindable
         var title: String = "",
         @get:Bindable
-        @TypeConverters(ItemTypeConverter::class)
-        var itemtype : ItemType
-) : BaseObservable() {
-    @get:Bindable
-    var subtitle: String? = null
-    @get:Bindable
-    @Embedded
-    var chartitem : ChartItem? = null
-    @get:Bindable
-    @Embedded
-    var unavailableitem : UnavailableItem? = null
-
-    fun itemsTheSame(other: Any?): Boolean {
-        return other is Item &&
-                this.title == other.title &&
-                this.itemtype == other.itemtype
-    }
-
-    override fun equals(other: Any?): Boolean {
-        return other is Item &&
-                this.title == other.title &&
-                this.itemtype == other.itemtype &&
-                this.unavailableitem == other.unavailableitem &&
-                this.subtitle == other.subtitle &&
-                this.chartitem == other.chartitem
-    }
-
-    override fun hashCode(): Int {
-        var result = title.hashCode()
-        result = 31 * result + itemtype.hashCode()
-        result = 31 * result + (subtitle?.hashCode() ?: 0)
-        result = 31 * result + (chartitem?.hashCode() ?: 0)
-        result = 31 * result + (unavailableitem?.hashCode() ?: 0)
-        return result
-    }
-}
+        var itemType : ItemType,
+        @get:Bindable
+        var subtitle: String? = null,
+        @get:Bindable
+        @Embedded var chartItem : ChartItem? = null,
+        @get:Bindable
+        @Embedded var unavailableItem : UnavailableItem? = null
+): BaseObservable()

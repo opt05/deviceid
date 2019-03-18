@@ -9,7 +9,7 @@ Licensed under the MIT License. For complete licensing information see [LICENSE.
 This is a repository for the Android Device Info app that displays specific info about your Android device
 
 ### Build Tools ###
-* Android Studio 3.2.1 (Gradle 4.6)
+* Android Studio 3.3.2 (Gradle 4.10)
 * AndroidX/Jetpack
 * Android 4.0 (API 14) or above (built against 9/API 28)
 

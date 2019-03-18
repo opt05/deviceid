@@ -1,62 +1,59 @@
 package com.cwlarson.deviceid.database
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
-import android.telephony.TelephonyManager
 import android.util.Log
 import androidx.annotation.WorkerThread
 import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.databinding.*
+import com.cwlarson.deviceid.util.hasPermission
+import com.cwlarson.deviceid.util.telephonyManager
 
 @WorkerThread
-internal class Device(context: Context, db: AppDatabase) {
-    private val tag = Device::class.java.simpleName
-    private val context: Context = context.applicationContext
+internal class Device(private val context: Context, db: AppDatabase) {
+    companion object {
+        private const val TAG = "Device"
+    }
 
     init {
         //Set Device Tiles
-        db.addItems(context,*imei())
-        db.addItems(context,deviceModel())
-        db.addItems(context,serial())
-        db.addItems(context,androidID())
-        db.addItems(context,gsfid())
+        db.addItems(context,*imei(),deviceModel(),serial(),androidID(),gsfid())
     }
 
     // Request permission for IMEI/MEID for Android M+
     @SuppressLint("HardwareIds", "MissingPermission")
-    private fun imei(): Array<Item> {
-        val itemList = if(Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-            mutableListOf(Item("IMEI / MEID", ItemType.DEVICE))
+    private fun imei(): Array<Item> = if(Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            arrayOf(Item("IMEI / MEID", ItemType.DEVICE))
         } else {
-            mutableListOf(Item("IMEI", ItemType.DEVICE),Item("MEID", ItemType.DEVICE))
-        }
-        try {
-            if (Permissions(context).hasPermission(UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE)) {
-                val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-                    itemList[0].subtitle = @Suppress("DEPRECATION") telephonyManager.deviceId
-                } else {
-                    itemList[0].subtitle = telephonyManager.imei
-                    itemList[1].subtitle = telephonyManager.meid
-                }
-            } else {
-                for(item in itemList) {
-                    item.unavailableitem = UnavailableItem(UnavailableType.NEEDS_PERMISSION,
-                            context.resources.getString(R.string.phone_permission_denied),
-                            UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE)
-                }
+            arrayOf(Item("IMEI", ItemType.DEVICE),Item("MEID", ItemType.DEVICE))
+        }.apply {
+            try {
+                if (context.hasPermission(UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE)) {
+                    val telephonyManager = context.telephonyManager
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+                        get(0).subtitle = @Suppress("DEPRECATION") telephonyManager.deviceId
+                    } else {
+                        get(0).subtitle = telephonyManager.imei
+                        get(1).subtitle = telephonyManager.meid
+                    }
+                } else
+                    forEach { item ->
+                        item.unavailableItem = UnavailableItem(UnavailableType.NEEDS_PERMISSION,
+                                context.resources.getString(R.string.permission_item_subtitle,
+                                        context.packageManager.getPermissionInfo(Manifest.permission.READ_PHONE_STATE, 0)
+                                                .loadLabel(context.packageManager).toString().capitalize()),
+                                UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE)
+                    }
+            } catch (e: Exception) {
+                Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
             }
-        } catch (e: Exception) {
-            Log.w(tag, "Null in imei")
-        }
-        return itemList.toTypedArray()
     }
 
-    private fun deviceModel(): Item {
-        val item = Item("Model Number", ItemType.DEVICE)
+    private fun deviceModel() = Item("Model Number", ItemType.DEVICE).apply {
         var device = ""
         val manufacturer: String
         val product: String
@@ -71,48 +68,43 @@ internal class Device(context: Context, db: AppDatabase) {
                 "$manufacturer $model ($product)"
             }
         } catch (e: Exception) {
-            Log.w(tag, "Null in getDeviceModel")
+            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
-
-        item.subtitle = if (Character.isUpperCase(device[0])) device else Character.toUpperCase(device[0]) + device.substring(1)
-        return item
+        subtitle = if (Character.isUpperCase(device[0])) device else Character.toUpperCase(device[0]) + device.substring(1)
     }
 
     @SuppressLint("MissingPermission")
-    private fun serial(): Item {
-        val item = Item("Serial", ItemType.DEVICE)
+    private fun serial() = Item("Serial", ItemType.DEVICE).apply {
         if(Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             @Suppress("DEPRECATION") Build.SERIAL
         } else {
             try {
-                if (Permissions(context).hasPermission(UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE)) {
-                    item.subtitle = Build.getSerial()
+                if (context.hasPermission(UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE)) {
+                    subtitle = Build.getSerial()
                 } else {
-                    item.unavailableitem = UnavailableItem(UnavailableType.NEEDS_PERMISSION,
-                            context.resources.getString(R.string.phone_permission_denied),
+                    unavailableItem = UnavailableItem(UnavailableType.NEEDS_PERMISSION,
+                            context.resources.getString(R.string.permission_item_subtitle,
+                                    context.packageManager.getPermissionInfo(Manifest.permission
+                                            .READ_PHONE_STATE, 0).loadLabel(context.packageManager)
+                                            .toString().capitalize()),
                             UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE)
                 }
             } catch (e: Exception) {
-                Log.w(tag, "Null in serial")
+                Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
             }
         }
-        return item
     }
 
     @SuppressLint("HardwareIds")
-    private fun androidID(): Item {
-        val item = Item("Android/Hardware ID", ItemType.DEVICE)
+    private fun androidID() = Item("Android/Hardware ID", ItemType.DEVICE).apply {
         try {
-            item.subtitle = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+            subtitle = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
         } catch (e: Exception) {
-            Log.w(tag, "Null in androidID")
+            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
-
-        return item
     }
 
-    private fun gsfid(): Item {
-        val item = Item("Google Service Framework (GSF) ID", ItemType.DEVICE)
+    private fun gsfid() = Item("Google Service Framework (GSF) ID", ItemType.DEVICE).apply {
         try {
             val uri = Uri.parse("content://com.google.android.gsf.gservices")
             val idKey = "android_id"
@@ -125,7 +117,7 @@ internal class Device(context: Context, db: AppDatabase) {
                     c?.let {
                         val result = java.lang.Long.toHexString(java.lang.Long.parseLong(it.getString(1)))
                         if (!it.isClosed) it.close()
-                        item.subtitle = result
+                        subtitle = result
                     }
                 } catch (e: Exception) {
                     if (c?.isClosed != true) c?.close()
@@ -133,9 +125,7 @@ internal class Device(context: Context, db: AppDatabase) {
 
             }
         } catch (e: Exception) {
-            Log.w(tag, "Null in gsfid")
+            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
-
-        return item
     }
 }

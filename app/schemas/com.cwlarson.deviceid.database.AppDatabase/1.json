@@ -2,18 +2,12 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "01062f1bd460655076d1a2e76cfba3db",
+    "identityHash": "4032a5b88bc23a1d5e0fe23bd6190ba6",
     "entities": [
       {
         "tableName": "item",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`subtitle` TEXT, `title` TEXT NOT NULL, `itemtype` INTEGER NOT NULL, `chartaxis1` REAL, `chartaxis2` REAL, `chartdrawable` INTEGER, `unavailabletype` INTEGER, `unavailablesupporttext` TEXT, `unavailablepermissioncode` INTEGER, PRIMARY KEY(`title`, `itemtype`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`title` TEXT NOT NULL, `itemType` INTEGER NOT NULL, `subtitle` TEXT, `chartAxis1` REAL, `chartAxis2` REAL, `chartDrawable` INTEGER, `unavailableType` INTEGER, `unavailableSupportText` TEXT, `unavailablePermission` INTEGER, PRIMARY KEY(`title`, `itemType`))",
         "fields": [
-          {
-            "fieldPath": "subtitle",
-            "columnName": "subtitle",
-            "affinity": "TEXT",
-            "notNull": false
-          },
           {
             "fieldPath": "title",
             "columnName": "title",
@@ -21,44 +15,50 @@
             "notNull": true
           },
           {
-            "fieldPath": "itemtype",
-            "columnName": "itemtype",
+            "fieldPath": "itemType",
+            "columnName": "itemType",
             "affinity": "INTEGER",
             "notNull": true
           },
           {
-            "fieldPath": "chartitem.chartaxis1",
-            "columnName": "chartaxis1",
-            "affinity": "REAL",
-            "notNull": false
-          },
-          {
-            "fieldPath": "chartitem.chartaxis2",
-            "columnName": "chartaxis2",
-            "affinity": "REAL",
-            "notNull": false
-          },
-          {
-            "fieldPath": "chartitem.chartdrawable",
-            "columnName": "chartdrawable",
-            "affinity": "INTEGER",
-            "notNull": false
-          },
-          {
-            "fieldPath": "unavailableitem.unavailabletype",
-            "columnName": "unavailabletype",
-            "affinity": "INTEGER",
-            "notNull": false
-          },
-          {
-            "fieldPath": "unavailableitem.unavailablesupporttext",
-            "columnName": "unavailablesupporttext",
+            "fieldPath": "subtitle",
+            "columnName": "subtitle",
             "affinity": "TEXT",
             "notNull": false
           },
           {
-            "fieldPath": "unavailableitem.unavailablepermissioncode",
-            "columnName": "unavailablepermissioncode",
+            "fieldPath": "chartItem.chartAxis1",
+            "columnName": "chartAxis1",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "chartItem.chartAxis2",
+            "columnName": "chartAxis2",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "chartItem.chartDrawable",
+            "columnName": "chartDrawable",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "unavailableItem.unavailableType",
+            "columnName": "unavailableType",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "unavailableItem.unavailableSupportText",
+            "columnName": "unavailableSupportText",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "unavailableItem.unavailablePermission",
+            "columnName": "unavailablePermission",
             "affinity": "INTEGER",
             "notNull": false
           }
@@ -66,7 +66,7 @@
         "primaryKey": {
           "columnNames": [
             "title",
-            "itemtype"
+            "itemType"
           ],
           "autoGenerate": false
         },
@@ -76,7 +76,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, \"01062f1bd460655076d1a2e76cfba3db\")"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, \"4032a5b88bc23a1d5e0fe23bd6190ba6\")"
     ]
   }
 }

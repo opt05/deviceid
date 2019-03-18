@@ -1,26 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools">
+    tools:context=".SearchFragment">
     <data>
         <import type="android.view.View"/>
         <variable
-            name="isLoading"
-            type="boolean"/>
-        <variable
-            name="itemsCount"
-            type="int"/>
+            name="model"
+            type="com.cwlarson.deviceid.database.SearchItemsViewModel"/>
     </data>
     <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/top_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:showIn="@layout/activity_search">
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <ProgressBar
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             style="@style/Widget.AppCompat.ProgressBar"
-            android:visibility="@{isLoading?View.VISIBLE:View.GONE}"
+            android:visibility="@{safeUnbox(model.isLoading)?View.VISIBLE:View.GONE}"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
@@ -28,12 +27,12 @@
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler_view"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior"
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:clipToPadding="false"
             android:clipChildren="false"
-            android:paddingTop="8dp"
+            android:paddingTop="0dp"
             android:paddingBottom="8dp"
             tools:listitem="@layout/recycler_text_view"
             app:layout_constraintHorizontal_weight="1"
@@ -43,15 +42,14 @@
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintTop_toTopOf="parent"/>
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/textview_recyclerview_no_items"
-            android:textAppearance="@style/TextAppearance.AppCompat.Caption"
-            android:visibility="@{!isLoading &amp;&amp; itemsCount&lt;=0?View.VISIBLE:View.GONE}"
+        <include
+            android:id="@+id/no_items"
+            layout="@layout/no_items_layout"
+            app:isVisible="@{safeUnbox(model.itemsCount)&lt;=0}"
+            app:isSearch="@{true}"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
