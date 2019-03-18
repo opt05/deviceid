@@ -1,309 +1,264 @@
 package com.cwlarson.deviceid.database
 
-import android.app.Activity
-import android.app.ActivityManager
 import android.content.Context
 import android.os.Build
 import android.text.format.DateFormat
 import android.util.Log
+import androidx.annotation.WorkerThread
+import androidx.core.content.pm.PackageInfoCompat
 import com.cwlarson.deviceid.databinding.Item
 import com.cwlarson.deviceid.databinding.ItemType
 import com.cwlarson.deviceid.databinding.UnavailableItem
 import com.cwlarson.deviceid.databinding.UnavailableType
 import com.cwlarson.deviceid.util.SystemProperty
+import com.cwlarson.deviceid.util.activityManager
+import com.cwlarson.deviceid.util.gmsPackageInfo
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.*
 
-internal class Software(activity: Activity, db: AppDatabase) {
-    private val tag = Software::class.java.simpleName
-    private val context: Context = activity.applicationContext
+@WorkerThread
+internal class Software(private val context: Context, db: AppDatabase) {
+    companion object {
+        private const val TAG = "Software"
+    }
 
     init {
         //Set Software Tiles
-        val itemAdder = ItemAdder(context, db)
-        itemAdder.addItems(androidVersion())
-        itemAdder.addItems(patchLevel())
-        itemAdder.addItems(previewSDKInt())
-        itemAdder.addItems(deviceBuildVersion())
-        itemAdder.addItems(buildBaseband())
-        itemAdder.addItems(buildKernel())
-        itemAdder.addItems(buildDate())
-        itemAdder.addItems(buildNumber())
-        itemAdder.addItems(buildBoard())
-        itemAdder.addItems(buildBootloader())
-        itemAdder.addItems(buildBrand())
-        itemAdder.addItems(buildDevice())
-        itemAdder.addItems(buildDisplay())
-        itemAdder.addItems(buildFingerprint())
-        itemAdder.addItems(buildHardware())
-        itemAdder.addItems(buildHost())
-        itemAdder.addItems(buildTags())
-        itemAdder.addItems(buildType())
-        itemAdder.addItems(buildUser())
-        itemAdder.addItems(openGLVersion())
-        itemAdder.addItems(googlePlayServicesVersion())
-        itemAdder.addItems(googlePlayServicesInstallDate())
-        itemAdder.addItems(googlePlayServicesUpdatedDate())
+        db.addItems(context,androidVersion(),patchLevel(),previewSDKInt(),deviceBuildVersion(),
+                buildBaseband(),buildKernel(),buildDate(),buildNumber(),buildBoard(),
+                buildBootloader(),buildBrand(),buildDevice(),buildDisplay(),buildFingerprint(),
+                buildHardware(),buildHost(),buildTags(),buildType(),buildUser(),openGLVersion(),
+                googlePlayServicesVersion(),googlePlayServicesInstallDate(),
+                googlePlayServicesUpdatedDate())
     }
 
-    private enum class Codenames {
-        BASE, BASE_1_1,
-        CUPCAKE,
-        CUR_DEVELOPMENT,
-        DONUT,
-        ECLAIR, ECLAIR_MR1, ECLAIR_MR2,
-        FROYO,
-        GINGERBREAD, GINGERBREAD_MR1,
-        HONEYCOMB, HONEYCOMB_MR1, HONEYCOMB_MR2,
-        ICE_CREAM_SANDWICH, ICE_CREAM_SANDWICH_MR1,
-        JELLY_BEAN, JELLY_BEAN_MR1, JELLY_BEAN_MR2,
-        KITKAT, KITKAT_WATCH,
-        LOLLIPOP, LOLLIPOP_MR1,
-        MARSHMALLOW,
-        NOUGAT, NOUGAT_MR1,
-        OREO, OREO_MR1;
-
+    private enum class Codename(val value: Int) {
+        BASE(1), BASE_1_1(2),
+        CUPCAKE(3),
+        CUR_DEVELOPMENT(1000),
+        DONUT(4),
+        ECLAIR(5), ECLAIR_MR1(6), ECLAIR_MR2(7),
+        FROYO(8),
+        GINGERBREAD(9), GINGERBREAD_MR1(10),
+        HONEYCOMB(11), HONEYCOMB_MR1(12), HONEYCOMB_MR2(13),
+        ICE_CREAM_SANDWICH(14), ICE_CREAM_SANDWICH_MR1(15),
+        JELLY_BEAN(16), JELLY_BEAN_MR1(17), JELLY_BEAN_MR2(18),
+        KITKAT(19), KITKAT_WATCH(20),
+        LOLLIPOP(21), LOLLIPOP_MR1(22),
+        MARSHMALLOW(23),
+        NOUGAT(24), NOUGAT_MR1(25),
+        OREO(26), OREO_MR1(27),
+        PIE(28);
 
         companion object {
-            internal val codename: Codenames?
-                get() {
-                    val api = Build.VERSION.SDK_INT
-                    when (api) {
-                        1 -> return BASE
-                        2 -> return BASE_1_1
-                        3 -> return CUPCAKE
-                        4 -> return DONUT
-                        5 -> return ECLAIR
-                        6 -> return ECLAIR_MR1
-                        7 -> return ECLAIR_MR2
-                        8 -> return FROYO
-                        9 -> return GINGERBREAD
-                        10 -> return GINGERBREAD_MR1
-                        11 -> return HONEYCOMB
-                        12 -> return HONEYCOMB_MR1
-                        13 -> return HONEYCOMB_MR2
-                        14 -> return ICE_CREAM_SANDWICH
-                        15 -> return ICE_CREAM_SANDWICH_MR1
-                        16 -> return JELLY_BEAN
-                        17 -> return JELLY_BEAN_MR1
-                        18 -> return JELLY_BEAN_MR2
-                        19 -> return KITKAT
-                        20 -> return KITKAT_WATCH
-                        21 -> return LOLLIPOP
-                        22 -> return LOLLIPOP_MR1
-                        23 -> return MARSHMALLOW
-                        24 -> return NOUGAT
-                        25 -> return NOUGAT_MR1
-                        26 -> return OREO
-                        27 -> return OREO_MR1
-                        1000 -> return CUR_DEVELOPMENT
-                        else -> return null
-                    }
-                }
+            fun fromInt(value: Int) = values().firstOrNull { it.value == value }
         }
     }
 
-    private fun androidVersion(): Item {
-        val item = Item("Android Version", ItemType.SOFTWARE)
+    private fun androidVersion() = Item("Android Version", ItemType.SOFTWARE).apply {
         try {
-            val versionName = Codenames.codename?.toString() ?: ""
-            item.subtitle = Build.VERSION.RELEASE + " (" + Build.VERSION.SDK_INT.toString() + ") " +
-                    versionName
+            subtitle = "${Build.VERSION.RELEASE} (${Build.VERSION.SDK_INT}) ${Codename.fromInt(Build.VERSION.SDK_INT)?.toString().orEmpty()}"
         } catch (e: Exception) {
-            Log.w(tag, "Null in getAndroidVersion")
+            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
-
-        return item
     }
 
-    private fun patchLevel(): Item {
-        val item = Item("Security Patch Level", ItemType.SOFTWARE)
+    private fun patchLevel() = Item("Security Patch Level", ItemType.SOFTWARE).apply {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                try {
+                subtitle = try {
                     val template = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                     val patchDate = template.parse(Build.VERSION.SECURITY_PATCH)
                     val format = DateFormat.getBestDateTimePattern(Locale.getDefault(), "dMMMMyyyy")
-                    item.subtitle = DateFormat.format(format, patchDate).toString()
+                    DateFormat.format(format, patchDate).toString()
                 } catch (e: ParseException) {
                     e.printStackTrace()
-                    item.subtitle = Build.VERSION.SECURITY_PATCH
+                    Build.VERSION.SECURITY_PATCH
                 }
-
             } else {
-                item.unavailableitem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET, "6.0")
+                unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET, "6.0")
             }
         } catch (e: Exception) {
-            Log.w(tag, "Null in getAndroidVersion")
+            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
-
-        return item
     }
 
-    private fun previewSDKInt(): Item {
-        val item = Item("Preview SDK Number", ItemType.SOFTWARE)
+    private fun previewSDKInt() = Item("Preview SDK Number", ItemType.SOFTWARE).apply {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                val sdk = Build.VERSION.PREVIEW_SDK_INT
-                if (sdk == 0)
-                    item.subtitle = "Non-Preview"
-                else
-                    item.subtitle = "Preview " + Integer.toString(sdk)
+                subtitle = Build.VERSION.PREVIEW_SDK_INT.run {
+                    if(this == 0) "Non-Preview" else "Preview $this"
+                }
             } else {
-                item.unavailableitem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET, "6.0")
+                unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET, "6.0")
             }
         } catch (e: Exception) {
-            Log.w(tag, "Null in getPreviewSDKInt")
+            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
-
-        return item
     }
 
     //Get Moto specific build version if available
-    private fun deviceBuildVersion(): Item {
-        val item = Item("Build Version", ItemType.SOFTWARE)
-        val sp = SystemProperty(context)
-        item.subtitle = if (sp["ro.build.version.full"] == null || sp["ro.build.version.full"] == "") Build.DISPLAY else sp["ro.build.version.full"]
-        return item
-    }
-
-    private fun buildBaseband(): Item {
-        val item = Item("Build Baseband", ItemType.SOFTWARE)
-        item.subtitle = Build.getRadioVersion()
-        return item
-    }
-
-    private fun buildKernel(): Item {
-        val item = Item("Kernel Version", ItemType.SOFTWARE)
-        item.subtitle = System.getProperty("os.version")
-        return item
-    }
-
-    private fun buildDate(): Item {
-        val item = Item("Build Date", ItemType.SOFTWARE)
-        item.subtitle = SimpleDateFormat.getInstance().format(Date(Build.TIME))
-        return item
-    }
-
-    private fun buildNumber(): Item {
-        val item = Item("Build Number", ItemType.SOFTWARE)
-        item.subtitle = Build.ID
-        return item
-    }
-
-    private fun buildBoard(): Item  {
-        val item = Item("Build Board", ItemType.SOFTWARE)
-        item.subtitle = Build.BOARD
-        return item
-    }
-
-    private fun buildBootloader(): Item {
-        val item = Item("Build Bootloader", ItemType.SOFTWARE)
-        item.subtitle = Build.BOOTLOADER
-        return item
-    }
-
-    private fun buildBrand(): Item {
-        val item = Item("Build Brand", ItemType.SOFTWARE)
-        item.subtitle = Build.BRAND
-        return item
-    }
-
-    private fun buildDevice(): Item {
-        val item = Item("Build Brand", ItemType.SOFTWARE)
-        item.subtitle = Build.DEVICE
-        return item
-    }
-
-    private fun buildDisplay(): Item {
-        val item = Item("Build Display", ItemType.SOFTWARE)
-        item.subtitle = Build.DISPLAY
-        return item
-    }
-
-    private fun buildFingerprint(): Item {
-        val item = Item("Build Fingerprint", ItemType.SOFTWARE)
-        item.subtitle = Build.FINGERPRINT
-        return item
-    }
-
-    private fun buildHardware(): Item {
-        val item = Item("Build Hardware", ItemType.SOFTWARE)
-        item.subtitle = Build.HARDWARE
-        return item
-    }
-
-    private fun buildHost(): Item {
-        val item = Item("Build Host", ItemType.SOFTWARE)
-        item.subtitle = Build.HOST
-        return item
-    }
-
-    private fun buildTags(): Item {
-        val item = Item("Build Tags", ItemType.SOFTWARE)
-        item.subtitle = Build.TAGS
-        return item
-    }
-
-    private fun buildType(): Item {
-        val item = Item("Build Type", ItemType.SOFTWARE)
-        item.subtitle = Build.TYPE
-        return item
-    }
-
-    private fun buildUser(): Item {
-        val item = Item("Build User", ItemType.SOFTWARE)
-        item.subtitle = Build.USER
-        return item
-    }
-
-    private fun openGLVersion(): Item {
-        val item = Item("OpenGL Version", ItemType.SOFTWARE)
+    private fun deviceBuildVersion() = Item("Build Version", ItemType.SOFTWARE).apply {
         try {
-            val configurationInfo = (context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).deviceConfigurationInfo
-            item.subtitle = configurationInfo.glEsVersion
+            val sp = SystemProperty(context)
+            subtitle = if (sp["ro.build.version.full"] == null || sp["ro.build.version.full"] == "") Build.DISPLAY else sp["ro.build.version.full"]
         } catch (e: Exception) {
-            Log.e(tag, "Exception in getOpenGLVersion")
+            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
-
-        return item
     }
 
-    private fun googlePlayServicesVersion(): Item {
-        val item = Item("Google Play Services Version", ItemType.SOFTWARE)
+    private fun buildBaseband() = Item("Build Baseband", ItemType.SOFTWARE).apply {
         try {
-            val n = context.packageManager.getPackageInfo("com.google.android.gms", 0).versionName
-            val v = context.packageManager.getPackageInfo("com.google.android.gms", 0).versionCode
-            item.subtitle = n + " (" + v.toString() + ")"
+            subtitle = Build.getRadioVersion()
         } catch (e: Exception) {
-            Log.e(tag, "Exception in getGooglePlayServicesVersion")
+            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
-
-        return item
     }
 
-    private fun googlePlayServicesInstallDate(): Item {
-        val item = Item("Google Play Services Installed", ItemType.SOFTWARE)
+    private fun buildKernel() = Item("Kernel Version", ItemType.SOFTWARE).apply {
         try {
-            val t = context.packageManager.getPackageInfo("com.google.android.gms", 0).firstInstallTime
-            item.subtitle = DateFormat.getDateFormat(context).format(t)
+            subtitle = System.getProperty("os.version")
         } catch (e: Exception) {
-            Log.e(tag, "Exception in getGooglePlayServicesVersion")
+            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
-
-        return item
     }
 
-    private fun googlePlayServicesUpdatedDate(): Item {
-        val item = Item("Google Play Services Updated", ItemType.SOFTWARE)
+    private fun buildDate() = Item("Build Date", ItemType.SOFTWARE).apply {
         try {
-            val t = context.packageManager.getPackageInfo("com.google.android.gms", 0).lastUpdateTime
-            item.subtitle = DateFormat.getDateFormat(context).format(t)
+            subtitle = SimpleDateFormat.getInstance().format(Date(Build.TIME))
         } catch (e: Exception) {
-            Log.e(tag, "Exception in getGooglePlayServicesVersion")
+            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
+    }
 
-        return item
+    private fun buildNumber() = Item("Build Number", ItemType.SOFTWARE).apply {
+        try {
+            subtitle = Build.ID
+        } catch (e: Exception) {
+            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+        }
+    }
+
+    private fun buildBoard() = Item("Build Board", ItemType.SOFTWARE).apply {
+        try {
+            subtitle = Build.BOARD
+        } catch (e: Exception) {
+            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+        }
+    }
+
+    private fun buildBootloader() = Item("Build Bootloader", ItemType.SOFTWARE).apply {
+        try {
+            subtitle = Build.BOOTLOADER
+        } catch (e: Exception) {
+            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+        }
+    }
+
+    private fun buildBrand() = Item("Build Brand", ItemType.SOFTWARE).apply {
+        try {
+            subtitle = Build.BRAND
+        } catch (e: Exception) {
+            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+        }
+    }
+
+    private fun buildDevice() = Item("Build Device", ItemType.SOFTWARE).apply {
+        try {
+            subtitle = Build.DEVICE
+        } catch (e: Exception) {
+            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+        }
+    }
+
+    private fun buildDisplay() = Item("Build Display", ItemType.SOFTWARE).apply {
+        try {
+            subtitle = Build.DISPLAY
+        } catch (e: Exception) {
+            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+        }
+    }
+
+    private fun buildFingerprint() = Item("Build Fingerprint", ItemType.SOFTWARE).apply {
+        try {
+            subtitle = Build.FINGERPRINT
+        } catch (e: Exception) {
+            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+        }
+    }
+
+    private fun buildHardware() = Item("Build Hardware", ItemType.SOFTWARE).apply {
+        try {
+            subtitle = Build.HARDWARE
+        } catch (e: Exception) {
+            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+        }
+    }
+
+    private fun buildHost() = Item("Build Host", ItemType.SOFTWARE).apply {
+        try {
+            subtitle = Build.HOST
+        } catch (e: Exception) {
+            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+        }
+    }
+
+    private fun buildTags() = Item("Build Tags", ItemType.SOFTWARE).apply {
+        try {
+            subtitle = Build.TAGS
+        } catch (e: Exception) {
+            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+        }
+    }
+
+    private fun buildType() = Item("Build Type", ItemType.SOFTWARE).apply {
+        try {
+            subtitle = Build.TYPE
+        } catch (e: Exception) {
+            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+        }
+    }
+
+    private fun buildUser() = Item("Build User", ItemType.SOFTWARE).apply {
+        try {
+            subtitle = Build.USER
+        } catch (e: Exception) {
+            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+        }
+    }
+
+    private fun openGLVersion() = Item("OpenGL Version", ItemType.SOFTWARE).apply {
+        try {
+            subtitle = context.activityManager.deviceConfigurationInfo.glEsVersion
+        } catch (e: Exception) {
+            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+        }
+    }
+
+    private fun googlePlayServicesVersion() = Item("Google Play Services Version", ItemType.SOFTWARE).apply {
+        try {
+            val pi = context.gmsPackageInfo
+            val v = PackageInfoCompat.getLongVersionCode(pi)
+            subtitle = "${pi.versionName} ($v)"
+        } catch (e: Exception) {
+            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+        }
+    }
+
+    private fun googlePlayServicesInstallDate() = Item("Google Play Services Installed", ItemType.SOFTWARE).apply {
+        try {
+            subtitle = DateFormat.getDateFormat(context).format(context.gmsPackageInfo.firstInstallTime)
+        } catch (e: Exception) {
+            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+        }
+    }
+
+    private fun googlePlayServicesUpdatedDate() = Item("Google Play Services Updated", ItemType.SOFTWARE).apply {
+        try {
+            subtitle = DateFormat.getDateFormat(context).format(context.gmsPackageInfo.lastUpdateTime)
+        } catch (e: Exception) {
+            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+        }
     }
 }

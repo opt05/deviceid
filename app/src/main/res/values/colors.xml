@@ -1,7 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="primary_color">#37474f</color><!--500-->
-    <color name="primary_dark">#263238</color><!--700-->
-    <color name="accent_color">#009688</color><!--500-->
-    <color name="chart_bar_background">#E0E0E0</color>
+    <color name="colorPrimary">#37474f</color>
+    <color name="colorPrimaryVariant">#263238</color>
+    <!--Secondary colors are best for:-->
+    <!--Floating action buttons-->
+    <!--Selection controls, like sliders and switches-->
+    <!--Highlighting selected text-->
+    <!--Progress bars-->
+    <!--Links and headlines-->
+    <color name="colorSecondary">#009688</color>
+    <!--Secondary color can have dark and light variants-->
+    <color name="colorSecondaryVariant">#018786</color>
+    <!--Surface colors affect surfaces of components, such as cards, sheets, and menus.-->
+    <color name="colorSurface">#FFFFFF</color>
+    <!--Error color indicates errors components, such as text fields-->
+    <color name="colorError">#B00020</color>
+    <!--Typography and iconography colors-->
+    <color name="colorOnPrimary">#FFFFFF</color>
+    <color name="colorOnSecondary">#000000</color>
+    <color name="colorOnBackground">#000000</color>
+    <color name="colorOnSurface">#000000</color>
+    <color name="colorOnError">#FFFFFF</color>
+    <color name="colorScrim">#52000000</color>
+
+    <color name="overflowIconColor">#8a000000</color>
 </resources>

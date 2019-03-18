@@ -1,23 +1,23 @@
 package com.cwlarson.deviceid.databinding
 
-import android.arch.persistence.room.Ignore
-import android.databinding.BaseObservable
-import android.databinding.Bindable
-import android.support.annotation.DrawableRes
+import androidx.annotation.DrawableRes
+import androidx.databinding.BaseObservable
+import androidx.databinding.Bindable
+import androidx.room.Ignore
 
 data class ChartItem(
         @get:Bindable
-        var chartaxis1 : Float,
+        var chartAxis1 : Float,
         @get:Bindable
-        var chartaxis2 : Float,
+        var chartAxis2 : Float,
         @get:Bindable
         @DrawableRes
-        var chartdrawable : Int
-) : BaseObservable() {
-        @get:Bindable
+        var chartDrawable : Int
+): BaseObservable() {
         @Ignore
-        val chartpercentage : Int
-                = if(chartaxis1 == 0f && chartaxis2 == 0f) 0 else 100 -
-                        ((if(chartaxis1 > chartaxis2) chartaxis2 / chartaxis1
-                        else chartaxis1 / chartaxis2) * 100).toInt()
+        @get:Bindable
+        val chartPercentage : Int
+                = if(chartAxis1 == 0f && chartAxis2 == 0f) 0 else 100 -
+                        ((if(chartAxis1 > chartAxis2) chartAxis2 / chartAxis1
+                        else chartAxis1 / chartAxis2) * 100).toInt()
 }

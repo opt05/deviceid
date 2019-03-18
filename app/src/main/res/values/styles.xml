@@ -1,35 +1,51 @@
-<resources>
-
+<resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.DayNight.DarkActionBar">
+    <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- Customize your theme here. -->
-        <item name="colorPrimary">@color/primary_color</item>
-        <item name="colorPrimaryDark">@color/primary_dark</item>
-        <item name="colorAccent">@color/accent_color</item>
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryVariant</item>
+        <item name="colorSecondary">@color/colorSecondary</item>
+        <item name="colorError">@color/colorError</item>
+        <!-- New MaterialComponents attributes. -->
+        <item name="colorPrimaryVariant">@color/colorPrimaryVariant</item>
+        <item name="colorSecondaryVariant">@color/colorSecondaryVariant</item>
+        <item name="colorSurface">@color/colorSurface</item>
+        <item name="colorOnPrimary">@color/colorOnPrimary</item>
+        <item name="colorOnSecondary">@color/colorOnSecondary</item>
+        <item name="colorOnBackground">@color/colorOnBackground</item>
+        <item name="colorOnError">@color/colorOnError</item>
+        <item name="colorOnSurface">@color/colorOnSurface</item>
+        <item name="scrimBackground">@color/colorScrim</item>
+        <item name="fontFamily">@font/open_sans</item>
+        <item name="android:navigationBarColor" tools:targetApi="lollipop">?colorPrimaryDark</item>
     </style>
 
-    <style name="AppTheme.MainTheme" parent="AppTheme">
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
+    <style name="AppTheme.SearchBarTheme" parent="ThemeOverlay.MaterialComponents.Light">
+        <item name="fontFamily">@font/open_sans</item>
     </style>
 
-    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar"/>
+    <style name="AppTheme.ToolbarTheme" parent="ThemeOverlay.MaterialComponents.Dark.ActionBar">
+        <item name="fontFamily">@font/ubuntu_bold</item>
+    </style>
 
-    <style name="AppTheme.PopupThemeOverlay" parent="Theme.AppCompat.DayNight"/>
+    <style name="AppTheme.ActionMenuViewOverlay" parent="Theme.MaterialComponents.DayNight">
+        <item name="colorControlNormal">@color/overflowIconColor</item>
+    </style>
 
-    <style name="AppTheme.SplashTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
-        <item name="android:windowTitleSize">@dimen/toolbar_placeholder_height</item>
+    <style name="AppTheme.BottomBarButtonStyle" parent="Widget.MaterialComponents.Button.TextButton.Icon">
+        <item name="colorPrimary">@color/colorSecondary</item>
+    </style>
+
+    <style name="AppTheme.SplashTheme" parent="AppTheme">
+        <item name="android:windowTitleSize">?actionBarSize</item>
         <item name="android:windowTitleStyle">@style/CustomWindowTitle</item>
         <item name="android:windowTitleBackgroundStyle">@style/CustomWindowTitleBackground</item>
         <item name="android:windowNoTitle">false</item>
-        <item name="colorPrimary">@color/primary_color</item>
-        <item name="colorPrimaryDark">@color/primary_dark</item>
-        <item name="colorAccent">@color/accent_color</item>
     </style>
 
     <!-- Changes the background color of the title bar -->
     <style name="CustomWindowTitleBackground">
-        <item name="android:background">@color/primary_color</item>
+        <item name="android:background">?colorPrimary</item>
     </style>
 
     <!-- Set the theme for the window title -->

@@ -3,16 +3,15 @@
 
     <!-- Define the background properties like color etc -->
     <item android:id="@android:id/background"
-        android:drawable="@color/chart_bar_background"/>
+        android:drawable="@android:color/transparent"/>
 
     <!-- Define the progress properties like start color, end color etc -->
     <item android:id="@android:id/progress">
         <clip>
             <shape>
                 <gradient
-                    android:startColor="@color/accent_color"
-                    android:endColor="@color/accent_color"
-                    />
+                    android:startColor="@color/colorSecondary"
+                    android:endColor="@color/colorSecondary"/>
             </shape>
         </clip>
     </item>

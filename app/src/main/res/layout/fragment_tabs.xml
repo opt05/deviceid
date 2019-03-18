@@ -1,50 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
-        xmlns:tools="http://schemas.android.com/tools">
+        xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".MainActivity$TabFragment">
     <data>
         <import type="android.view.View"/>
         <variable
-            name="itemsCount"
-            type="int"/>
+            name="model"
+            type="com.cwlarson.deviceid.database.AllItemsViewModel"/>
     </data>
-    <android.support.constraint.ConstraintLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/top_layout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        <android.support.v4.widget.SwipeRefreshLayout
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
             android:id="@+id/swipe_to_refresh_layout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:layout_behavior="@string/appbar_scrolling_view_behavior"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent">
-            <android.support.v7.widget.RecyclerView
+            <androidx.recyclerview.widget.RecyclerView
                 android:paddingTop="8dp"
                 android:clipToPadding="false"
                 android:id="@+id/recycler_view"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 tools:listitem="@layout/recycler_text_view"
-                app:animatedVisibility="@{itemsCount>0?View.VISIBLE:View.GONE}"
-                tools:visibility="visible"
-                android:visibility="gone"/>
-        </android.support.v4.widget.SwipeRefreshLayout>
+                app:layout_behavior="@string/appbar_scrolling_view_behavior"
+                app:animatedVisibility="@{safeUnbox(model.itemsCount)>0?View.VISIBLE:View.GONE}"/>
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-        <TextView
-            android:textColor="?android:textColorSecondary"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/textview_recyclerview_no_items"
-            app:animatedVisibility="@{itemsCount&lt;=0?View.VISIBLE:View.GONE}"
-            android:gravity="center"
-            app:layout_constraintStart_toStartOf="parent"
+        <include
+            android:id="@+id/no_items"
+            layout="@layout/no_items_layout"
+            app:isVisible="@{safeUnbox(model.itemsCount)&lt;=0}"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"/>
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"/>
 
-    </android.support.constraint.ConstraintLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

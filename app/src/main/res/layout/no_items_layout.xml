@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        tools:context=".MainActivity$TabFragment">
+    <data>
+        <import type="com.cwlarson.deviceid.R"/>
+        <import type="android.view.View"/>
+        <variable name="isVisible" type="boolean"/>
+        <variable name="isSearch" type="boolean"/>
+    </data>
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:animatedVisibility="@{isVisible ? View.VISIBLE : View.GONE}"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <ImageView
+            android:id="@+id/no_items_icon"
+            android:layout_width="wrap_content"
+            android:layout_height="120dp"
+            android:adjustViewBounds="true"
+            app:srcCompatBinding="@{isSearch ? R.drawable.ic_no_items_search : R.drawable.ic_no_items}"
+            tools:src="@drawable/ic_no_items"
+            app:layout_constraintBottom_toTopOf="@id/no_items_text"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_chainStyle="packed"
+            android:contentDescription="@string/imageview_recyclerview_no_items_desc"/>
+
+        <TextView
+            android:id="@+id/no_items_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@{isSearch ? @string/textview_recyclerview_no_search_items : @string/textview_recyclerview_no_items}"
+            tools:text="@string/textview_recyclerview_no_items"
+            android:textAppearance="?textAppearanceHeadline6"
+            android:layout_marginTop="32dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/no_items_icon"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

@@ -1,24 +1,34 @@
 package com.cwlarson.deviceid.database
 
 import android.app.Application
-import android.arch.lifecycle.AndroidViewModel
-import android.arch.lifecycle.LiveData
-import android.arch.lifecycle.MutableLiveData
-import android.arch.lifecycle.Transformations
+import android.content.Context
+import androidx.lifecycle.*
+import androidx.paging.PagedList
+import androidx.paging.toLiveData
 import com.cwlarson.deviceid.databinding.Item
 import com.cwlarson.deviceid.databinding.ItemType
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlin.coroutines.CoroutineContext
 
-class AllItemsViewModel(application: Application) : AndroidViewModel(application) {
-    private val mDatabase: AppDatabase = AppDatabase.getDatabase(application)
-    private var mItems: LiveData<List<Item>>? = null
-    private val mHideUnavailable = MutableLiveData<Boolean>()
-    private val mStatus = MutableLiveData<Status>()
-
-    val status: LiveData<Status>
-        get() = mStatus
-
+class AllItemsViewModel(application: Application) : AndroidViewModel(application), CoroutineScope {
+    private val database = AppDatabase.getDatabase(application)
+    private var items: LiveData<PagedList<Item>>? = null
+    private val hideUnavailable = MutableLiveData<Boolean>()
+    val status = MutableLiveData<Status?>()
+    val itemsCount = MutableLiveData<Int>()
     init {
-        mHideUnavailable.value = false
+        hideUnavailable.value = false
+    }
+    private val job = Job()
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.IO + job
+
+    override fun onCleared() {
+        super.onCleared()
+        job.cancel()
     }
 
     /**
@@ -26,74 +36,109 @@ class AllItemsViewModel(application: Application) : AndroidViewModel(application
      * @param itemType The type of tab to fetch correct data
      * @return LiveData of all the items of specified type
      */
-    fun getAllItems(itemType: ItemType?): LiveData<List<Item>>? {
-        if (mItems == null) {
-            mItems = Transformations.switchMap(mHideUnavailable) { hideUnavailable ->
+    fun getAllItems(itemType: ItemType?): LiveData<PagedList<Item>>? {
+        if (items == null) {
+            items = Transformations.switchMap(hideUnavailable) { hideUnavailable ->
                 if (hideUnavailable) {
-                    itemType?.let { mDatabase.itemDao().getAllAvailableItems(it) }
+                    itemType?.let { database.itemDao().getAllAvailableItems(it).toLiveData(20) }
                 } else {
-                    itemType?.let { mDatabase.itemDao().getAllItems(it) }
+                    itemType?.let { database.itemDao().getAllItems(it).toLiveData(20) }
                 }
             }
         }
-        return mItems
+        return items
     }
 
     fun setHideUnavailable(hideUnavailable: Boolean) {
-        this.mHideUnavailable.value = hideUnavailable
+        this.hideUnavailable.value = hideUnavailable
     }
 
-    fun setStatus(status: Status) {
-        this.mStatus.value = status
+    fun refreshData(context: Context?, itemType: ItemType?, noStatus: Boolean = false) {
+        launch {
+            if(!noStatus) status.postValue(Status.LOADING)
+            status.postValue(database.populateAsync(context, itemType).await())
+        }
     }
-
 }
 
 class SearchItemsViewModel(application: Application) : AndroidViewModel(application) {
-    private val mDatabase: AppDatabase = AppDatabase.getDatabase(application)
-    private var mItems: LiveData<List<Item>>? = null
-    private val mHideUnavailable = MutableLiveData<Boolean>()
-
+    private val database = AppDatabase.getDatabase(application)
+    private val searchText = MutableLiveData<String?>()
+    private val hideUnavailable = MutableLiveData<Boolean>()
+    val itemsCount = MutableLiveData<Int>()
+    val isLoading = MutableLiveData<Boolean>()
     init {
-        mHideUnavailable.value = false
+        hideUnavailable.value = false
+        itemsCount.value = 0
+        isLoading.value = true
+    }
+    val searchItems: LiveData<PagedList<Item>> = Transformations.switchMap(DoubleTrigger(searchText, hideUnavailable)) { pair ->
+        when {
+            pair.first.isNullOrBlank() -> MutableLiveData<PagedList<Item>>().apply { value = null }
+            pair.second == true -> database.itemDao().getAllAvailableSearchItems("%${pair.first}%").toLiveData(20)
+            else -> database.itemDao().getAllSearchItems("%${pair.first}%").toLiveData(20)
+        }
     }
 
     /**
-     * Used by SearchActivity
-     * @return LiveData of all items
+     * Used by [com.cwlarson.deviceid.MainActivity]
+     * to give search text to [com.cwlarson.deviceid.SearchFragment]
      */
-    fun getAllSearchItems(searchString: String): LiveData<List<Item>>? {
-        if (mItems == null) {
-            mItems = Transformations.switchMap(mHideUnavailable) { hideUnavailable ->
-                if (hideUnavailable) {
-                    mDatabase.itemDao().getAllAvailableSearchItems("%$searchString%")
-                } else {
-                    mDatabase.itemDao().getAllSearchItems("%$searchString%")
-                }
-            }
-        }
-        return mItems
+    fun setSearchText(searchString: String?) {
+        this.searchText.value = searchString
     }
 
     fun setHideUnavailable(hideUnavailable: Boolean) {
-        this.mHideUnavailable.value = hideUnavailable
+        this.hideUnavailable.value = hideUnavailable
     }
 
 }
 
 class BottomSheetViewModel(application: Application) : AndroidViewModel(application) {
-    private var item: LiveData<Item>? = null
-    private val mDatabase: AppDatabase = AppDatabase.getDatabase(application)
-
+    private val database = AppDatabase.getDatabase(application)
+    private val itemDetails = MutableLiveData<Pair<String, ItemType>?>()
+    var item: LiveData<Item?> = Transformations.switchMap(itemDetails) { pair ->
+        database.itemDao().getItem(pair?.first, pair?.second)
+    }
     /**
      * Used by ItemClickDialog
      * @return LiveData of all items
      */
-    fun getItem(title: String, type: ItemType): LiveData<Item>? {
-        if (item == null) {
-            item = mDatabase.itemDao().getItem(title, type)
-        }
-        return item
+    fun setItem(title: String, type: ItemType) {
+        itemDetails.value = Pair(title, type)
+    }
+}
+
+class MainActivityViewModel(application: Application) : AndroidViewModel(application), CoroutineScope {
+    private val database = AppDatabase.getDatabase(application)
+    var hideSearchBar = MutableLiveData<Boolean>()
+    var hideBottomBar = MutableLiveData<Boolean>()
+    var isSearchOpen = MutableLiveData<Boolean>()
+    //Toolbar padding
+    var contentInsetStartWithNavigationDefault: Int = 0
+    var contentInsetStartDefault: Int = 0
+    var contentInsetEndDefault: Int = 0
+    var titleVisibility = MutableLiveData<Pair<Boolean, Int>>()
+    private val job = Job()
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.IO + job
+
+    override fun onCleared() {
+        super.onCleared()
+        job.cancel()
     }
 
+    fun loadAllData(context: Context?) {
+        @Suppress("DeferredResultUnused")
+        launch {
+            database.populateAsync(context)
+        }
+    }
+}
+
+class DoubleTrigger<A, B>(a: LiveData<A>, b: LiveData<B>) : MediatorLiveData<Pair<A?, B?>>() {
+    init {
+        addSource(a) { value = it to b.value }
+        addSource(b) { value = a.value to it }
+    }
 }

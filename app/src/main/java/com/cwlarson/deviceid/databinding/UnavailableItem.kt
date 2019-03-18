@@ -1,10 +1,8 @@
 package com.cwlarson.deviceid.databinding
 
-import android.arch.persistence.room.Ignore
-import android.arch.persistence.room.TypeConverter
-import android.arch.persistence.room.TypeConverters
-import android.databinding.BaseObservable
-import android.databinding.Bindable
+import androidx.databinding.BaseObservable
+import androidx.databinding.Bindable
+import androidx.room.TypeConverter
 
 enum class UnavailableType(val value: Int) {
     NOT_FOUND(1), NO_LONGER_POSSIBLE(2), NOT_POSSIBLE_YET(3),
@@ -33,19 +31,10 @@ class UnavailablePermissionConverter {
     fun toInt(permission: UnavailablePermission?): Int? = permission?.value
 }
 
-@TypeConverters(UnavailableTypeConverter::class, UnavailablePermissionConverter::class)
 data class UnavailableItem(
         @get:Bindable
-        @TypeConverters(UnavailableTypeConverter::class)
-        var unavailabletype : UnavailableType?,
+        var unavailableType : UnavailableType?,
         @get:Bindable
-        var unavailablesupporttext : String?,
+        var unavailableSupportText : String?,
         @get:Bindable
-        @TypeConverters(UnavailablePermissionConverter::class)
-        var unavailablepermissioncode : UnavailablePermission?) : BaseObservable() {
-
-        @Ignore
-        constructor(type: UnavailableType?, text: String?) : this(unavailabletype = type,
-                unavailablesupporttext = text, unavailablepermissioncode = null)
-
-}
+        var unavailablePermission : UnavailablePermission? = null) : BaseObservable()

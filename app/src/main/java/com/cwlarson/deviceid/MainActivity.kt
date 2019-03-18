@@ -1,126 +1,249 @@
 package com.cwlarson.deviceid
 
-import android.app.SearchManager
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
-import android.databinding.DataBindingUtil
+import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.os.Bundle
-import android.preference.PreferenceManager
-import android.support.v7.widget.SearchView
-import android.text.TextUtils
-import android.view.Menu
-import android.view.MenuItem
-import com.cwlarson.deviceid.database.AppDatabase
+import android.util.Log
+import android.util.TypedValue
+import android.view.View
+import android.widget.ArrayAdapter
+import android.widget.Filter
+import androidx.annotation.ColorRes
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SearchView
+import androidx.core.content.edit
+import androidx.databinding.DataBindingUtil
+import androidx.lifecycle.ViewModelProviders
+import androidx.lifecycle.get
+import androidx.navigation.findNavController
+import androidx.navigation.ui.AppBarConfiguration
+import androidx.navigation.ui.onNavDestinationSelected
+import androidx.navigation.ui.setupActionBarWithNavController
+import androidx.navigation.ui.setupWithNavController
+import com.cwlarson.deviceid.database.SearchItemsViewModel
 import com.cwlarson.deviceid.databinding.ActivityMainBinding
-import com.cwlarson.deviceid.util.TabsViewPagerAdapter
+import com.cwlarson.deviceid.databinding.UnavailablePermission
+import com.cwlarson.deviceid.util.SearchClickHandler
+import kotlinx.coroutines.*
+import org.json.JSONArray
+import java.util.concurrent.TimeUnit
+import kotlin.coroutines.CoroutineContext
 
-
-class MainActivity : PermissionsActivity() {
-    private var mAdapter: TabsViewPagerAdapter? = null
-    private var mSearchViewMenuItem: MenuItem? = null
-    private var mSearchView: SearchView? = null
-    private var launchSearch: Boolean = false
-    private var mSearchString: String? = null
-    private var mSearchFocus: Boolean = false
+class MainActivity : AppCompatActivity(), CoroutineScope, SharedPreferences.OnSharedPreferenceChangeListener {
+    companion object {
+        @Suppress("FieldCanBeLocal","unused")
+        private const val TAG = "MainActivity"
+    }
+    private val topLevelDestinations = hashSetOf(R.id.tab_device_dest,
+            R.id.tab_network_dest, R.id.tab_software_dest, R.id.tab_hardware_dest)
+    private lateinit var binding: ActivityMainBinding
+    private lateinit var preferences: SharedPreferences
+    private lateinit var searchHistoryAdapter: SuggestionAdapter<String>
+    private val job = SupervisorJob()
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.Main + job
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        setTheme(R.style.AppTheme_MainTheme) //Removes splash screen
+        setTheme(R.style.AppTheme) //Removes splash screen
         super.onCreate(savedInstanceState)
-        val binding = DataBindingUtil.setContentView<ActivityMainBinding>(this, R.layout.activity_main)
-        setSupportActionBar(binding.myToolbar)
-
-        if (savedInstanceState != null) {
-            mSearchString = savedInstanceState.getString(SEARCH_KEY)
-            mSearchFocus = savedInstanceState.getBoolean(SEARCH_FOCUS_KEY)
+        preferences = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this).also {
+            it.registerOnSharedPreferenceChangeListener(this)
         }
-
-        // Get the ViewPager and set it's PagerAdapter so that it can display items
-        mAdapter = TabsViewPagerAdapter(supportFragmentManager, this)
-        binding.viewpager.adapter = mAdapter
-        binding.viewpager.offscreenPageLimit = mAdapter?.count ?: 1 //Prevent reloading of
-        // views on
-        // tab switching
-        // Give the TabLayout the ViewPager
-        binding.tabs.setupWithViewPager(binding.viewpager)
-        handleIntent(intent)
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        mSearchView?.let {
-            mSearchString = it.query.toString()
-            mSearchFocus = it.hasFocus()
-            outState.putString(SEARCH_KEY, mSearchString)
-            outState.putBoolean(SEARCH_FOCUS_KEY, mSearchFocus)
-        }
-    }
-
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        handleIntent(intent)
-    }
-
-    private fun handleIntent(intent: Intent?) {
-        if (intent != null && ACTION_SEARCH == intent.action) {
-            //Shortcut launched for search
-            if (mSearchViewMenuItem == null)
-                launchSearch = true
-            else {
-                mSearchViewMenuItem?.expandActionView()
+        binding = DataBindingUtil.setContentView<ActivityMainBinding>(this, R.layout
+                .activity_main).apply {
+            lifecycleOwner = this@MainActivity
+            model = ViewModelProviders.of(this@MainActivity).get()
+            setSupportActionBar(toolbar)
+            model?.apply {
+                contentInsetStartWithNavigationDefault = toolbar.contentInsetStartWithNavigation
+                contentInsetEndDefault = toolbar.contentInsetEnd
+                contentInsetStartDefault = toolbar.contentInsetStart
             }
         }
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        val inflater = menuInflater
-        inflater.inflate(R.menu.base_menu, menu)
-        inflater.inflate(R.menu.search_menu, menu)
-        // Get checkable menu item value
-        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(applicationContext)
-        menu.findItem(R.id.action_hide_unables).isChecked = sharedPreferences.getBoolean("hide_unables", false)
-
-        // Associate searchable configuration with the SearchView
-        val searchManager = getSystemService(Context.SEARCH_SERVICE) as SearchManager
-        mSearchViewMenuItem = menu.findItem(R.id.search)
-        mSearchView = mSearchViewMenuItem?.actionView as SearchView
-        mSearchView?.setSearchableInfo(searchManager.getSearchableInfo(componentName))
-        if (launchSearch) {
-            mSearchViewMenuItem?.expandActionView()
-            launchSearch = false
-        }
-        if (!TextUtils.isEmpty(mSearchString)) {
-            mSearchViewMenuItem?.expandActionView()
-            mSearchView?.setQuery(mSearchString, false)
-            if (!mSearchFocus) mSearchView?.clearFocus()
-        }
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.action_hide_unables -> {
-                item.isChecked = !item.isChecked
-                val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(applicationContext)
-                val editor = sharedPreferences.edit()
-                editor.putBoolean("hide_unables", item.isChecked)
-                editor.apply()
-                // Refresh tabs due to data added/removed
-                mAdapter?.notifyDataSetChanged()
-                true
+        findNavController(R.id.nav_host_fragment).apply {
+            //Setup menu
+            binding.menuToolbar.run {
+                menuInflater.inflate(R.menu.base_menu, menu)
+                setOnMenuItemClickListener { item ->
+                    item.onNavDestinationSelected(this@apply) ||
+                            super.onOptionsItemSelected(item)
+                }
             }
-            else -> super.onOptionsItemSelected(item)
+            setupActionBarWithNavController(this@apply,
+                    AppBarConfiguration.Builder(topLevelDestinations).build())
+            binding.bottomNavigation.setupWithNavController(this@apply)
+            addOnDestinationChangedListener { _, destination, _ ->
+                binding.model?.hideSearchBar?.value = !topLevelDestinations.contains(destination
+                        .id) && destination.id != R.id.search_fragment_dest
+                binding.model?.hideBottomBar?.value = !topLevelDestinations.contains(destination
+                        .id) || destination.id == R.id.search_fragment_dest
+                (destination.id == R.id.search_fragment_dest).apply {
+                    if (this) supportActionBar?.setDisplayHomeAsUpEnabled(false)
+                    binding.model?.isSearchOpen?.value = this
+                    if (!this && binding.searchBar.query.isNotBlank())
+                        binding.searchBar.setQuery("", false)
+                }
+            }
+            binding.searchHandler = SearchClickHandler(this, binding.searchBar)
+        }
+        val searchModel = ViewModelProviders.of(this).get<SearchItemsViewModel>()
+        binding.searchBar.apply {
+            setOnQueryTextFocusChangeListener { _, hasFocus ->
+                if(!hasFocus && preferences.getBoolean(
+                                getString(R.string.pref_search_history_key), false))
+                    query?.let { saveSearchHistoryItem(it.toString()) }
+            }
+            setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+                override fun onQueryTextSubmit(query: String?): Boolean {
+                    query?.let { saveSearchHistoryItem(it) }
+                    searchModel.setSearchText(query)
+                    binding.searchHandler?.onSearchSubmit(query)
+                    return false
+                }
+
+                override fun onQueryTextChange(query: String?): Boolean {
+                    //if(!preferences.getBoolean(getString(R.string.pref_search_history_key), false)) {
+                        searchModel.setSearchText(query)
+                       binding.searchHandler?.onSearchSubmit(query)
+                    //}
+                    return false
+                }
+            })
+            // Load history items in searchview
+            findViewById<SearchView.SearchAutoComplete?>(R.id.search_src_text)?.apply {
+                @ColorRes val colorRes = TypedValue().run {
+                    this@MainActivity.theme.resolveAttribute(R.attr.colorBackgroundFloating, this, true)
+                    resourceId
+                }
+                setDropDownBackgroundResource(colorRes)
+                searchHistoryAdapter = SuggestionAdapter(this@MainActivity,
+                        R.layout.searchview_history_item,
+                        getSearchHistoryItems(preferences), android.R.id.text1)
+                @SuppressLint("RestrictedApi")
+                threshold = 0
+                setAdapter(searchHistoryAdapter)
+                setOnItemClickListener { _, _, position, _ ->
+                    setQuery(searchHistoryAdapter.getItem(position), true)
+                }
+            } ?: Log.wtf(TAG, "SearchView.SearchAutoComplete id has changed and requires maintenance")
+
+        }
+        launch(Dispatchers.IO) {
+            (savedInstanceState == null && intent.action != Intent.ACTION_SEARCH).apply {
+                if(this) delay(TimeUnit.SECONDS.toMillis(2))
+                binding.model?.titleVisibility?.postValue(Pair(!this, View.GONE))
+            }
+        }
+        if (savedInstanceState == null) {
+            binding.model?.loadAllData(this@MainActivity)
+            intent?.handle()
         }
     }
 
     override fun onDestroy() {
-        mAdapter?.destroy()
-        AppDatabase.destroyInstance()
         super.onDestroy()
+        coroutineContext.cancel()
+        preferences.unregisterOnSharedPreferenceChangeListener(this)
     }
 
-    companion object {
-        private const val ACTION_SEARCH = "com.cwlarson.deviceid.SEARCH"
-        private const val SEARCH_KEY = "SEARCH_KEY"
-        private const val SEARCH_FOCUS_KEY = "SEARCH_FOCUS_KEY"
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE.value) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // GRANTED: Force new data updates
+                binding.model?.loadAllData(this@MainActivity)
+            } else {
+                // DENIED: We do nothing (it is handled by the ViewAdapter)
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        intent?.handle()
+    }
+
+    private fun Intent.handle() {
+        if(this.action == Intent.ACTION_SEARCH) {
+            binding.searchBar.apply {
+                isFocusable = true
+                isFocusableInTouchMode = true
+                requestFocus()
+            }
+            binding.searchHandler?.onSearchSubmitIntent()
+        }
+    }
+
+    override fun onSupportNavigateUp(): Boolean  =
+            findNavController(R.id.nav_host_fragment).navigateUp()
+
+    private inner class SuggestionAdapter<String>(context: Context, resource: Int, objects: MutableList<String>, textViewResourceId: Int) :
+            ArrayAdapter<String>(context, resource, textViewResourceId, objects) {
+        private val items = ArrayList<String>(objects)
+        private var filterItems = mutableListOf<String>()
+        private var filter = object: Filter() {
+            override fun performFiltering(constraint: CharSequence?): FilterResults =
+                FilterResults().apply {
+                    filterItems.clear()
+                    filterItems.addAll(if(constraint != null) {
+                        items.filter { s -> s.toString().contains(constraint, true) }
+                    } else items)
+                    values = filterItems
+                    count = filterItems.size
+                }
+            override fun publishResults(constraint: CharSequence?, results: FilterResults?) {
+                if(objects.isNotEmpty()) clear()
+                if(results != null && results.count > 0) {
+                    addAll(filterItems)
+                    notifyDataSetChanged()
+                } else notifyDataSetInvalidated()
+            }
+        }
+
+        override fun getItemId(position: Int): Long = position.toLong()
+
+        override fun getItem(position: Int): String? = filterItems[position]
+
+        override fun getCount(): Int = filterItems.size
+
+        override fun getFilter(): Filter = filter
+
+        fun updateList(newList: List<String>?) {
+            items.clear()
+            newList?.let { items.addAll(it) }
+            notifyDataSetChanged()
+        }
+    }
+
+    private fun saveSearchHistoryItem(item: String) {
+        if(preferences.getBoolean(getString(R.string.pref_search_history_key), false) && item.isNotBlank()) {
+            val jsonString = JSONArray(getSearchHistoryItems(preferences).run {
+                // Remove item in the list if already in history
+                removeAll { s -> s == item }
+                // Prepend item to top of list and remove older ones if more than 10 items
+                (listOf(item).plus(this)).take(10)
+            }).toString()
+            preferences.edit {
+                putString(getString(R.string.pref_search_history_data_key), jsonString)
+            }
+        }
+    }
+
+    private fun getSearchHistoryItems(preferences: SharedPreferences?) = mutableListOf<String>().apply {
+        val json = JSONArray(preferences?.getString(getString(R.string.pref_search_history_data_key), "[]"))
+        (0..(json.length() - 1)).forEach {
+            add(json.get(it).toString())
+        }
+    }
+
+    override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
+        if(key == getString(R.string.pref_search_history_data_key))
+            searchHistoryAdapter.updateList(getSearchHistoryItems(sharedPreferences))
+        else if(key == getString(R.string.pref_search_history_key) &&
+                sharedPreferences?.getBoolean(key, false) == false)
+            sharedPreferences.edit { remove(getString(R.string.pref_search_history_data_key)) }
     }
 }

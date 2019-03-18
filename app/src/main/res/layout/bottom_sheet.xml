@@ -1,58 +1,84 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools">
     <data>
         <import type="android.text.TextUtils"/>
         <import type="com.cwlarson.deviceid.R"/>
-        <variable name="handler" type="com.cwlarson.deviceid.util.ItemClickHandler"/>
-        <variable name="item" type="com.cwlarson.deviceid.databinding.Item" />
+        <variable name="handler" type="com.cwlarson.deviceid.util.ItemClickDialogHandler"/>
+        <variable name="model" type="com.cwlarson.deviceid.database.BottomSheetViewModel"/>
     </data>
-    <LinearLayout
-        android:background="?android:attr/windowBackground"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:background="?android:colorBackground"
         android:orientation="vertical"
         android:layout_marginStart="@dimen/activity_horizontal_margin"
         android:layout_marginEnd="@dimen/activity_horizontal_margin"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:padding="16dp"
-        app:layout_behavior="android.support.design.widget.BottomSheetBehavior">
+        app:layout_behavior="@string/bottom_sheet_behavior">
         <TextView
+            android:id="@+id/bottom_title"
             android:textSize="18sp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@{item.title}"
-            android:textColor="?android:attr/textColorPrimary"/>
+            android:text="@{TextUtils.isEmpty(model.item.title) ? @android:string/unknownName : model.item.title}"
+            tools:text="@tools:sample/lorem"
+            android:textColor="?android:attr/textColorPrimary"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/bottom_subtitle"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0"/>
         <TextView
+            android:id="@+id/bottom_subtitle"
             android:textSize="16sp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text='@{TextUtils.isEmpty(item.subtitle) ? @string/not_found : item.subtitle}'
-            android:textColor="?android:attr/textColorSecondary"/>
+            android:text='@{TextUtils.isEmpty(model.item.subtitle) ? @string/not_found : model.item.subtitle}'
+            tools:text="@tools:sample/lorem"
+            android:textColor="?android:attr/textColorSecondary"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/bottom_title"
+            app:layout_constraintBottom_toTopOf="@id/bottom_divider"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0"/>
         <View
-            android:layout_marginTop="8dp"
+            android:id="@+id/bottom_divider"
+            android:layout_marginTop="16dp"
             android:layout_marginBottom="8dp"
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="?android:attr/dividerVertical"/>
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-            <Button
-                android:onClick="@{() -> handler.onShareClick()}"
-                android:layout_weight="1"
-                app:buttonImageAbove="@{R.drawable.ic_action_share}"
-                style="@style/Widget.AppCompat.Button.Borderless"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:text="@string/menu_share"/>
-            <Button
-                android:onClick="@{() -> handler.onLongClick()}"
-                android:layout_weight="1"
-                style="@style/Widget.AppCompat.Button.Borderless"
-                app:buttonImageAbove="@{R.drawable.ic_action_copy}"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:text="@string/menu_copy_to_clipboard"/>
-        </LinearLayout>
-    </LinearLayout>
+            android:background="?android:attr/dividerVertical"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/bottom_subtitle"
+            app:layout_constraintBottom_toTopOf="@id/bottom_button_share"
+            app:layout_constraintEnd_toEndOf="parent"/>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/bottom_button_share"
+            style="@style/AppTheme.BottomBarButtonStyle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:onClick="@{() -> handler.onShareClick(model.item)}"
+            android:text="@string/menu_share"
+            app:icon="@drawable/ic_action_share"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/bottom_divider"
+            app:layout_constraintEnd_toStartOf="@id/bottom_button_copy"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/bottom_button_copy"
+            android:onClick="@{() -> handler.onCopyClick(model.item)}"
+            android:layout_weight="1"
+            style="@style/AppTheme.BottomBarButtonStyle"
+            app:icon="@drawable/ic_action_copy"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/menu_copy_to_clipboard"
+            app:layout_constraintStart_toEndOf="@id/bottom_button_share"
+            app:layout_constraintTop_toTopOf="@id/bottom_button_share"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

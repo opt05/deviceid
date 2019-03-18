@@ -1,0 +1,82 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "4032a5b88bc23a1d5e0fe23bd6190ba6",
+    "entities": [
+      {
+        "tableName": "item",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`title` TEXT NOT NULL, `itemType` INTEGER NOT NULL, `subtitle` TEXT, `chartAxis1` REAL, `chartAxis2` REAL, `chartDrawable` INTEGER, `unavailableType` INTEGER, `unavailableSupportText` TEXT, `unavailablePermission` INTEGER, PRIMARY KEY(`title`, `itemType`))",
+        "fields": [
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "itemType",
+            "columnName": "itemType",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subtitle",
+            "columnName": "subtitle",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "chartItem.chartAxis1",
+            "columnName": "chartAxis1",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "chartItem.chartAxis2",
+            "columnName": "chartAxis2",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "chartItem.chartDrawable",
+            "columnName": "chartDrawable",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "unavailableItem.unavailableType",
+            "columnName": "unavailableType",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "unavailableItem.unavailableSupportText",
+            "columnName": "unavailableSupportText",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "unavailableItem.unavailablePermission",
+            "columnName": "unavailablePermission",
+            "affinity": "INTEGER",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "title",
+            "itemType"
+          ],
+          "autoGenerate": false
+        },
+        "indices": [],
+        "foreignKeys": []
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, \"4032a5b88bc23a1d5e0fe23bd6190ba6\")"
+    ]
+  }
+}
