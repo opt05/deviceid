@@ -4,14 +4,14 @@ apply plugin: 'kotlin-kapt' //For Kotlin Annotation Processing with libraries (i
 apply plugin: "androidx.navigation.safeargs.kotlin"
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion 29
     defaultConfig {
         vectorDrawables.useSupportLibrary = true
         applicationId "com.cwlarson.deviceid"
         minSdkVersion 14
-        targetSdkVersion 28
-        versionCode 13
-        versionName "1.4.0"
+        targetSdkVersion 29
+        versionCode 14
+        versionName "1.4.1"
     }
     signingConfigs {
         release {
@@ -43,30 +43,21 @@ android {
     }
 }
 
-def androidx_version = '1.1.0-alpha05'
-def androidx_fragment_version = '1.1.0-alpha05'
-def androidx_appcompat_version = '1.1.0-alpha03'
-def androidx_recycler_version = '1.1.0-alpha03'
-def androidx_swiperefresh_version = '1.1.0-alpha01'
-def androidx_constraint_version = '2.0.0-alpha3'
-def androidx_preferences_version = '1.1.0-alpha04'
-def material_components_version = '1.1.0-alpha04'
-def lifecycle_version = '2.0.0'
-def room_version = '2.0.0'
+def lifecycle_version = '2.2.0-alpha01'
+def room_version = '2.1.0-rc01'
 def paging_version = '2.1.0'
-def coroutines_version = '1.1.1'
-def leakcanary_version = '1.6.3'
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    implementation "androidx.core:core-ktx:$androidx_version"
-    implementation "androidx.fragment:fragment-ktx:$androidx_fragment_version"
-    implementation "androidx.appcompat:appcompat:$androidx_appcompat_version"
-    implementation "androidx.recyclerview:recyclerview:$androidx_recycler_version"
+    implementation "androidx.core:core-ktx:1.1.0-rc01"
+    implementation "androidx.fragment:fragment-ktx:1.1.0-beta01"
+    implementation "androidx.appcompat:appcompat:1.1.0-beta01"
+    implementation "androidx.recyclerview:recyclerview:1.1.0-alpha06"
     implementation "androidx.paging:paging-runtime-ktx:$paging_version"
-    implementation "androidx.swiperefreshlayout:swiperefreshlayout:$androidx_swiperefresh_version"
-    implementation "com.google.android.material:material:$material_components_version"
-    implementation "androidx.constraintlayout:constraintlayout:$androidx_constraint_version"
+    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0-alpha01"
+    implementation "com.google.android.material:material:1.1.0-alpha07"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:1.1.0-beta01"
+    implementation "androidx.constraintlayout:constraintlayout:2.0.0-beta1"
     // ViewModel and LiveData
     implementation "androidx.lifecycle:lifecycle-extensions:$lifecycle_version"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version"
@@ -74,16 +65,18 @@ dependencies {
     // Room
     implementation "androidx.room:room-runtime:$room_version"
     kapt "androidx.room:room-compiler:$room_version"
+    implementation "androidx.room:room-ktx:$room_version"
     //Navigation
     implementation "androidx.navigation:navigation-fragment-ktx:$nav_version"
     implementation "androidx.navigation:navigation-ui-ktx:$nav_version"
     //Preference Compat
-    implementation "androidx.preference:preference-ktx:$androidx_preferences_version"
+    implementation "androidx.preference:preference-ktx:1.1.0-beta01"
     // Kotlin coroutines
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.2.1"
+    // Timber
+    implementation 'com.jakewharton.timber:timber:4.7.1'
     //Debug bridge for Android applications, enabling the powerful Chrome Developer Tools
-    debugImplementation "com.facebook.stetho:stetho:1.5.0"
+    debugImplementation "com.facebook.stetho:stetho:1.5.1"
     //LeakCanary
-    debugImplementation "com.squareup.leakcanary:leakcanary-android:$leakcanary_version"
-    debugImplementation "com.squareup.leakcanary:leakcanary-support-fragment:$leakcanary_version"
+    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.0-alpha-2'
 }

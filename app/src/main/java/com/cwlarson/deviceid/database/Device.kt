@@ -6,22 +6,24 @@ import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
-import android.util.Log
 import androidx.annotation.WorkerThread
 import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.databinding.*
 import com.cwlarson.deviceid.util.hasPermission
 import com.cwlarson.deviceid.util.telephonyManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import timber.log.Timber
+import java.util.*
 
 @WorkerThread
-internal class Device(private val context: Context, db: AppDatabase) {
-    companion object {
-        private const val TAG = "Device"
-    }
-
+internal class Device(private val context: Context, db: AppDatabase, scope: CoroutineScope) {
     init {
         //Set Device Tiles
-        db.addItems(context,*imei(),deviceModel(),serial(),androidID(),gsfid())
+        scope.launch(Dispatchers.IO) {
+            db.addItems(context, *imei(), deviceModel(), serial(), androidID(), gsfid())
+        }
     }
 
     // Request permission for IMEI/MEID for Android M+
@@ -45,11 +47,12 @@ internal class Device(private val context: Context, db: AppDatabase) {
                         item.unavailableItem = UnavailableItem(UnavailableType.NEEDS_PERMISSION,
                                 context.resources.getString(R.string.permission_item_subtitle,
                                         context.packageManager.getPermissionInfo(Manifest.permission.READ_PHONE_STATE, 0)
-                                                .loadLabel(context.packageManager).toString().capitalize()),
+                                                .loadLabel(context.packageManager).toString()
+                                                .toUpperCase(Locale.getDefault())),
                                 UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE)
                     }
             } catch (e: Exception) {
-                Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+                Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
             }
     }
 
@@ -68,7 +71,7 @@ internal class Device(private val context: Context, db: AppDatabase) {
                 "$manufacturer $model ($product)"
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
         subtitle = if (Character.isUpperCase(device[0])) device else Character.toUpperCase(device[0]) + device.substring(1)
     }
@@ -86,11 +89,11 @@ internal class Device(private val context: Context, db: AppDatabase) {
                             context.resources.getString(R.string.permission_item_subtitle,
                                     context.packageManager.getPermissionInfo(Manifest.permission
                                             .READ_PHONE_STATE, 0).loadLabel(context.packageManager)
-                                            .toString().capitalize()),
+                                            .toString().toUpperCase(Locale.getDefault())),
                             UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE)
                 }
             } catch (e: Exception) {
-                Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+                Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
             }
         }
     }
@@ -100,7 +103,7 @@ internal class Device(private val context: Context, db: AppDatabase) {
         try {
             subtitle = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -125,7 +128,7 @@ internal class Device(private val context: Context, db: AppDatabase) {
 
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 }

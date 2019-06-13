@@ -44,7 +44,6 @@
     <string name="BATTERY_PLUGGED_USB">over USB</string>
     <string name="BATTERY_PLUGGED_AC">on AC</string>
     <!-- Preferences -->
-    <string name="empty_preference_default">Not set</string>
     <string name="pref_title_app_settings">App Settings</string>
     <string name="pref_hide_unavailable_key" translatable="false">hide_unables</string>
     <string name="pref_hide_unavailable_title">Hide not applicable</string>
@@ -53,23 +52,10 @@
     <string name="pref_hide_unavailable_summary_off">Showing items not applicable to this
         device</string>
     <string name="pref_daynight_mode_key" translatable="false">daynight_mode</string>
-    <string name="pref_daynight_mode_title">Dark mode</string>
-    <string-array name="pref_daynight_mode_entries">
-        <item>Use system setting</item>
-        <item>Off</item>
-        <item>Auto</item>
-        <item>On</item>
-    </string-array>
+    <string name="pref_daynight_mode_title">Choose theme</string>
     <string name="pref_night_mode_system" translatable="false">mode_system</string>
     <string name="pref_night_mode_off" translatable="false">mode_off</string>
-    <string name="pref_night_mode_auto" translatable="false">mode_auto</string>
     <string name="pref_night_mode_on" translatable="false">mode_on</string>
-    <string-array name="pref_daynight_mode_values">
-        <item>@string/pref_night_mode_system</item>
-        <item>@string/pref_night_mode_off</item>
-        <item>@string/pref_night_mode_auto</item>
-        <item>@string/pref_night_mode_on</item>
-    </string-array>
 
     <string name="pref_auto_refresh_rate_key">refresh_rate</string>
     <string name="pref_auto_refresh_rate_title">Auto refresh rate</string>

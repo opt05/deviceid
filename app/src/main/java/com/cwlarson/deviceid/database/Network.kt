@@ -7,29 +7,29 @@ import android.content.Context
 import android.net.wifi.WifiInfo
 import android.os.Build
 import android.telephony.TelephonyManager
-import android.util.Log
-import androidx.annotation.WorkerThread
 import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.databinding.*
 import com.cwlarson.deviceid.util.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.math.BigInteger
 import java.net.InetAddress
 import java.nio.ByteOrder
 
-@WorkerThread
-internal class Network(private val context: Context, db: AppDatabase) {
-    companion object {
-        private const val TAG = "Network"
-    }
+internal class Network(private val context: Context, db: AppDatabase, scope: CoroutineScope) {
     private val wifiConnectionInfo: WifiInfo = context.wifiManager.connectionInfo
 
     init {
         //Set Network Tiles
-        db.addItems(context,wifiMac(),wifiBSSID(),wifiSSID(),wifiFrequency(),wifiHiddenSSID(),
-                wifiIpAddress(),wifiLinkSpeed(),wifiNetworkID(),wifiRSSI(),wifiHostname(),
-                bluetoothMac(),bluetoothHostname(),simSerial(),simOperatorName(),simCountry(),
-                simState(),phoneNumber(),voicemailNumber(),cellNetworkName(),cellNetworkType(),
-                cellNetworkClass(),eSimID(),eSimEnabled(),eSimOSVersion())
+        scope.launch(Dispatchers.IO) {
+            db.addItems(context, wifiMac(), wifiBSSID(), wifiSSID(), wifiFrequency(), wifiHiddenSSID(),
+                    wifiIpAddress(), wifiLinkSpeed(), wifiNetworkID(), wifiRSSI(), wifiHostname(),
+                    bluetoothMac(), bluetoothHostname(), simSerial(), simOperatorName(), simCountry(),
+                    simState(), phoneNumber(), voicemailNumber(), cellNetworkName(), cellNetworkType(),
+                    cellNetworkClass(), eSimID(), eSimEnabled(), eSimOSVersion())
+        }
     }
 
     /*
@@ -42,7 +42,7 @@ internal class Network(private val context: Context, db: AppDatabase) {
             try {
                 subtitle = wifiConnectionInfo.macAddress
             } catch (e: Exception) {
-                Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+                Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
             }
 
         } else {
@@ -54,7 +54,7 @@ internal class Network(private val context: Context, db: AppDatabase) {
         try {
             subtitle = wifiConnectionInfo.bssid
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -62,7 +62,7 @@ internal class Network(private val context: Context, db: AppDatabase) {
         try {
             subtitle = wifiConnectionInfo.ssid
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -71,7 +71,7 @@ internal class Network(private val context: Context, db: AppDatabase) {
             try {
                 subtitle = wifiConnectionInfo.frequency.toString()
             } catch (e: Exception) {
-                Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+                Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
             }
 
         }
@@ -81,7 +81,7 @@ internal class Network(private val context: Context, db: AppDatabase) {
         try {
             subtitle = wifiConnectionInfo.hiddenSSID.toString()
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -93,7 +93,7 @@ internal class Network(private val context: Context, db: AppDatabase) {
             val ipByteArray = BigInteger.valueOf(ipAddress.toLong()).toByteArray()
             subtitle = InetAddress.getByAddress(ipByteArray).hostAddress
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -101,7 +101,7 @@ internal class Network(private val context: Context, db: AppDatabase) {
         try {
             subtitle = Integer.toString(wifiConnectionInfo.linkSpeed)
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -109,7 +109,7 @@ internal class Network(private val context: Context, db: AppDatabase) {
         try {
             subtitle = Integer.toString(wifiConnectionInfo.networkId)
         } catch (e: NullPointerException) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -117,7 +117,7 @@ internal class Network(private val context: Context, db: AppDatabase) {
         try {
             subtitle = Integer.toString(wifiConnectionInfo.rssi)
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -128,7 +128,7 @@ internal class Network(private val context: Context, db: AppDatabase) {
             getString.isAccessible = true
             subtitle = getString.invoke(null, "net.hostname").toString()
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -140,13 +140,13 @@ internal class Network(private val context: Context, db: AppDatabase) {
     private fun bluetoothMac() = Item("Bluetooth MAC Address", ItemType.NETWORK).apply {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
             try {
-                subtitle = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                subtitle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
                     context.bluetoothManager.adapter.address
                 } else {
                     BluetoothAdapter.getDefaultAdapter().address
                 }
             } catch (e: Exception) {
-                Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+                Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
             }
 
         } else {
@@ -156,13 +156,13 @@ internal class Network(private val context: Context, db: AppDatabase) {
 
     private fun bluetoothHostname() = Item("Bluetooth Hostname", ItemType.NETWORK).apply {
         try {
-            subtitle = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            subtitle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
                 context.bluetoothManager.adapter.name
             } else {
                 BluetoothAdapter.getDefaultAdapter().name
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -171,7 +171,7 @@ internal class Network(private val context: Context, db: AppDatabase) {
         try {
             subtitle = context.telephonyManager.simSerialNumber
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -179,7 +179,7 @@ internal class Network(private val context: Context, db: AppDatabase) {
         try {
             subtitle = context.telephonyManager.simOperatorName
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -187,7 +187,7 @@ internal class Network(private val context: Context, db: AppDatabase) {
         try {
             subtitle = context.telephonyManager.simCountryIso
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -208,7 +208,7 @@ internal class Network(private val context: Context, db: AppDatabase) {
                 else -> "Network unknown"
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -225,7 +225,7 @@ internal class Network(private val context: Context, db: AppDatabase) {
                         UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE)
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -241,7 +241,7 @@ internal class Network(private val context: Context, db: AppDatabase) {
                         UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE)
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -249,7 +249,7 @@ internal class Network(private val context: Context, db: AppDatabase) {
         try {
             subtitle = context.telephonyManager.networkOperatorName
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -277,7 +277,7 @@ internal class Network(private val context: Context, db: AppDatabase) {
                 else -> { null }
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -306,7 +306,7 @@ internal class Network(private val context: Context, db: AppDatabase) {
                 else -> { }
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -315,7 +315,7 @@ internal class Network(private val context: Context, db: AppDatabase) {
             try {
                 subtitle = context.euiccManager.eid
             } catch (e: Exception) {
-                Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+                Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
             }
         } else {
             unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET, "9.0")
@@ -327,7 +327,7 @@ internal class Network(private val context: Context, db: AppDatabase) {
             try {
                 subtitle = context.euiccManager.isEnabled.toString()
             } catch (e: Exception) {
-                Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+                Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
             }
         } else {
             unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET, "9.0")
@@ -339,7 +339,7 @@ internal class Network(private val context: Context, db: AppDatabase) {
             try {
                 subtitle = context.euiccManager.euiccInfo?.osVersion
             } catch (e: Exception) {
-                Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+                Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
             }
         } else {
             unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET, "9.0")

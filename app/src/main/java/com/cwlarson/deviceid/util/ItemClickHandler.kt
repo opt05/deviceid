@@ -3,14 +3,13 @@ package com.cwlarson.deviceid.util
 import android.Manifest
 import android.app.Activity
 import android.content.ClipData
+import android.content.Intent
 import android.content.pm.PackageManager
-import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatDialogFragment
 import androidx.appcompat.widget.SearchView
 import androidx.core.app.ActivityCompat
-import androidx.core.app.ShareCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.navigation.NavController
@@ -19,6 +18,7 @@ import com.cwlarson.deviceid.databinding.Item
 import com.cwlarson.deviceid.databinding.UnavailablePermission
 import com.cwlarson.deviceid.dialog.ItemClickDialog
 import com.google.android.material.snackbar.Snackbar
+import timber.log.Timber
 
 class SearchClickHandler(private val navController: NavController,
                          private val searchView: SearchView) {
@@ -49,12 +49,14 @@ class SearchClickHandler(private val navController: NavController,
 class ItemClickDialogHandler(private val activity: Activity?,
                              private val dialog: AppCompatDialogFragment? = null) {
     fun onShareClick(item: Item?): Boolean = activity?.let {  a ->
-        val shareIntent = ShareCompat.IntentBuilder.from(a)
-                .setType("text/plain")
-                .setChooserTitle(R.string.send_to)
-                .setText(item?.subtitle)
-                .intent
-        shareIntent.resolveActivity(a.packageManager)?.let { a.startActivity(shareIntent) }
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TITLE, a.getString(R.string.send_to))
+            putExtra(Intent.EXTRA_TEXT, item?.subtitle)
+        }
+        shareIntent.resolveActivity(a.packageManager)?.let {
+            a.startActivity(Intent.createChooser(shareIntent, null))
+        } ?: Toast.makeText(a, "No app available", Toast.LENGTH_LONG).show()
         dialog?.dismiss()
         true
         } ?: false
@@ -63,10 +65,9 @@ class ItemClickDialogHandler(private val activity: Activity?,
     fun onCopyClick(item: Item?) {
         activity?.let {
             val clip = ClipData.newPlainText(item?.title, item?.subtitle)
-            it.clipboardManager.primaryClip = clip
-            Toast.makeText(it, it.resources.getString(R.string.copy_to_clipboard, item?.title),
-                    Toast.LENGTH_SHORT).show()
-        } ?: Log.e("ItemClickHandler","copyToClipboard error...")
+            it.clipboardManager.setPrimaryClip(clip)
+            Toast.makeText(it, it.resources.getString(R.string.copy_to_clipboard, item?.title), Toast.LENGTH_SHORT).show()
+        } ?: Timber.e("copyToClipboard error...")
         dialog?.dismiss()
     }
 }

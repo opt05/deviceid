@@ -7,36 +7,32 @@ import androidx.paging.PagedList
 import androidx.paging.toLiveData
 import com.cwlarson.deviceid.databinding.Item
 import com.cwlarson.deviceid.databinding.ItemType
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlin.coroutines.CoroutineContext
 
-class AllItemsViewModel(application: Application) : AndroidViewModel(application), CoroutineScope {
+
+
+class AllItemsViewModel(application: Application) : AndroidViewModel(application) {
     private val database = AppDatabase.getDatabase(application)
     private var items: LiveData<PagedList<Item>>? = null
     private val hideUnavailable = MutableLiveData<Boolean>()
+    private var itemType: ItemType? = null
     val status = MutableLiveData<Status?>()
     val itemsCount = MutableLiveData<Int>()
+    val refreshDisabled = MutableLiveData<Boolean>()
     init {
         hideUnavailable.value = false
     }
-    private val job = Job()
-    override val coroutineContext: CoroutineContext
-        get() = Dispatchers.IO + job
 
-    override fun onCleared() {
-        super.onCleared()
-        job.cancel()
+    fun initialize(itemType: ItemType) {
+        if(itemType == this.itemType) return
+        this.itemType = itemType
     }
 
     /**
      * Used by tab layout
-     * @param itemType The type of tab to fetch correct data
      * @return LiveData of all the items of specified type
      */
-    fun getAllItems(itemType: ItemType?): LiveData<PagedList<Item>>? {
+    fun getAllItems(): LiveData<PagedList<Item>>? {
         if (items == null) {
             items = Transformations.switchMap(hideUnavailable) { hideUnavailable ->
                 if (hideUnavailable) {
@@ -53,10 +49,10 @@ class AllItemsViewModel(application: Application) : AndroidViewModel(application
         this.hideUnavailable.value = hideUnavailable
     }
 
-    fun refreshData(context: Context?, itemType: ItemType?, noStatus: Boolean = false) {
-        launch {
+    fun refreshData(noStatus: Boolean = false) {
+        viewModelScope.launch {
             if(!noStatus) status.postValue(Status.LOADING)
-            status.postValue(database.populateAsync(context, itemType).await())
+            status.postValue(database.populateAsync(getApplication(), itemType ?: ItemType.NONE))
         }
     }
 }
@@ -109,30 +105,15 @@ class BottomSheetViewModel(application: Application) : AndroidViewModel(applicat
     }
 }
 
-class MainActivityViewModel(application: Application) : AndroidViewModel(application), CoroutineScope {
+class MainActivityViewModel(application: Application) : AndroidViewModel(application) {
     private val database = AppDatabase.getDatabase(application)
-    var hideSearchBar = MutableLiveData<Boolean>()
-    var hideBottomBar = MutableLiveData<Boolean>()
-    var isSearchOpen = MutableLiveData<Boolean>()
-    //Toolbar padding
-    var contentInsetStartWithNavigationDefault: Int = 0
-    var contentInsetStartDefault: Int = 0
-    var contentInsetEndDefault: Int = 0
-    var titleVisibility = MutableLiveData<Pair<Boolean, Int>>()
-    private val job = Job()
-    override val coroutineContext: CoroutineContext
-        get() = Dispatchers.IO + job
-
-    override fun onCleared() {
-        super.onCleared()
-        job.cancel()
-    }
+    val hideSearchBar = MutableLiveData<Boolean>()
+    val hideBottomBar = MutableLiveData<Boolean>()
+    val isSearchOpen = MutableLiveData<Boolean>()
+    val titleVisibility = MutableLiveData<Pair<Boolean, Int>>()
 
     fun loadAllData(context: Context?) {
-        @Suppress("DeferredResultUnused")
-        launch {
-            database.populateAsync(context)
-        }
+        viewModelScope.launch { database.populateAsync(context) }
     }
 }
 

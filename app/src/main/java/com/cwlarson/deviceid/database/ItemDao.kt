@@ -28,5 +28,5 @@ interface ItemDao {
     fun getItem(title: String?, type: ItemType?): LiveData<Item?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insert(vararg items: Item)
+    suspend fun insert(vararg items: Item)
 }

@@ -7,7 +7,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
 import androidx.databinding.ViewDataBinding
-import androidx.fragment.app.FragmentActivity
 import androidx.paging.PagedListAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
@@ -16,8 +15,7 @@ import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.databinding.Item
 import com.cwlarson.deviceid.databinding.RecyclerHeaderViewBinding
 
-internal class MyAdapter(private val snackbarView: View,
-                         private val activity: FragmentActivity?) :
+internal class MyAdapter(private val handler: ItemClickHandler) :
         PagedListAdapter<Item, MyAdapter.CustomViewHolder>(DIFF_CALLBACK),
         HeaderInterface<MyAdapter.HeaderViewHolder> {
 
@@ -55,13 +53,13 @@ internal class MyAdapter(private val snackbarView: View,
     override fun onBindViewHolder(holder: CustomViewHolder, position: Int) {
         // - get element from your dataset at this position
         // - replace the contents of the view with that element
-        getItem(position)?.let { holder.bind(it, activity) }
+        getItem(position)?.let { holder.bind(it, handler) }
     }
 
     internal inner class CustomViewHolder(private val binding: ViewDataBinding) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(item: Item, activity: FragmentActivity?) {
+        fun bind(item: Item, handler: ItemClickHandler) {
             binding.setVariable(BR.item, item)
-            binding.setVariable(BR.handler, ItemClickHandler(snackbarView, activity))
+            binding.setVariable(BR.handler, handler)
             binding.executePendingBindings()
         }
     }

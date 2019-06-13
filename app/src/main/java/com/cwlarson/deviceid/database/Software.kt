@@ -3,8 +3,6 @@ package com.cwlarson.deviceid.database
 import android.content.Context
 import android.os.Build
 import android.text.format.DateFormat
-import android.util.Log
-import androidx.annotation.WorkerThread
 import androidx.core.content.pm.PackageInfoCompat
 import com.cwlarson.deviceid.databinding.Item
 import com.cwlarson.deviceid.databinding.ItemType
@@ -13,24 +11,25 @@ import com.cwlarson.deviceid.databinding.UnavailableType
 import com.cwlarson.deviceid.util.SystemProperty
 import com.cwlarson.deviceid.util.activityManager
 import com.cwlarson.deviceid.util.gmsPackageInfo
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.*
 
-@WorkerThread
-internal class Software(private val context: Context, db: AppDatabase) {
-    companion object {
-        private const val TAG = "Software"
-    }
-
+internal class Software(private val context: Context, db: AppDatabase, scope: CoroutineScope) {
     init {
-        //Set Software Tiles
-        db.addItems(context,androidVersion(),patchLevel(),previewSDKInt(),deviceBuildVersion(),
-                buildBaseband(),buildKernel(),buildDate(),buildNumber(),buildBoard(),
-                buildBootloader(),buildBrand(),buildDevice(),buildDisplay(),buildFingerprint(),
-                buildHardware(),buildHost(),buildTags(),buildType(),buildUser(),openGLVersion(),
-                googlePlayServicesVersion(),googlePlayServicesInstallDate(),
-                googlePlayServicesUpdatedDate())
+        scope.launch(Dispatchers.IO) {
+            //Set Software Tiles
+            db.addItems(context, androidVersion(), patchLevel(), previewSDKInt(), deviceBuildVersion(),
+                    buildBaseband(), buildKernel(), buildDate(), buildNumber(), buildBoard(),
+                    buildBootloader(), buildBrand(), buildDevice(), buildDisplay(), buildFingerprint(),
+                    buildHardware(), buildHost(), buildTags(), buildType(), buildUser(), openGLVersion(),
+                    googlePlayServicesVersion(), googlePlayServicesInstallDate(),
+                    googlePlayServicesUpdatedDate())
+        }
     }
 
     private enum class Codename(val value: Int) {
@@ -60,7 +59,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = "${Build.VERSION.RELEASE} (${Build.VERSION.SDK_INT}) ${Codename.fromInt(Build.VERSION.SDK_INT)?.toString().orEmpty()}"
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -80,7 +79,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
                 unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET, "6.0")
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -94,7 +93,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
                 unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET, "6.0")
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -104,7 +103,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
             val sp = SystemProperty(context)
             subtitle = if (sp["ro.build.version.full"] == null || sp["ro.build.version.full"] == "") Build.DISPLAY else sp["ro.build.version.full"]
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -112,7 +111,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = Build.getRadioVersion()
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -120,7 +119,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = System.getProperty("os.version")
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -128,7 +127,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = SimpleDateFormat.getInstance().format(Date(Build.TIME))
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -136,7 +135,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = Build.ID
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -144,7 +143,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = Build.BOARD
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -152,7 +151,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = Build.BOOTLOADER
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -160,7 +159,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = Build.BRAND
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -168,7 +167,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = Build.DEVICE
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -176,7 +175,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = Build.DISPLAY
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -184,7 +183,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = Build.FINGERPRINT
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -192,7 +191,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = Build.HARDWARE
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -200,7 +199,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = Build.HOST
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -208,7 +207,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = Build.TAGS
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -216,7 +215,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = Build.TYPE
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -224,7 +223,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = Build.USER
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -232,7 +231,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = context.activityManager.deviceConfigurationInfo.glEsVersion
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -242,7 +241,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
             val v = PackageInfoCompat.getLongVersionCode(pi)
             subtitle = "${pi.versionName} ($v)"
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -250,7 +249,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = DateFormat.getDateFormat(context).format(context.gmsPackageInfo.firstInstallTime)
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -258,7 +257,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = DateFormat.getDateFormat(context).format(context.gmsPackageInfo.lastUpdateTime)
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 }

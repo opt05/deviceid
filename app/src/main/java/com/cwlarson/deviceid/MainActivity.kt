@@ -6,7 +6,6 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.util.Log
 import android.util.TypedValue
 import android.view.View
 import android.widget.ArrayAdapter
@@ -16,6 +15,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.core.content.edit
 import androidx.databinding.DataBindingUtil
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.lifecycle.get
 import androidx.navigation.findNavController
@@ -23,20 +23,20 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.onNavDestinationSelected
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
+import androidx.preference.PreferenceManager
+import com.cwlarson.deviceid.database.MainActivityViewModel
 import com.cwlarson.deviceid.database.SearchItemsViewModel
 import com.cwlarson.deviceid.databinding.ActivityMainBinding
 import com.cwlarson.deviceid.databinding.UnavailablePermission
 import com.cwlarson.deviceid.util.SearchClickHandler
+import com.cwlarson.deviceid.util.setTranslucentStatus
 import kotlinx.coroutines.*
 import org.json.JSONArray
+import timber.log.Timber
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.CoroutineContext
 
 class MainActivity : AppCompatActivity(), CoroutineScope, SharedPreferences.OnSharedPreferenceChangeListener {
-    companion object {
-        @Suppress("FieldCanBeLocal","unused")
-        private const val TAG = "MainActivity"
-    }
     private val topLevelDestinations = hashSetOf(R.id.tab_device_dest,
             R.id.tab_network_dest, R.id.tab_software_dest, R.id.tab_hardware_dest)
     private lateinit var binding: ActivityMainBinding
@@ -49,19 +49,17 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SharedPreferences.OnSh
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(R.style.AppTheme) //Removes splash screen
         super.onCreate(savedInstanceState)
-        preferences = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this).also {
+        preferences = PreferenceManager.getDefaultSharedPreferences(this).also {
             it.registerOnSharedPreferenceChangeListener(this)
         }
-        binding = DataBindingUtil.setContentView<ActivityMainBinding>(this, R.layout
-                .activity_main).apply {
+        binding = DataBindingUtil.setContentView<ActivityMainBinding>(this, R.layout.activity_main).apply {
             lifecycleOwner = this@MainActivity
-            model = ViewModelProviders.of(this@MainActivity).get()
-            setSupportActionBar(toolbar)
-            model?.apply {
-                contentInsetStartWithNavigationDefault = toolbar.contentInsetStartWithNavigation
-                contentInsetEndDefault = toolbar.contentInsetEnd
-                contentInsetStartDefault = toolbar.contentInsetStart
+            model = ViewModelProviders.of(this@MainActivity).get<MainActivityViewModel>().apply {
+                hideSearchBar.observe(this@MainActivity, Observer {
+                    setTranslucentStatus(!(it ?: false))
+                })
             }
+            setSupportActionBar(toolbar)
         }
         findNavController(R.id.nav_host_fragment).apply {
             //Setup menu
@@ -76,8 +74,8 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SharedPreferences.OnSh
                     AppBarConfiguration.Builder(topLevelDestinations).build())
             binding.bottomNavigation.setupWithNavController(this@apply)
             addOnDestinationChangedListener { _, destination, _ ->
-                binding.model?.hideSearchBar?.value = !topLevelDestinations.contains(destination
-                        .id) && destination.id != R.id.search_fragment_dest
+                binding.model?.hideSearchBar?.value = !topLevelDestinations.contains(destination.id)
+                        && destination.id != R.id.search_fragment_dest
                 binding.model?.hideBottomBar?.value = !topLevelDestinations.contains(destination
                         .id) || destination.id == R.id.search_fragment_dest
                 (destination.id == R.id.search_fragment_dest).apply {
@@ -105,10 +103,8 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SharedPreferences.OnSh
                 }
 
                 override fun onQueryTextChange(query: String?): Boolean {
-                    //if(!preferences.getBoolean(getString(R.string.pref_search_history_key), false)) {
-                        searchModel.setSearchText(query)
-                       binding.searchHandler?.onSearchSubmit(query)
-                    //}
+                    searchModel.setSearchText(query)
+                    binding.searchHandler?.onSearchSubmit(query)
                     return false
                 }
             })
@@ -128,7 +124,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SharedPreferences.OnSh
                 setOnItemClickListener { _, _, position, _ ->
                     setQuery(searchHistoryAdapter.getItem(position), true)
                 }
-            } ?: Log.wtf(TAG, "SearchView.SearchAutoComplete id has changed and requires maintenance")
+            } ?: Timber.wtf("SearchView.SearchAutoComplete id has changed and requires maintenance")
 
         }
         launch(Dispatchers.IO) {
@@ -234,7 +230,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SharedPreferences.OnSh
 
     private fun getSearchHistoryItems(preferences: SharedPreferences?) = mutableListOf<String>().apply {
         val json = JSONArray(preferences?.getString(getString(R.string.pref_search_history_data_key), "[]"))
-        (0..(json.length() - 1)).forEach {
+        (0 until json.length()).forEach {
             add(json.get(it).toString())
         }
     }

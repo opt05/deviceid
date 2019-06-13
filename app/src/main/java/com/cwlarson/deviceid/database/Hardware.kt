@@ -9,9 +9,7 @@ import android.os.BatteryManager
 import android.os.Build
 import android.text.format.Formatter
 import android.util.DisplayMetrics
-import android.util.Log
 import android.view.Display
-import androidx.annotation.WorkerThread
 import androidx.core.content.ContextCompat
 import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.databinding.ChartItem
@@ -22,19 +20,17 @@ import com.cwlarson.deviceid.util.windowManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.io.File
 import java.lang.reflect.Method
 
-@WorkerThread
-internal class Hardware(private val context: Context, private val db: AppDatabase) {
-    companion object {
-        private const val TAG = "Hardware"
-    }
-
+internal class Hardware(private val context: Context, private val db: AppDatabase, scope: CoroutineScope) {
     //Set Hardware Tiles
     init {
-        db.addItems(context,deviceScreenDensity(),ramSize(),formattedInternalMemory(),
-                formattedExternalMemory())
+        scope.launch(Dispatchers.IO) {
+            db.addItems(context, deviceScreenDensity(), ramSize(), formattedInternalMemory(),
+                    formattedExternalMemory())
+        }
         getBattery()
     }
 
@@ -48,7 +44,7 @@ internal class Hardware(private val context: Context, private val db: AppDatabas
             val mGetRawH: Method
             val mGetRawW: Method
             // For JellyBean 4.2 (API 17) and onward
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
                 display.getRealMetrics(metrics)
                 width = metrics.widthPixels
                 height = metrics.heightPixels
@@ -73,7 +69,7 @@ internal class Hardware(private val context: Context, private val db: AppDatabas
                 else -> { null }
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -97,7 +93,7 @@ internal class Hardware(private val context: Context, private val db: AppDatabas
                 chartItem = ChartItem(mi.availMem.toFloat(), mi.totalMem.toFloat(), R.drawable.ic_memory)
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -110,7 +106,7 @@ internal class Hardware(private val context: Context, private val db: AppDatabas
                         Formatter.formatFileSize(context, available), Formatter.formatFileSize(context, total))
             chartItem = ChartItem(available.toFloat(), total.toFloat(), R.drawable.ic_storage)
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -120,8 +116,8 @@ internal class Hardware(private val context: Context, private val db: AppDatabas
             var totalSize = 0L
             val appsDir = ContextCompat.getExternalFilesDirs(context, null)
             for (file in appsDir) {
-                availSize += file.parentFile.parentFile.parentFile.parentFile.freeSpace
-                totalSize += file.parentFile.parentFile.parentFile.parentFile.totalSpace
+                availSize += file?.parentFile?.parentFile?.parentFile?.parentFile?.freeSpace ?: 0L
+                totalSize += file?.parentFile?.parentFile?.parentFile?.parentFile?.totalSpace ?: 0L
             }
             availSize -= File(context.filesDir.absoluteFile.toString()).freeSpace
             totalSize -= File(context.filesDir.absoluteFile.toString()).totalSpace
@@ -130,7 +126,7 @@ internal class Hardware(private val context: Context, private val db: AppDatabas
                         Formatter.formatFileSize(context, availSize), Formatter.formatFileSize(context, totalSize))
             chartItem = ChartItem(availSize.toFloat(), totalSize.toFloat(), R.drawable.ic_storage)
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
