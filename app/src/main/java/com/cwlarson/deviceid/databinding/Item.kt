@@ -1,11 +1,13 @@
 package com.cwlarson.deviceid.databinding
 
+import androidx.annotation.Keep
 import androidx.databinding.BaseObservable
 import androidx.databinding.Bindable
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.TypeConverter
 
+@Keep
 enum class ItemType(val value: Int) {
     NONE(-1),
     DEVICE(1),NETWORK(2),SOFTWARE(3),HARDWARE(4)

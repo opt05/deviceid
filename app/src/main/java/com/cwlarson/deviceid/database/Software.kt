@@ -3,6 +3,7 @@ package com.cwlarson.deviceid.database
 import android.content.Context
 import android.os.Build
 import android.text.format.DateFormat
+import androidx.annotation.Keep
 import androidx.core.content.pm.PackageInfoCompat
 import com.cwlarson.deviceid.databinding.Item
 import com.cwlarson.deviceid.databinding.ItemType
@@ -19,7 +20,7 @@ import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.*
 
-internal class Software(private val context: Context, db: AppDatabase, scope: CoroutineScope) {
+class Software(private val context: Context, db: AppDatabase, scope: CoroutineScope) {
     init {
         scope.launch(Dispatchers.IO) {
             //Set Software Tiles
@@ -32,6 +33,8 @@ internal class Software(private val context: Context, db: AppDatabase, scope: Co
         }
     }
 
+    @Suppress("unused")
+    @Keep
     private enum class Codename(val value: Int) {
         BASE(1), BASE_1_1(2),
         CUPCAKE(3),
@@ -57,7 +60,8 @@ internal class Software(private val context: Context, db: AppDatabase, scope: Co
 
     private fun androidVersion() = Item("Android Version", ItemType.SOFTWARE).apply {
         try {
-            subtitle = "${Build.VERSION.RELEASE} (${Build.VERSION.SDK_INT}) ${Codename.fromInt(Build.VERSION.SDK_INT)?.toString().orEmpty()}"
+            subtitle = "${Build.VERSION.RELEASE} (${Build.VERSION.SDK_INT}) " +
+                    "${Codename.fromInt(Build.VERSION.SDK_INT)?.name}"
         } catch (e: Exception) {
             Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }

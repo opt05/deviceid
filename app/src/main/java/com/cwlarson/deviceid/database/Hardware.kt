@@ -24,7 +24,7 @@ import timber.log.Timber
 import java.io.File
 import java.lang.reflect.Method
 
-internal class Hardware(private val context: Context, private val db: AppDatabase, scope: CoroutineScope) {
+class Hardware(private val context: Context, private val db: AppDatabase, scope: CoroutineScope) {
     //Set Hardware Tiles
     init {
         scope.launch(Dispatchers.IO) {
@@ -129,7 +129,7 @@ internal class Hardware(private val context: Context, private val db: AppDatabas
             Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
-
+    // FIXME: Move to lifecycle components
     private fun getBattery() =
         context.registerReceiver(InfoReceiver(), IntentFilter(Intent.ACTION_BATTERY_CHANGED))
 

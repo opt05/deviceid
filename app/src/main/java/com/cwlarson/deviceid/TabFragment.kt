@@ -26,7 +26,7 @@ class TabFragment : Fragment(), OnSharedPreferenceChangeListener, CoroutineScope
     private lateinit var binding: FragmentTabsBinding
     private lateinit var preferences: SharedPreferences
     private var refreshJob: Job? = null
-    private val args: TabFragmentArgs by navArgs()
+    private val args by navArgs<TabFragmentArgs>()
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.IO
 

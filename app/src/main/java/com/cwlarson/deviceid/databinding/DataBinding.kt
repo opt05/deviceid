@@ -23,6 +23,7 @@ import com.cwlarson.deviceid.R
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.card.MaterialCardView
 import timber.log.Timber
+import kotlin.math.max
 
 @BindingAdapter("srcCompatBinding")
 fun bindSrcCompat(imageView: ImageView, @DrawableRes drawable: Int) {
@@ -191,11 +192,11 @@ fun applySystemWindows(view: View, applyLeft: Boolean, applyTop: Boolean, applyR
             val bottom = if (applyBottom) insets.systemWindowInsetBottom else 0
             when (v) { // Fix for custom CardView since it cannot use padding
                 is MaterialCardView -> {
-                    if(v.getTag(R.id.hasMarginSet) == null) {
-                        v.setTag(R.id.hasMarginSet, true)
+                    if(v.getTag(R.id.hasInsetsSet) == null) {
+                        v.setTag(R.id.hasInsetsSet, true)
                         v.doOnPreDraw {
                             it.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
-                            val addtlHeight = Math.max(0, (abHeight - (it.measuredHeight - it
+                            val addtlHeight = max(0, (abHeight - (it.measuredHeight - it
                                     .paddingTop - it.paddingBottom)) / 2)
                             it.updateLayoutParams<ViewGroup.MarginLayoutParams> {
                                 updateMargins(
@@ -210,8 +211,11 @@ fun applySystemWindows(view: View, applyLeft: Boolean, applyTop: Boolean, applyR
                     }
                 }
                 else -> {
-                    v.setPadding(padding.left + left, padding.top + top + if(applyActionBarPadding)
-                        abHeight else 0, padding.right + right, padding.bottom + bottom)
+                    if(v.getTag(R.id.hasInsetsSet) == null) {
+                        v.setTag(R.id.hasInsetsSet, true)
+                        v.setPadding(padding.left + left, padding.top + top + if (applyActionBarPadding)
+                            abHeight else 0, padding.right + right, padding.bottom + bottom)
+                    }
                 }
             }
             if (view.parent is SwipeRefreshLayout) (view.parent as SwipeRefreshLayout)
@@ -221,11 +225,11 @@ fun applySystemWindows(view: View, applyLeft: Boolean, applyTop: Boolean, applyR
     } else {
         when (view) { // Fix for custom CardView since it cannot use padding
             is MaterialCardView -> {
-                if(view.getTag(R.id.hasMarginSet) == null) {
-                    view.setTag(R.id.hasMarginSet, true)
+                if(view.getTag(R.id.hasInsetsSet) == null) {
+                    view.setTag(R.id.hasInsetsSet, true)
                     view.doOnPreDraw {
                         it.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
-                        val addtlHeight = Math.max(0,(abHeight - (it.measuredHeight - it
+                        val addtlHeight = max(0, (abHeight - (it.measuredHeight - it
                                 .paddingTop - it.paddingBottom)) / 2)
                         it.updateLayoutParams<ViewGroup.MarginLayoutParams> {
                             updateMargins(top = topMargin + addtlHeight, bottom = bottomMargin + addtlHeight)
@@ -236,7 +240,10 @@ fun applySystemWindows(view: View, applyLeft: Boolean, applyTop: Boolean, applyR
                 }
             }
             else -> {
-                view.updatePadding(top = view.paddingTop + if(applyActionBarPadding) abHeight else 0)
+                if(view.getTag(R.id.hasInsetsSet) == null) {
+                    view.setTag(R.id.hasInsetsSet, true)
+                    view.updatePadding(top = view.paddingTop + if (applyActionBarPadding) abHeight else 0)
+                }
             }
         }
         if (view.parent is SwipeRefreshLayout) (view.parent as SwipeRefreshLayout)

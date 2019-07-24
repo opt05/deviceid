@@ -17,8 +17,11 @@
         <item name="colorOnSurface">@color/colorOnSurface</item>
         <item name="scrimBackground">@color/colorScrim</item>
         <item name="fontFamily">@font/open_sans</item>
-        <item name="bottomNavigationStyle">@style/AppTheme.BottomNavigationTheme</item>
-        <item name="materialAlertDialogTheme">@style/ThemeOverlay.MaterialComponents.Dialog.Alert</item>
+        <item name="bottomNavigationStyle">@style/Widget.MaterialComponents.BottomNavigationView.PrimarySurface</item>
+        <item name="toolbarStyle">@style/Widget.MaterialComponents.Toolbar.PrimarySurface</item>
+        <item name="materialCardViewStyle">@style/Widget.MaterialComponents.CardView</item>
+        <item name="materialAlertDialogTheme">@style/AppTheme.AlertDialog</item>
+        <item name="searchViewStyle">@style/AppTheme.SearchView</item>
         <item name="shapeAppearanceSmallComponent">@style/AppShapeAppearance.SmallComponent</item>
         <item name="shapeAppearanceMediumComponent">@style/AppShapeAppearance.MediumComponent</item>
         <item name="shapeAppearanceLargeComponent">@style/AppShapeAppearance.LargeComponent</item>
@@ -26,16 +29,13 @@
 
     <style name="AppTheme" parent="AppTheme.Base"/>
 
-    <style name="AppTheme.SearchBarTheme" parent="Widget.MaterialComponents.CardView">
-        <item name="fontFamily">@font/open_sans</item>
-    </style>
-
     <style name="AppTheme.ToolbarTheme" parent="ThemeOverlay.MaterialComponents.Dark.ActionBar">
         <item name="fontFamily">@font/ubuntu_bold</item>
     </style>
 
-    <style name="AppTheme.BottomNavigationTheme"
-           parent="Widget.MaterialComponents.BottomNavigationView.Colored"/>
+    <style name="AppTheme.AlertDialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
+        <item name="colorPrimary">@color/colorSecondary</item>
+    </style>
 
     <style name="AppTheme.SearchView" parent="Widget.AppCompat.SearchView">
         <item name="android:textSize">16sp</item>
@@ -56,36 +56,15 @@
         <item name="cornerSize">12dp</item>
     </style>
 
-    <style name="AppTheme.ActionMenuViewOverlay" parent="Theme.MaterialComponents.DayNight">
-        <item name="colorControlNormal">@color/overflowIconColor</item>
-    </style>
-
     <style name="AppTheme.BottomBarButtonStyle" parent="Widget.MaterialComponents.Button.TextButton.Icon">
         <item name="colorPrimary">@color/colorSecondary</item>
     </style>
 
-    <style name="AppTheme.SplashTheme" parent="AppTheme">
-        <item name="android:windowTitleSize">?actionBarSize</item>
-        <item name="android:windowTitleStyle">@style/CustomWindowTitle</item>
-        <item name="android:windowTitleBackgroundStyle">@style/CustomWindowTitleBackground</item>
-        <item name="android:windowNoTitle">false</item>
-        <item name="android:windowDrawsSystemBarBackgrounds" tools:targetApi="lollipop">true</item>
+    <style name="AppTheme.SplashTheme" parent="AppTheme.Base">
+        <item name="android:windowBackground">@drawable/launch_screen</item>
         <item name="android:windowTranslucentNavigation" tools:targetApi="kitkat">true</item>
-    </style>
-
-    <!-- Changes the background color of the title bar -->
-    <style name="CustomWindowTitleBackground">
-        <item name="android:background">?colorPrimary</item>
-    </style>
-
-    <!-- Set the theme for the window title -->
-    <style name="CustomWindowTitle">
-        <item name="android:singleLine">true</item>
-        <item name="android:textAppearance">@style/CustomWindowTitleText</item>
-    </style>
-
-    <style name="CustomWindowTitleText">
-        <item name="android:textColor">@android:color/transparent</item>
+        <item name="android:windowDrawsSystemBarBackgrounds" tools:targetApi="lollipop">true</item>
+        <item name="android:statusBarColor" tools:targetApi="lollipop">?colorPrimarySurface</item>
     </style>
 
 </resources>

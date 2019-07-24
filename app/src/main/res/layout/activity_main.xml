@@ -60,7 +60,6 @@
             app:cardUseCompatPadding="false"
             app:cardElevation="2dp"
             app:cardPreventCornerOverlap="false"
-            style="@style/AppTheme.SearchBarTheme"
             app:layout_behavior=".util.SearchViewBehavior">
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
@@ -108,7 +107,6 @@
                     android:paddingLeft="@{safeUnbox(model.isSearchOpen) ? @dimen/searchbar_padding_active : @dimen/searchbar_padding_inactive}"
                     android:paddingEnd="-8dp"
                     android:paddingRight="-8dp"
-                    android:theme="@style/AppTheme.SearchView"
                     app:searchIcon="@null"
                     app:queryHint="@null"
                     app:defaultQueryHint="@null"
@@ -123,7 +121,6 @@
                     android:id="@+id/menu_toolbar"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:theme="@style/AppTheme.ActionMenuViewOverlay"
                     android:paddingStart="0dp"
                     android:paddingLeft="0dp"
                     android:paddingEnd="@dimen/searchbar_padding_inactive"
@@ -142,6 +139,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
+            app:labelVisibilityMode="auto"
             app:layout_behavior="@string/hide_bottom_view_on_scroll_behavior"
             app:menu="@menu/bottom_navigation_menu"
             app:paddingBottomSystemWindowInsets="@{true}"/>

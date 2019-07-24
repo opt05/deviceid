@@ -18,7 +18,7 @@ import timber.log.Timber
 import java.util.*
 
 @WorkerThread
-internal class Device(private val context: Context, db: AppDatabase, scope: CoroutineScope) {
+class Device(private val context: Context, db: AppDatabase, scope: CoroutineScope) {
     init {
         //Set Device Tiles
         scope.launch(Dispatchers.IO) {

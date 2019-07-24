@@ -16,7 +16,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:padding="16dp"
-        app:layout_behavior="@string/bottom_sheet_behavior">
+        app:layout_behavior="@string/bottom_sheet_behavior"
+        app:behavior_skipCollapsed="true">
         <TextView
             android:id="@+id/bottom_title"
             android:textSize="18sp"

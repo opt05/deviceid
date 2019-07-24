@@ -25,17 +25,18 @@ android {
     }
     buildTypes {
         release {
-            postprocessing {
-                removeUnusedCode true
-                removeUnusedResources true
-                obfuscate true
-                optimizeCode true
-                proguardFile 'proguard-rules.pro'
-            }
+            shrinkResources true
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
     }
     dataBinding { enabled = true }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions { jvmTarget = JavaVersion.VERSION_1_8}
     kapt {
         arguments { arg("room.schemaLocation", "$projectDir/schemas".toString()) }
         // Increase the max count of errors from annotation processors. Default is 100.
@@ -43,25 +44,25 @@ android {
     }
 }
 
-def lifecycle_version = '2.2.0-alpha01'
-def room_version = '2.1.0-rc01'
+def lifecycle_version = '2.2.0-alpha02'
+def room_version = '2.1.0'
 def paging_version = '2.1.0'
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    implementation "androidx.core:core-ktx:1.1.0-rc01"
-    implementation "androidx.fragment:fragment-ktx:1.1.0-beta01"
-    implementation "androidx.appcompat:appcompat:1.1.0-beta01"
-    implementation "androidx.recyclerview:recyclerview:1.1.0-alpha06"
+    implementation "androidx.core:core-ktx:1.1.0-rc02"
+    implementation "androidx.fragment:fragment-ktx:1.1.0-rc03"
+    implementation "androidx.appcompat:appcompat:1.1.0-rc01"
+    implementation "androidx.recyclerview:recyclerview:1.1.0-beta01"
     implementation "androidx.paging:paging-runtime-ktx:$paging_version"
-    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0-alpha01"
-    implementation "com.google.android.material:material:1.1.0-alpha07"
+    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0-alpha02"
+    implementation "com.google.android.material:material:1.1.0-alpha08"
     implementation "androidx.coordinatorlayout:coordinatorlayout:1.1.0-beta01"
-    implementation "androidx.constraintlayout:constraintlayout:2.0.0-beta1"
+    implementation "androidx.constraintlayout:constraintlayout:2.0.0-beta2"
     // ViewModel and LiveData
     implementation "androidx.lifecycle:lifecycle-extensions:$lifecycle_version"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version"
-    kapt "androidx.lifecycle:lifecycle-compiler:$lifecycle_version"
+    implementation "androidx.lifecycle:lifecycle-common-java8:$lifecycle_version"
     // Room
     implementation "androidx.room:room-runtime:$room_version"
     kapt "androidx.room:room-compiler:$room_version"
@@ -70,13 +71,15 @@ dependencies {
     implementation "androidx.navigation:navigation-fragment-ktx:$nav_version"
     implementation "androidx.navigation:navigation-ui-ktx:$nav_version"
     //Preference Compat
-    implementation "androidx.preference:preference-ktx:1.1.0-beta01"
+    implementation "androidx.preference:preference-ktx:1.1.0-rc01"
     // Kotlin coroutines
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.2.1"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.2.2"
+    // App Updates
+    implementation 'com.google.android.play:core:1.6.1'
     // Timber
     implementation 'com.jakewharton.timber:timber:4.7.1'
     //Debug bridge for Android applications, enabling the powerful Chrome Developer Tools
     debugImplementation "com.facebook.stetho:stetho:1.5.1"
     //LeakCanary
-    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.0-alpha-2'
+    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.0-alpha-3'
 }

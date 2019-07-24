@@ -15,4 +15,25 @@
     <integer-array name="swipe_to_refresh_colors" tools:keep="@array/swipe_to_refresh_colors">
         <item>@color/colorSecondary</item>
     </integer-array>
+    
+    <string-array name="pref_fake_update_event_entries">
+        <item>No simulation</item>
+        <item>None</item>
+        <item>Success</item>
+        <item>Fail - dialog cancel</item>
+        <item>Fail - dialog update failed</item>
+        <item>Fail - download</item>
+        <item>Fail - download cancel</item>
+        <item>Fail - install</item>
+    </string-array>
+    <string-array name="pref_fake_update_event_values">
+        <item>NO_SIMULATION</item>
+        <item>NONE</item>
+        <item>SUCCESS</item>
+        <item>FAIL_DIALOG_CANCEL</item>
+        <item>FAIL_DIALOG_UPDATE_FAILED</item>
+        <item>FAIL_DOWNLOAD</item>
+        <item>FAIL_DOWNLOAD_CANCEL</item>
+        <item>FAIL_INSTALL</item>
+    </string-array>
 </resources>

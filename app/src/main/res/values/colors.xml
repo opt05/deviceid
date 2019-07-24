@@ -22,9 +22,7 @@
     <color name="colorOnSurface">#000000</color>
     <color name="colorOnError">#FFFFFF</color>
     <color name="colorScrim">#52000000</color>
-    <color name="statusBarBackground">#E6FFFFFF</color>
     
     <color name="imagePrimary">@color/colorSecondary</color>
     <color name="imageSecondary">@color/colorSecondaryVariant</color>
-    <color name="overflowIconColor">#8a000000</color>
 </resources>

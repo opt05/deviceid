@@ -18,7 +18,7 @@ import java.math.BigInteger
 import java.net.InetAddress
 import java.nio.ByteOrder
 
-internal class Network(private val context: Context, db: AppDatabase, scope: CoroutineScope) {
+class Network(private val context: Context, db: AppDatabase, scope: CoroutineScope) {
     private val wifiConnectionInfo: WifiInfo = context.wifiManager.connectionInfo
 
     init {
@@ -32,7 +32,7 @@ internal class Network(private val context: Context, db: AppDatabase, scope: Cor
         }
     }
 
-    /*
+    /**
      * Marshmallow has started to depreciate this method
      * http://developer.android.com/about/versions/marshmallow/android-6.0-changes.html#behavior-hardware-id
      */
@@ -99,7 +99,7 @@ internal class Network(private val context: Context, db: AppDatabase, scope: Cor
 
     private fun wifiLinkSpeed() = Item("Wi-Fi Link Speed", ItemType.NETWORK).apply {
         try {
-            subtitle = Integer.toString(wifiConnectionInfo.linkSpeed)
+            subtitle = wifiConnectionInfo.linkSpeed.toString()
         } catch (e: Exception) {
             Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
@@ -107,7 +107,7 @@ internal class Network(private val context: Context, db: AppDatabase, scope: Cor
 
     private fun wifiNetworkID() = Item("Wi-Fi Network ID", ItemType.NETWORK).apply {
         try {
-            subtitle = Integer.toString(wifiConnectionInfo.networkId)
+            subtitle = wifiConnectionInfo.networkId.toString()
         } catch (e: NullPointerException) {
             Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
@@ -115,24 +115,25 @@ internal class Network(private val context: Context, db: AppDatabase, scope: Cor
 
     private fun wifiRSSI() = Item("Wi-Fi RSSI", ItemType.NETWORK).apply {
         try {
-            subtitle = Integer.toString(wifiConnectionInfo.rssi)
+            subtitle = wifiConnectionInfo.rssi.toString()
         } catch (e: Exception) {
             Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
+    @SuppressLint("PrivateApi","DiscouragedPrivateApi")
     private fun wifiHostname() = Item("Wi-Fi Hostname", ItemType.NETWORK).apply {
         try {
-            @SuppressLint("PrivateApi")
-            val getString = Build::class.java.getDeclaredMethod("getString", String::class.java)
-            getString.isAccessible = true
-            subtitle = getString.invoke(null, "net.hostname").toString()
+            Build::class.java.getDeclaredMethod("getString", String::class.java).run {
+                isAccessible = true
+                subtitle = invoke(null, "net.hostname")?.toString()
+            }
         } catch (e: Exception) {
             Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
-    /*
+    /**
      * Marshmallow has started to depreciate this method
      * http://developer.android.com/about/versions/marshmallow/android-6.0-changes.html#behavior-hardware-id
      */

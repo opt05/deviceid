@@ -13,10 +13,12 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.navigation.NavController
+import androidx.navigation.findNavController
 import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.databinding.Item
+import com.cwlarson.deviceid.databinding.ItemType
 import com.cwlarson.deviceid.databinding.UnavailablePermission
-import com.cwlarson.deviceid.dialog.ItemClickDialog
+import com.cwlarson.deviceid.dialog.ItemClickDialogDirections
 import com.google.android.material.snackbar.Snackbar
 import timber.log.Timber
 
@@ -81,11 +83,12 @@ class ItemClickHandler(private val snackbarView: View, private val activity: Fra
             } else if (it.unavailableType != null) {
                 // Unavailable for another reason
                 val message = a.resources?.getString(R.string.snackbar_not_found_adapter, item.title)
-                Snackbar.make(snackbarView, message ?: "Unknown error",
-                        Snackbar.LENGTH_LONG).setAnchorView(R.id.bottom_navigation).show()
+                Snackbar.make(snackbarView, message ?: "Unknown error", Snackbar.LENGTH_LONG)
+                        .setActionTextColor(ContextCompat.getColor(activity, R.color.imageSecondary))
+                        .setAnchorView(R.id.bottom_navigation).show()
             }
-        } ?: ItemClickDialog.newInstance(item?.title, item?.itemType).show(
-                a.supportFragmentManager, ItemClickDialog.DIALOG_TAG)
+        } ?: a.findNavController(R.id.nav_host_fragment).navigate(ItemClickDialogDirections
+                .actionGlobalItemClickDialog(item?.title, item?.itemType ?: ItemType.NONE))
         true
     } ?: false
 
@@ -108,9 +111,9 @@ class ItemClickHandler(private val snackbarView: View, private val activity: Fra
                     Snackbar.make(snackbarView,
                             a.getString(R.string.permission_snackbar_retry,
                                     a.packageManager.getPermissionInfo(Manifest.permission.READ_PHONE_STATE, 0)
-                                            .loadLabel(a.packageManager).toString(),
-                                    itemTitle),
-                            Snackbar.LENGTH_INDEFINITE).setAnchorView(R.id.bottom_navigation)
+                                            .loadLabel(a.packageManager).toString(), itemTitle), Snackbar.LENGTH_INDEFINITE)
+                            .setActionTextColor(ContextCompat.getColor(a, R.color.imageSecondary))
+                            .setAnchorView(R.id.bottom_navigation)
                             .setAction(R.string.permission_snackbar_button
                     ) { ActivityCompat.requestPermissions(a,
                             arrayOf(permission), MY_PERMISSION.value) }.show()

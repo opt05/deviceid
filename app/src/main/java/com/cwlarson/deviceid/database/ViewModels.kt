@@ -7,9 +7,12 @@ import androidx.paging.PagedList
 import androidx.paging.toLiveData
 import com.cwlarson.deviceid.databinding.Item
 import com.cwlarson.deviceid.databinding.ItemType
+import com.cwlarson.deviceid.util.FakeAppUpdateManagerWrapper
+import com.cwlarson.deviceid.util.UpdateState
+import com.google.android.play.core.appupdate.AppUpdateManager
+import com.google.android.play.core.appupdate.AppUpdateManagerFactory
+import com.google.android.play.core.install.InstallState
 import kotlinx.coroutines.launch
-
-
 
 class AllItemsViewModel(application: Application) : AndroidViewModel(application) {
     private val database = AppDatabase.getDatabase(application)
@@ -117,9 +120,53 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
     }
 }
 
+class AppUpdateViewModel(application: Application) : AndroidViewModel(application) {
+    val checkForFlexibleUpdate = MutableLiveData<Event<Boolean>>()
+    val updateStatus = MutableLiveData<UpdateState>()
+    val installState = MutableLiveData<InstallState>()
+    val useFakeAppUpdateManager = MutableLiveData<Boolean>()
+    private val appUpdateManager: AppUpdateManager by lazy {
+        AppUpdateManagerFactory.create(application)
+    }
+    val fakeAppUpdateManager by lazy {
+        FakeAppUpdateManagerWrapper(application, viewModelScope)
+    }
+
+    fun getUpdateManager(): AppUpdateManager =
+            if(useFakeAppUpdateManager.value == true) fakeAppUpdateManager else appUpdateManager
+
+    fun sendCheckForFlexibleUpdate() {
+        checkForFlexibleUpdate.value = Event(true)
+    }
+}
+
+/**
+ * Used as a wrapper for a double LiveData event to trigger on either data change.
+ */
 class DoubleTrigger<A, B>(a: LiveData<A>, b: LiveData<B>) : MediatorLiveData<Pair<A?, B?>>() {
     init {
         addSource(a) { value = it to b.value }
         addSource(b) { value = a.value to it }
     }
+}
+
+/**
+ * Used as a wrapper for data that is exposed via a LiveData that represents an event.
+ */
+open class Event<out T>(private val content: T) {
+    @Suppress("MemberVisibilityCanBePrivate")
+    var hasBeenHandled = false
+        private set // Allow external read but not write
+    /**
+     * Returns the content and prevents its use again.
+     */
+    fun getContentIfNotHandled(): T? = if (hasBeenHandled) null
+    else {
+        hasBeenHandled = true
+        content
+    }
+    /**
+     * Returns the content, even if it's already been handled.
+     */
+    fun peekContent(): T = content
 }

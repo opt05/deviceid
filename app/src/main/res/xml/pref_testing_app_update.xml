@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+                  xmlns:app="http://schemas.android.com/apk/res-auto">
+    <androidx.preference.PreferenceCategory
+        android:title="App Update Testing">
+        <androidx.preference.SwitchPreferenceCompat
+            android:key="@string/pref_use_fake_update_manager_key"
+            android:title="@string/pref_use_fake_update_manager_title"
+            app:singleLineTitle="false"
+            android:defaultValue="false"
+            android:summaryOff="@string/pref_use_fake_update_manager_summary_off"
+            android:summaryOn="@string/pref_use_fake_update_manager_summary_on" />
+        <androidx.preference.ListPreference
+            android:key="@string/pref_fake_update_set_end_state_key"
+            android:title="@string/pref_fake_update_set_end_state_title"
+            android:entries="@array/pref_fake_update_event_entries"
+            android:entryValues="@array/pref_fake_update_event_values"
+            android:defaultValue="NO_SIMULATION"
+            app:useSimpleSummaryProvider="true"/>
+    </androidx.preference.PreferenceCategory>
+</PreferenceScreen>
