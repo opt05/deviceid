@@ -40,7 +40,7 @@ class SearchFragment: Fragment(), SharedPreferences.OnSharedPreferenceChangeList
             model = activity?.let {
                 ViewModelProviders.of(it).get<SearchItemsViewModel>().apply {
                     setHideUnavailable(preferences.getBoolean(getString(R.string.pref_hide_unavailable_key), false))
-                    searchItems.observe(this@SearchFragment, Observer { itemModels ->
+                    searchItems.observe(viewLifecycleOwner, Observer { itemModels ->
                         myAdapter.submitList(itemModels)
                         itemsCount.value = itemModels?.size ?: 0
                         isLoading.value = false

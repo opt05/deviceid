@@ -101,9 +101,9 @@ class ItemClickHandler(private val snackbarView: View, private val activity: Fra
     // Request permission for IMEI/MEID for Android M+
     private fun getPermissionClickAdapter(MY_PERMISSION: UnavailablePermission?, itemTitle: String?) {
         activity?.let {  a ->
-            val permission: String
-            when (MY_PERMISSION) {
-                UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE -> permission = Manifest.permission.READ_PHONE_STATE
+            val permission: String = when (MY_PERMISSION) {
+                UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE -> Manifest.permission.READ_PHONE_STATE
+                UnavailablePermission.MY_PERMISSIONS_REQUEST_LOCATION_STATE -> Manifest.permission.ACCESS_FINE_LOCATION
                 else -> return
             }
             if (ContextCompat.checkSelfPermission(a, permission) != PackageManager.PERMISSION_GRANTED) {

@@ -27,7 +27,7 @@ class ItemClickDialog : BottomSheetDialogFragment() {
                               savedInstanceState: Bundle?): View? =
         DataBindingUtil.inflate<BottomSheetBinding>(LayoutInflater.from(context),
                 R.layout.bottom_sheet, null, false).apply {
-            lifecycleOwner = this@ItemClickDialog
+            lifecycleOwner = viewLifecycleOwner
             handler = ItemClickDialogHandler(activity, this@ItemClickDialog)
             model = ViewModelProviders.of(this@ItemClickDialog).get<BottomSheetViewModel>().apply {
                 setItem(args.title ?: getString(R.string.not_found), args.type)

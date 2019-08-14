@@ -6,54 +6,44 @@ import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
-import androidx.annotation.WorkerThread
 import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.databinding.*
 import com.cwlarson.deviceid.util.hasPermission
 import com.cwlarson.deviceid.util.telephonyManager
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.util.*
 
-@WorkerThread
 class Device(private val context: Context, db: AppDatabase, scope: CoroutineScope) {
     init {
-        //Set Device Tiles
-        scope.launch(Dispatchers.IO) {
-            db.addItems(context, *imei(), deviceModel(), serial(), androidID(), gsfid())
+        scope.launch {
+            db.addItems(context, imei(), deviceModel(), serial(), androidID(), gsfid())
         }
     }
 
     // Request permission for IMEI/MEID for Android M+
     @SuppressLint("HardwareIds", "MissingPermission")
-    private fun imei(): Array<Item> = if(Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-            arrayOf(Item("IMEI / MEID", ItemType.DEVICE))
-        } else {
-            arrayOf(Item("IMEI", ItemType.DEVICE),Item("MEID", ItemType.DEVICE))
-        }.apply {
+    private fun imei(): Item = Item("IMEI / MEID", ItemType.DEVICE).apply {
+        if(Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             try {
                 if (context.hasPermission(UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE)) {
                     val telephonyManager = context.telephonyManager
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-                        get(0).subtitle = @Suppress("DEPRECATION") telephonyManager.deviceId
-                    } else {
-                        get(0).subtitle = telephonyManager.imei
-                        get(1).subtitle = telephonyManager.meid
-                    }
+                    subtitle = @Suppress("DEPRECATION") telephonyManager.deviceId
                 } else
-                    forEach { item ->
-                        item.unavailableItem = UnavailableItem(UnavailableType.NEEDS_PERMISSION,
+                        unavailableItem = UnavailableItem(UnavailableType.NEEDS_PERMISSION,
                                 context.resources.getString(R.string.permission_item_subtitle,
                                         context.packageManager.getPermissionInfo(Manifest.permission.READ_PHONE_STATE, 0)
                                                 .loadLabel(context.packageManager).toString()
                                                 .toUpperCase(Locale.getDefault())),
                                 UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE)
-                    }
             } catch (e: Exception) {
                 Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
             }
+        } else {
+            unavailableItem = UnavailableItem(UnavailableType.NO_LONGER_POSSIBLE,
+                    Build.VERSION_CODES.O.sdkToVersion())
+        }
     }
 
     private fun deviceModel() = Item("Model Number", ItemType.DEVICE).apply {
@@ -69,11 +59,11 @@ class Device(private val context: Context, db: AppDatabase, scope: CoroutineScop
                 "$model ($product)"
             } else {
                 "$manufacturer $model ($product)"
-            }
+            }.capitalize()
         } catch (e: Exception) {
             Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
-        subtitle = if (Character.isUpperCase(device[0])) device else Character.toUpperCase(device[0]) + device.substring(1)
+        subtitle = device
     }
 
     @SuppressLint("MissingPermission")
@@ -81,20 +71,8 @@ class Device(private val context: Context, db: AppDatabase, scope: CoroutineScop
         if(Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             @Suppress("DEPRECATION") Build.SERIAL
         } else {
-            try {
-                if (context.hasPermission(UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE)) {
-                    subtitle = Build.getSerial()
-                } else {
-                    unavailableItem = UnavailableItem(UnavailableType.NEEDS_PERMISSION,
-                            context.resources.getString(R.string.permission_item_subtitle,
-                                    context.packageManager.getPermissionInfo(Manifest.permission
-                                            .READ_PHONE_STATE, 0).loadLabel(context.packageManager)
-                                            .toString().toUpperCase(Locale.getDefault())),
-                            UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE)
-                }
-            } catch (e: Exception) {
-                Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
-            }
+            unavailableItem = UnavailableItem(UnavailableType.NO_LONGER_POSSIBLE,
+                    Build.VERSION_CODES.O.sdkToVersion())
         }
     }
 

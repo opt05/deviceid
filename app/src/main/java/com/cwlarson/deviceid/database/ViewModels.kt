@@ -55,7 +55,7 @@ class AllItemsViewModel(application: Application) : AndroidViewModel(application
     fun refreshData(noStatus: Boolean = false) {
         viewModelScope.launch {
             if(!noStatus) status.postValue(Status.LOADING)
-            status.postValue(database.populateAsync(getApplication(), itemType ?: ItemType.NONE))
+            status.postValue(database.populateAsync(getApplication(),  itemType ?: ItemType.NONE))
         }
     }
 }

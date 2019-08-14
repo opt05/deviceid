@@ -13,17 +13,50 @@ import com.cwlarson.deviceid.util.SystemProperty
 import com.cwlarson.deviceid.util.activityManager
 import com.cwlarson.deviceid.util.gmsPackageInfo
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.*
 
+fun Int.sdkToVersion(): String {
+    return when(this) {
+        Build.VERSION_CODES.BASE -> "1.0"
+        Build.VERSION_CODES.BASE_1_1 -> "1.1"
+        Build.VERSION_CODES.CUPCAKE -> "1.5"
+        Build.VERSION_CODES.DONUT -> "1.6"
+        Build.VERSION_CODES.ECLAIR -> "2.0"
+        Build.VERSION_CODES.ECLAIR_0_1 -> "2.0.1"
+        Build.VERSION_CODES.ECLAIR_MR1 -> "2.1"
+        Build.VERSION_CODES.FROYO -> "2.2"
+        Build.VERSION_CODES.GINGERBREAD -> "2.3"
+        Build.VERSION_CODES.GINGERBREAD_MR1 -> "2.3.3"
+        Build.VERSION_CODES.HONEYCOMB -> "3.0"
+        Build.VERSION_CODES.HONEYCOMB_MR1 -> "3.1"
+        Build.VERSION_CODES.HONEYCOMB_MR2 -> "3.2"
+        Build.VERSION_CODES.ICE_CREAM_SANDWICH -> "4.0.1"
+        Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1 -> "4.0.3"
+        Build.VERSION_CODES.JELLY_BEAN -> "4.1"
+        Build.VERSION_CODES.JELLY_BEAN_MR1 -> "4.2"
+        Build.VERSION_CODES.JELLY_BEAN_MR2 -> "4.3"
+        Build.VERSION_CODES.KITKAT -> "4.4"
+        Build.VERSION_CODES.KITKAT_WATCH -> "4.4W"
+        Build.VERSION_CODES.LOLLIPOP -> "5.0"
+        Build.VERSION_CODES.LOLLIPOP_MR1 -> "5.1"
+        Build.VERSION_CODES.M -> "6.0"
+        Build.VERSION_CODES.N -> "7.0"
+        Build.VERSION_CODES.N_MR1 -> "7.1"
+        Build.VERSION_CODES.O -> "8.0"
+        Build.VERSION_CODES.O_MR1 -> "8.1"
+        Build.VERSION_CODES.P -> "9.0"
+        Build.VERSION_CODES.Q -> "10.0"
+        else -> "UNKNOWN"
+    }
+}
+
 class Software(private val context: Context, db: AppDatabase, scope: CoroutineScope) {
     init {
-        scope.launch(Dispatchers.IO) {
-            //Set Software Tiles
+        scope.launch {
             db.addItems(context, androidVersion(), patchLevel(), previewSDKInt(), deviceBuildVersion(),
                     buildBaseband(), buildKernel(), buildDate(), buildNumber(), buildBoard(),
                     buildBootloader(), buildBrand(), buildDevice(), buildDisplay(), buildFingerprint(),
@@ -35,33 +68,33 @@ class Software(private val context: Context, db: AppDatabase, scope: CoroutineSc
 
     @Suppress("unused")
     @Keep
-    private enum class Codename(val value: Int) {
-        BASE(1), BASE_1_1(2),
-        CUPCAKE(3),
-        CUR_DEVELOPMENT(1000),
-        DONUT(4),
-        ECLAIR(5), ECLAIR_MR1(6), ECLAIR_MR2(7),
-        FROYO(8),
-        GINGERBREAD(9), GINGERBREAD_MR1(10),
-        HONEYCOMB(11), HONEYCOMB_MR1(12), HONEYCOMB_MR2(13),
-        ICE_CREAM_SANDWICH(14), ICE_CREAM_SANDWICH_MR1(15),
-        JELLY_BEAN(16), JELLY_BEAN_MR1(17), JELLY_BEAN_MR2(18),
-        KITKAT(19), KITKAT_WATCH(20),
-        LOLLIPOP(21), LOLLIPOP_MR1(22),
-        MARSHMALLOW(23),
-        NOUGAT(24), NOUGAT_MR1(25),
-        OREO(26), OREO_MR1(27),
-        PIE(28);
+    private enum class CODENAME(val value: Int) {
+        BASE(Build.VERSION_CODES.BASE), BASE_1_1(Build.VERSION_CODES.BASE_1_1),
+        CUPCAKE(Build.VERSION_CODES.CUPCAKE),
+        CUR_DEVELOPMENT(Build.VERSION_CODES.CUR_DEVELOPMENT),
+        DONUT(Build.VERSION_CODES.DONUT),
+        ECLAIR(Build.VERSION_CODES.ECLAIR), ECLAIR_MR1(Build.VERSION_CODES.ECLAIR_0_1), ECLAIR_MR2(Build.VERSION_CODES.ECLAIR_MR1),
+        FROYO(Build.VERSION_CODES.FROYO),
+        GINGERBREAD(Build.VERSION_CODES.GINGERBREAD), GINGERBREAD_MR1(Build.VERSION_CODES.GINGERBREAD_MR1),
+        HONEYCOMB(Build.VERSION_CODES.HONEYCOMB), HONEYCOMB_MR1(Build.VERSION_CODES.HONEYCOMB_MR1), HONEYCOMB_MR2(Build.VERSION_CODES.HONEYCOMB_MR2),
+        ICE_CREAM_SANDWICH(Build.VERSION_CODES.ICE_CREAM_SANDWICH), ICE_CREAM_SANDWICH_MR1(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1),
+        JELLY_BEAN(Build.VERSION_CODES.JELLY_BEAN), JELLY_BEAN_MR1(Build.VERSION_CODES.JELLY_BEAN_MR1), JELLY_BEAN_MR2(Build.VERSION_CODES.JELLY_BEAN_MR2),
+        KITKAT(Build.VERSION_CODES.KITKAT), KITKAT_WATCH(Build.VERSION_CODES.KITKAT_WATCH),
+        LOLLIPOP(Build.VERSION_CODES.LOLLIPOP), LOLLIPOP_MR1(Build.VERSION_CODES.LOLLIPOP_MR1),
+        MARSHMALLOW(Build.VERSION_CODES.M),
+        NOUGAT(Build.VERSION_CODES.N), NOUGAT_MR1(Build.VERSION_CODES.N_MR1),
+        OREO(Build.VERSION_CODES.O), OREO_MR1(Build.VERSION_CODES.O_MR1),
+        PIE(Build.VERSION_CODES.P),
+        Q(Build.VERSION_CODES.Q); //FIXME: Update with new name
 
         companion object {
-            fun fromInt(value: Int) = values().firstOrNull { it.value == value }
+            fun fromInt(value: Int) = values().firstOrNull { it.value == value }?.name ?: "UNKNOWN"
         }
     }
 
     private fun androidVersion() = Item("Android Version", ItemType.SOFTWARE).apply {
         try {
-            subtitle = "${Build.VERSION.RELEASE} (${Build.VERSION.SDK_INT}) " +
-                    "${Codename.fromInt(Build.VERSION.SDK_INT)?.name}"
+            subtitle = "${Build.VERSION.RELEASE} (${Build.VERSION.SDK_INT}) ${CODENAME.fromInt(Build.VERSION.SDK_INT)}"
         } catch (e: Exception) {
             Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
@@ -80,7 +113,8 @@ class Software(private val context: Context, db: AppDatabase, scope: CoroutineSc
                     Build.VERSION.SECURITY_PATCH
                 }
             } else {
-                unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET, "6.0")
+                unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET,
+                        Build.VERSION_CODES.M.sdkToVersion())
             }
         } catch (e: Exception) {
             Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
@@ -94,7 +128,8 @@ class Software(private val context: Context, db: AppDatabase, scope: CoroutineSc
                     if(this == 0) "Non-Preview" else "Preview $this"
                 }
             } else {
-                unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET, "6.0")
+                unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET,
+                        Build.VERSION_CODES.N.sdkToVersion())
             }
         } catch (e: Exception) {
             Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")

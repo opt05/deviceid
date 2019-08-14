@@ -48,7 +48,7 @@ class TabFragment : Fragment(), OnSharedPreferenceChangeListener, CoroutineScope
                 setHasFixedSize(true)
                 adapter = myAdapter
             }
-            model?.getAllItems()?.observe(this@TabFragment, Observer { items ->
+            model?.getAllItems()?.observe(viewLifecycleOwner, Observer { items ->
                 myAdapter.submitList(items)
                 model?.itemsCount?.value = items?.size ?: 0
                 // Espresso does not know how to wait for data binding's loop so we execute changes sync.

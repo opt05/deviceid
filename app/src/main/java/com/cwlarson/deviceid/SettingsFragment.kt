@@ -35,11 +35,6 @@ fun SharedPreferences.setDarkTheme(context: Context?, newValue: Any? = null) {
 class SettingsFragment: PreferenceFragmentCompat() {
     private var appUpdateViewModel: AppUpdateViewModel? = null
 
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-        activity?.let { appUpdateViewModel = ViewModelProviders.of(it).get() }
-    }
-
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val layout = super.onCreateView(inflater, container, savedInstanceState)
         applySystemWindows(listView, applyBottom = true, applyActionBarPadding = false,
@@ -47,8 +42,9 @@ class SettingsFragment: PreferenceFragmentCompat() {
         return layout
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+        activity?.let { appUpdateViewModel = ViewModelProviders.of(it).get() }
         findPreference<ListPreference>(getString(R.string.pref_daynight_mode_key))?.onPreferenceChangeListener =
                 Preference.OnPreferenceChangeListener { _, newValue ->
                     preferenceManager.sharedPreferences.setDarkTheme(context, newValue)
@@ -56,40 +52,39 @@ class SettingsFragment: PreferenceFragmentCompat() {
                 }
         findPreference<Preference>(getString(R.string.pref_check_for_update_key))?.let { pref ->
             if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                activity?.let { act ->
-                    appUpdateViewModel?.updateStatus?.observe(act, Observer { ua ->
-                        pref.title = when (ua) {
-                            UpdateState.Yes,
-                            UpdateState.YesButNotAllowed ->
-                                act.getString(R.string.pref_check_for_update_title_yes)
-                            else -> // is UpdateState.No
-                                act.getString(R.string.pref_check_for_update_title_no)
-                        }
-                    })
-                    appUpdateViewModel?.installState?.observe(act, Observer { state ->
-                        pref.summary = when (state?.installStatus()) {
-                            InstallStatus.CANCELED ->
-                                act.getString(R.string.pref_check_for_update_summary_canceled)
-                            InstallStatus.DOWNLOADING ->
-                                act.getString(R.string.pref_check_for_update_summary_downloading)
-                            InstallStatus.INSTALLED ->
-                                act.getString(R.string.pref_check_for_update_summary_installed)
-                            InstallStatus.INSTALLING ->
-                                act.getString(R.string.pref_check_for_update_summary_installing)
-                            InstallStatus.PENDING ->
-                                act.getString(R.string.pref_check_for_update_summary_pending)
-                            InstallStatus.REQUIRES_UI_INTENT ->
-                                act.getString(R.string.pref_check_for_update_summary_ui_intent)
-                            InstallStatus.UNKNOWN ->
-                                act.getString(R.string.pref_check_for_update_summary_unknown)
-                            InstallStatus.DOWNLOADED ->
-                                act.getString(R.string.pref_check_for_update_summary_downloaded)
-                            InstallStatus.FAILED ->
-                                act.getString(R.string.pref_check_for_update_summary_failed)
-                            else -> act.getString(R.string.pref_check_for_update_summary)
-                        }
-                    })
-                }
+                appUpdateViewModel?.updateStatus?.observe(viewLifecycleOwner, Observer { ua ->
+                    pref.title = when (ua) {
+                        UpdateState.Yes,
+                        UpdateState.YesButNotAllowed ->
+                            getString(R.string.pref_check_for_update_title_yes)
+                        else -> // is UpdateState.No
+                            getString(R.string.pref_check_for_update_title_no)
+                    }
+                })
+                appUpdateViewModel?.installState?.observe(viewLifecycleOwner, Observer { state ->
+                    pref.summary = when (state?.installStatus()) {
+                        InstallStatus.CANCELED ->
+                            getString(R.string.pref_check_for_update_summary_canceled)
+                        InstallStatus.DOWNLOADING ->
+                            getString(R.string.pref_check_for_update_summary_downloading)
+                        InstallStatus.INSTALLED ->
+                            getString(R.string.pref_check_for_update_summary_installed)
+                        InstallStatus.INSTALLING ->
+                            getString(R.string.pref_check_for_update_summary_installing)
+                        InstallStatus.PENDING ->
+                            getString(R.string.pref_check_for_update_summary_pending)
+                        InstallStatus.REQUIRES_UI_INTENT ->
+                            getString(R.string.pref_check_for_update_summary_ui_intent)
+                        InstallStatus.UNKNOWN ->
+                            getString(R.string.pref_check_for_update_summary_unknown)
+                        InstallStatus.DOWNLOADED ->
+                            getString(R.string.pref_check_for_update_summary_downloaded)
+                        InstallStatus.FAILED ->
+                            getString(R.string.pref_check_for_update_summary_failed)
+                        else -> getString(R.string.pref_check_for_update_summary)
+                    }
+                })
+
                 pref.onPreferenceClickListener = Preference.OnPreferenceClickListener {
                     appUpdateViewModel?.sendCheckForFlexibleUpdate()
                             ?: Toast.makeText(context, R.string.update_unknown_title, Toast.LENGTH_SHORT).show()

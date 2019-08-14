@@ -34,6 +34,7 @@
             <androidx.recyclerview.widget.RecyclerView
                 app:paddingTopSystemWindowInsets="@{!safeUnbox(mainModel.hideSearchBar)}"
                 app:paddingActionBar="@{!safeUnbox(mainModel.hideSearchBar)}"
+                app:paddingBottomSystemWindowInsets="@{ true }"
                 android:paddingTop="@dimen/recycler_top_padding"
                 android:clipToPadding="false"
                 android:clipChildren="false"

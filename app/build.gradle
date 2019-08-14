@@ -56,7 +56,7 @@ dependencies {
     implementation "androidx.recyclerview:recyclerview:1.1.0-beta01"
     implementation "androidx.paging:paging-runtime-ktx:$paging_version"
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0-alpha02"
-    implementation "com.google.android.material:material:1.1.0-alpha08"
+    implementation "com.google.android.material:material:1.1.0-alpha09"
     implementation "androidx.coordinatorlayout:coordinatorlayout:1.1.0-beta01"
     implementation "androidx.constraintlayout:constraintlayout:2.0.0-beta2"
     // ViewModel and LiveData
@@ -81,5 +81,5 @@ dependencies {
     //Debug bridge for Android applications, enabling the powerful Chrome Developer Tools
     debugImplementation "com.facebook.stetho:stetho:1.5.1"
     //LeakCanary
-    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.0-alpha-3'
+    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.0-beta-1'
 }

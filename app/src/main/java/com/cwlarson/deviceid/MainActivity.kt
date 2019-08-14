@@ -230,7 +230,8 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SharedPreferences
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE.value) {
+        if (requestCode == UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE.value ||
+         requestCode == UnavailablePermission.MY_PERMISSIONS_REQUEST_LOCATION_STATE.value) {
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // GRANTED: Force new data updates
                 binding.model?.loadAllData(this@MainActivity)

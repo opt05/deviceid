@@ -104,6 +104,9 @@ fun Context.hasPermission(permission: UnavailablePermission): Boolean = when (pe
     UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE ->
         ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) ==
                 PackageManager.PERMISSION_GRANTED
+    UnavailablePermission.MY_PERMISSIONS_REQUEST_LOCATION_STATE ->
+        ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) ==
+                PackageManager.PERMISSION_GRANTED
 }
 
 /**
