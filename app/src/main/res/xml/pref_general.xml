@@ -35,5 +35,9 @@
             android:defaultValue="false"
             android:summaryOff="@string/pref_search_history_summary_off"
             android:summaryOn="@string/pref_search_history_summary_on" />
+        <androidx.preference.Preference
+            android:icon="@drawable/ic_app_update"
+            android:summary="@string/pref_check_for_update_summary"
+            android:key="@string/pref_check_for_update_key"/>
     </androidx.preference.PreferenceCategory>
 </androidx.preference.PreferenceScreen>

@@ -3,8 +3,6 @@ package com.cwlarson.deviceid.database
 import android.content.Context
 import android.os.Build
 import android.text.format.DateFormat
-import android.util.Log
-import androidx.annotation.WorkerThread
 import androidx.core.content.pm.PackageInfoCompat
 import com.cwlarson.deviceid.databinding.Item
 import com.cwlarson.deviceid.databinding.ItemType
@@ -13,54 +11,92 @@ import com.cwlarson.deviceid.databinding.UnavailableType
 import com.cwlarson.deviceid.util.SystemProperty
 import com.cwlarson.deviceid.util.activityManager
 import com.cwlarson.deviceid.util.gmsPackageInfo
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.*
 
-@WorkerThread
-internal class Software(private val context: Context, db: AppDatabase) {
-    companion object {
-        private const val TAG = "Software"
+/**
+ * Use [Build.VERSION.SDK_INT] to get the version number of the release
+ */
+fun Int.sdkToVersion(): String {
+    return when(this) {
+        Build.VERSION_CODES.BASE -> "1.0"
+        Build.VERSION_CODES.BASE_1_1 -> "1.1"
+        Build.VERSION_CODES.CUPCAKE -> "1.5"
+        Build.VERSION_CODES.DONUT -> "1.6"
+        Build.VERSION_CODES.ECLAIR -> "2.0"
+        Build.VERSION_CODES.ECLAIR_0_1 -> "2.0.1"
+        Build.VERSION_CODES.ECLAIR_MR1 -> "2.1"
+        Build.VERSION_CODES.FROYO -> "2.2"
+        Build.VERSION_CODES.GINGERBREAD -> "2.3"
+        Build.VERSION_CODES.GINGERBREAD_MR1 -> "2.3.3"
+        Build.VERSION_CODES.HONEYCOMB -> "3.0"
+        Build.VERSION_CODES.HONEYCOMB_MR1 -> "3.1"
+        Build.VERSION_CODES.HONEYCOMB_MR2 -> "3.2"
+        Build.VERSION_CODES.ICE_CREAM_SANDWICH -> "4.0.1"
+        Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1 -> "4.0.3"
+        Build.VERSION_CODES.JELLY_BEAN -> "4.1"
+        Build.VERSION_CODES.JELLY_BEAN_MR1 -> "4.2"
+        Build.VERSION_CODES.JELLY_BEAN_MR2 -> "4.3"
+        Build.VERSION_CODES.KITKAT -> "4.4"
+        Build.VERSION_CODES.KITKAT_WATCH -> "4.4W"
+        Build.VERSION_CODES.LOLLIPOP -> "5.0"
+        Build.VERSION_CODES.LOLLIPOP_MR1 -> "5.1"
+        Build.VERSION_CODES.M -> "6.0"
+        Build.VERSION_CODES.N -> "7.0"
+        Build.VERSION_CODES.N_MR1 -> "7.1"
+        Build.VERSION_CODES.O -> "8.0"
+        Build.VERSION_CODES.O_MR1 -> "8.1"
+        Build.VERSION_CODES.P -> "9.0"
+        Build.VERSION_CODES.Q -> "10.0"
+        else -> "UNKNOWN"
     }
+}
 
+/**
+ * Use [Build.VERSION.SDK_INT] to get the version name of the release
+ * NOTE: No longer used after Android Pie
+ */
+private fun Int.getCodename(): String =
+        when(this) {
+            Build.VERSION_CODES.CUPCAKE -> "Cupcake"
+            Build.VERSION_CODES.DONUT -> "Donut"
+            Build.VERSION_CODES.ECLAIR, Build.VERSION_CODES.ECLAIR_0_1, Build.VERSION_CODES.ECLAIR_MR1 -> "Eclair"
+            Build.VERSION_CODES.FROYO -> "Froyo"
+            Build.VERSION_CODES.GINGERBREAD, Build.VERSION_CODES.GINGERBREAD_MR1 -> "Gingerbread"
+            Build.VERSION_CODES.HONEYCOMB, Build.VERSION_CODES.HONEYCOMB_MR1, Build.VERSION_CODES.HONEYCOMB_MR2 -> "Honeycomb"
+            Build.VERSION_CODES.ICE_CREAM_SANDWICH, Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1 -> "Ice Cream Sandwich"
+            Build.VERSION_CODES.JELLY_BEAN, Build.VERSION_CODES.JELLY_BEAN_MR1, Build.VERSION_CODES.JELLY_BEAN_MR2 -> "Jelly Bean"
+            Build.VERSION_CODES.KITKAT -> "KitKat"
+            Build.VERSION_CODES.KITKAT_WATCH -> "KitKat Watch"
+            Build.VERSION_CODES.LOLLIPOP, Build.VERSION_CODES.LOLLIPOP_MR1 -> "Lollipop"
+            Build.VERSION_CODES.M -> "Marshmallow"
+            Build.VERSION_CODES.N, Build.VERSION_CODES.N_MR1 -> "Nougat"
+            Build.VERSION_CODES.O, Build.VERSION_CODES.O_MR1 -> "Oreo"
+            Build.VERSION_CODES.P -> "Pie"
+            else -> ""
+        }
+
+class Software(private val context: Context, db: AppDatabase, scope: CoroutineScope) {
     init {
-        //Set Software Tiles
-        db.addItems(context,androidVersion(),patchLevel(),previewSDKInt(),deviceBuildVersion(),
-                buildBaseband(),buildKernel(),buildDate(),buildNumber(),buildBoard(),
-                buildBootloader(),buildBrand(),buildDevice(),buildDisplay(),buildFingerprint(),
-                buildHardware(),buildHost(),buildTags(),buildType(),buildUser(),openGLVersion(),
-                googlePlayServicesVersion(),googlePlayServicesInstallDate(),
-                googlePlayServicesUpdatedDate())
-    }
-
-    private enum class Codename(val value: Int) {
-        BASE(1), BASE_1_1(2),
-        CUPCAKE(3),
-        CUR_DEVELOPMENT(1000),
-        DONUT(4),
-        ECLAIR(5), ECLAIR_MR1(6), ECLAIR_MR2(7),
-        FROYO(8),
-        GINGERBREAD(9), GINGERBREAD_MR1(10),
-        HONEYCOMB(11), HONEYCOMB_MR1(12), HONEYCOMB_MR2(13),
-        ICE_CREAM_SANDWICH(14), ICE_CREAM_SANDWICH_MR1(15),
-        JELLY_BEAN(16), JELLY_BEAN_MR1(17), JELLY_BEAN_MR2(18),
-        KITKAT(19), KITKAT_WATCH(20),
-        LOLLIPOP(21), LOLLIPOP_MR1(22),
-        MARSHMALLOW(23),
-        NOUGAT(24), NOUGAT_MR1(25),
-        OREO(26), OREO_MR1(27),
-        PIE(28);
-
-        companion object {
-            fun fromInt(value: Int) = values().firstOrNull { it.value == value }
+        scope.launch {
+            db.addItems(context, androidVersion(), patchLevel(), previewSDKInt(), deviceBuildVersion(),
+                    buildBaseband(), buildKernel(), buildDate(), buildNumber(), buildBoard(),
+                    buildBootloader(), buildBrand(), buildDevice(), buildDisplay(), buildFingerprint(),
+                    buildHardware(), buildHost(), buildTags(), buildType(), buildUser(), openGLVersion(),
+                    googlePlayServicesVersion(), googlePlayServicesInstallDate(),
+                    googlePlayServicesUpdatedDate())
         }
     }
 
     private fun androidVersion() = Item("Android Version", ItemType.SOFTWARE).apply {
         try {
-            subtitle = "${Build.VERSION.RELEASE} (${Build.VERSION.SDK_INT}) ${Codename.fromInt(Build.VERSION.SDK_INT)?.toString().orEmpty()}"
+            subtitle = "${Build.VERSION.RELEASE} (API level ${Build.VERSION.SDK_INT}) ${Build.VERSION.SDK_INT.getCodename()}".trim()
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -77,10 +113,11 @@ internal class Software(private val context: Context, db: AppDatabase) {
                     Build.VERSION.SECURITY_PATCH
                 }
             } else {
-                unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET, "6.0")
+                unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET,
+                        Build.VERSION_CODES.M.sdkToVersion())
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -91,10 +128,11 @@ internal class Software(private val context: Context, db: AppDatabase) {
                     if(this == 0) "Non-Preview" else "Preview $this"
                 }
             } else {
-                unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET, "6.0")
+                unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET,
+                        Build.VERSION_CODES.N.sdkToVersion())
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -104,7 +142,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
             val sp = SystemProperty(context)
             subtitle = if (sp["ro.build.version.full"] == null || sp["ro.build.version.full"] == "") Build.DISPLAY else sp["ro.build.version.full"]
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -112,7 +150,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = Build.getRadioVersion()
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -120,7 +158,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = System.getProperty("os.version")
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -128,7 +166,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = SimpleDateFormat.getInstance().format(Date(Build.TIME))
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -136,7 +174,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = Build.ID
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -144,7 +182,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = Build.BOARD
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -152,7 +190,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = Build.BOOTLOADER
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -160,7 +198,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = Build.BRAND
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -168,7 +206,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = Build.DEVICE
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -176,7 +214,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = Build.DISPLAY
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -184,7 +222,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = Build.FINGERPRINT
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -192,7 +230,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = Build.HARDWARE
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -200,7 +238,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = Build.HOST
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -208,7 +246,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = Build.TAGS
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -216,7 +254,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = Build.TYPE
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -224,7 +262,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = Build.USER
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -232,7 +270,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = context.activityManager.deviceConfigurationInfo.glEsVersion
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -242,7 +280,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
             val v = PackageInfoCompat.getLongVersionCode(pi)
             subtitle = "${pi.versionName} ($v)"
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -250,7 +288,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = DateFormat.getDateFormat(context).format(context.gmsPackageInfo.firstInstallTime)
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -258,7 +296,7 @@ internal class Software(private val context: Context, db: AppDatabase) {
         try {
             subtitle = DateFormat.getDateFormat(context).format(context.gmsPackageInfo.lastUpdateTime)
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 }

@@ -5,9 +5,13 @@
     tools:context=".MainActivity$TabFragment">
     <data>
         <import type="android.view.View"/>
+        <import type="com.cwlarson.deviceid.database.Status"/>
         <variable
             name="model"
             type="com.cwlarson.deviceid.database.AllItemsViewModel"/>
+        <variable
+            name="mainModel"
+            type="com.cwlarson.deviceid.database.MainActivityViewModel"/>
     </data>
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/top_layout"
@@ -17,18 +21,26 @@
 
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
             android:id="@+id/swipe_to_refresh_layout"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:refreshing="@{model.status != null &amp;&amp; model.status == Status.LOADING}"
+            app:onRefreshListener="@{() -> model.refreshData(false)}"
+            app:colorSchemeColors="@{@intArray/swipe_to_refresh_colors}"
+            app:enabled="@{!safeUnbox(model.refreshDisabled)}"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent">
             <androidx.recyclerview.widget.RecyclerView
-                android:paddingTop="8dp"
+                app:paddingTopSystemWindowInsets="@{!safeUnbox(mainModel.hideSearchBar)}"
+                app:paddingActionBar="@{!safeUnbox(mainModel.hideSearchBar)}"
+                app:paddingBottomSystemWindowInsets="@{ true }"
+                android:paddingTop="@dimen/recycler_top_padding"
                 android:clipToPadding="false"
+                android:clipChildren="false"
                 android:id="@+id/recycler_view"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 tools:listitem="@layout/recycler_text_view"
                 app:layout_behavior="@string/appbar_scrolling_view_behavior"
                 app:animatedVisibility="@{safeUnbox(model.itemsCount)>0?View.VISIBLE:View.GONE}"/>

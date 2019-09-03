@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#37474f</color>
+    <color name="colorPrimary">#9BA3A7</color>
     <color name="colorPrimaryVariant">#263238</color>
     <!--Secondary colors are best for:-->
     <!--Floating action buttons-->
@@ -10,19 +10,19 @@
     <!--Links and headlines-->
     <color name="colorSecondary">#03DAC6</color>
     <!--Secondary color can have dark and light variants-->
-    <color name="colorSecondaryVariant">#018786</color>
+    <color name="colorSecondaryVariant">#03DAC6</color>
     <!--Surface colors affect surfaces of components, such as cards, sheets, and menus.-->
-    <color name="colorSurface">#FFFFFF</color>
+    <color name="colorSurface">#121212</color>
     <!--Error color indicates errors components, such as text fields-->
-    <color name="colorError">#B00020</color>
+    <color name="colorError">#CF6679</color>
     <!--Typography and iconography colors-->
-    <color name="colorOnPrimary">#FFFFFF</color>
+    <color name="colorOnPrimary">#000000</color>
     <color name="colorOnSecondary">#000000</color>
-    <color name="colorOnBackground">#000000</color>
-    <color name="colorOnSurface">#000000</color>
-    <color name="colorOnError">#FFFFFF</color>
+    <color name="colorOnBackground">#FFFFFF</color>
+    <color name="colorOnSurface">#FFFFFF</color>
+    <color name="colorOnError">#000000</color>
     <color name="colorScrim">#52000000</color>
-    
+
     <color name="imagePrimary">@color/colorSecondary</color>
-    <color name="imageSecondary">@color/colorSecondaryVariant</color>
+    <color name="imageSecondary">#018786</color>
 </resources>

@@ -1,7 +1,6 @@
 package com.cwlarson.deviceid.database
 
 import android.content.Context
-import androidx.annotation.WorkerThread
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -9,9 +8,7 @@ import androidx.room.TypeConverters
 import com.cwlarson.deviceid.BuildConfig
 import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.databinding.*
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
 
 // Since this is an in memory database, do not store schema
@@ -41,29 +38,26 @@ abstract class AppDatabase : RoomDatabase() {
 
 enum class Status { LOADING, ERROR, SUCCESS }
 
-suspend fun AppDatabase.populateAsync(context: Context?, type: ItemType? = null): Deferred<Status> =
+suspend fun AppDatabase.populateAsync(context: Context?, type: ItemType? = null): Status =
     withContext(Dispatchers.IO) {
-        async {
-            return@async context?.let {
-                when (type) {
-                    ItemType.DEVICE -> Device(context, this@populateAsync)
-                    ItemType.NETWORK -> Network(context, this@populateAsync)
-                    ItemType.SOFTWARE -> Software(context, this@populateAsync)
-                    ItemType.HARDWARE -> Hardware(context, this@populateAsync)
-                    else -> {
-                        Device(context, this@populateAsync)
-                        Network(context, this@populateAsync)
-                        Software(context, this@populateAsync)
-                        Hardware(context, this@populateAsync)
-                    }
+        context?.let {
+            when (type) {
+                ItemType.DEVICE -> Device(context, this@populateAsync, this)
+                ItemType.NETWORK -> Network(context, this@populateAsync, this)
+                ItemType.SOFTWARE -> Software(context, this@populateAsync, this)
+                ItemType.HARDWARE -> Hardware(context, this@populateAsync, this)
+                else -> {
+                    Device(context, this@populateAsync, this)
+                    Network(context, this@populateAsync, this)
+                    Software(context, this@populateAsync, this)
+                    Hardware(context, this@populateAsync, this)
                 }
-                Status.SUCCESS
-            } ?: Status.ERROR
-        }
+            }
+            Status.SUCCESS
+        } ?: Status.ERROR
     }
 
-@WorkerThread
-fun AppDatabase.addItems(context: Context, vararg items: Item) {
+suspend fun AppDatabase.addItems(context: Context, vararg items: Item) {
     items.forEach {
         if (it.subtitle.isNullOrBlank()) {
             if (it.unavailableItem == null) {

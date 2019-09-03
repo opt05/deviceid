@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">Device Info</string>
-    <string name="search_hint_items">Search all items</string>
+    <string name="search_hint_items">Search all</string>
     <string name="not_found">Unable to determine</string>
     <string name="no_longer_possible">Not possible since Android %s</string>
     <string name="not_possible_yet">Available starting on Android %s</string>
@@ -44,7 +44,6 @@
     <string name="BATTERY_PLUGGED_USB">over USB</string>
     <string name="BATTERY_PLUGGED_AC">on AC</string>
     <!-- Preferences -->
-    <string name="empty_preference_default">Not set</string>
     <string name="pref_title_app_settings">App Settings</string>
     <string name="pref_hide_unavailable_key" translatable="false">hide_unables</string>
     <string name="pref_hide_unavailable_title">Hide not applicable</string>
@@ -53,23 +52,10 @@
     <string name="pref_hide_unavailable_summary_off">Showing items not applicable to this
         device</string>
     <string name="pref_daynight_mode_key" translatable="false">daynight_mode</string>
-    <string name="pref_daynight_mode_title">Dark mode</string>
-    <string-array name="pref_daynight_mode_entries">
-        <item>Use system setting</item>
-        <item>Off</item>
-        <item>Auto</item>
-        <item>On</item>
-    </string-array>
+    <string name="pref_daynight_mode_title">Choose theme</string>
     <string name="pref_night_mode_system" translatable="false">mode_system</string>
     <string name="pref_night_mode_off" translatable="false">mode_off</string>
-    <string name="pref_night_mode_auto" translatable="false">mode_auto</string>
     <string name="pref_night_mode_on" translatable="false">mode_on</string>
-    <string-array name="pref_daynight_mode_values">
-        <item>@string/pref_night_mode_system</item>
-        <item>@string/pref_night_mode_off</item>
-        <item>@string/pref_night_mode_auto</item>
-        <item>@string/pref_night_mode_on</item>
-    </string-array>
 
     <string name="pref_auto_refresh_rate_key">refresh_rate</string>
     <string name="pref_auto_refresh_rate_title">Auto refresh rate</string>
@@ -82,4 +68,46 @@
     <string name="pref_search_history_summary_on">Saving history (turning off clears
         history)</string>
     <string name="pref_search_history_summary_off">Not saving history</string>
+    <string name="pref_check_for_update_key">pref_check_for_update</string>
+    <string name="pref_check_for_update_title_yes">App update available</string>
+    <string name="pref_check_for_update_title_no">App update not available</string>
+    <string name="pref_check_for_update_summary">Check for app update</string>
+    <string name="pref_check_for_update_summary_canceled">Canceled</string>
+    <string name="pref_check_for_update_summary_downloading">Downloading…</string>
+    <string name="pref_check_for_update_summary_installed">Installed!</string>
+    <string name="pref_check_for_update_summary_installing">Installing…</string>
+    <string name="pref_check_for_update_summary_pending">Pending…</string>
+    <string name="pref_check_for_update_summary_ui_intent">To perform the installation, a Play
+        Store UI flow needs to be started.</string>
+    <string name="pref_check_for_update_summary_unknown">Unknown</string>
+    <string name="pref_check_for_update_summary_downloaded">Downloaded - pending restart of
+    app</string>
+    <string name="pref_check_for_update_summary_failed">Check for app update failed!</string>
+    <!-- App Updates -->
+    <string name="update_inprogress_title">Update in progress</string>
+    <string name="update_inprogress_message">An update is already in progress and will be
+        completed shortly.</string>
+    <string name="update_inprogress_ok">Got it</string>
+    <string name="update_notavailable_title">Latest version installed</string>
+    <string name="update_notavailable_message">It seems that you&#8217;re already running the
+        latest available version of this app.
+    </string>
+    <string name="update_notavailable_ok">@android:string/ok</string>
+    <string name="update_unknown_title">Failed to check for updates</string>
+    <string name="update_unknown_message">An unknown response has been received. Please check
+        your internet connection or try again later.
+    </string>
+    <string name="update_unknown_ok">Got it</string>
+    <string name="update_download_finished">An update has just been downloaded.</string>
+    <string name="update_restart">Restart app</string>
+    <string name="update_download_failed">Failed to download an update.</string>
+    <string name="update_retry">Retry</string>
+    <!-- Fake App Update Preferences -->
+    <string name="pref_use_fake_update_manager_key">pref_use_fake_update_manager</string>
+    <string name="pref_use_fake_update_manager_title">Test app updates\n(Requires app
+        restart)</string>
+    <string name="pref_use_fake_update_manager_summary_off">Using real AppUpdateManager</string>
+    <string name="pref_use_fake_update_manager_summary_on">Using FakeAppUpdateManager</string>
+    <string name="pref_fake_update_set_end_state_key">pref_fake_update_set_end_state</string>
+    <string name="pref_fake_update_set_end_state_title">Update flow end</string>
 </resources>

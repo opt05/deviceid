@@ -16,13 +16,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.cwlarson.deviceid.database.SearchItemsViewModel
 import com.cwlarson.deviceid.databinding.FragmentSearchBinding
 import com.cwlarson.deviceid.util.HeaderDecoration
+import com.cwlarson.deviceid.util.ItemClickHandler
 import com.cwlarson.deviceid.util.MyAdapter
 
 class SearchFragment: Fragment(), SharedPreferences.OnSharedPreferenceChangeListener {
-    companion object {
-        @Suppress("FieldCanBeLocal","unused")
-        private const val TAG = "SearchFragment"
-    }
     private lateinit var preferences: SharedPreferences
     private lateinit var binding: FragmentSearchBinding
 
@@ -31,19 +28,20 @@ class SearchFragment: Fragment(), SharedPreferences.OnSharedPreferenceChangeList
             registerOnSharedPreferenceChangeListener(this@SearchFragment) }
         binding = DataBindingUtil.inflate<FragmentSearchBinding>(inflater, R.layout.fragment_search,
                 container, false).apply {
-            recyclerView.layoutManager = LinearLayoutManager(context)
-            val adapter = MyAdapter(topLayout, activity)
-            recyclerView.adapter = adapter
-            recyclerView.setHasFixedSize(true)
-            recyclerView.addItemDecoration(
-                    DividerItemDecoration(context, DividerItemDecoration.VERTICAL))
-            recyclerView.addItemDecoration(HeaderDecoration(adapter), -1)
+            val myAdapter = MyAdapter(ItemClickHandler(topLayout, activity))
+            recyclerView.apply {
+                layoutManager = LinearLayoutManager(context)
+                adapter = myAdapter
+                setHasFixedSize(true)
+                addItemDecoration(DividerItemDecoration(context, DividerItemDecoration.VERTICAL))
+                addItemDecoration(HeaderDecoration(myAdapter), -1)
+            }
             lifecycleOwner = this@SearchFragment
             model = activity?.let {
                 ViewModelProviders.of(it).get<SearchItemsViewModel>().apply {
                     setHideUnavailable(preferences.getBoolean(getString(R.string.pref_hide_unavailable_key), false))
-                    searchItems.observe(this@SearchFragment, Observer { itemModels ->
-                        adapter.submitList(itemModels)
+                    searchItems.observe(viewLifecycleOwner, Observer { itemModels ->
+                        myAdapter.submitList(itemModels)
                         itemsCount.value = itemModels?.size ?: 0
                         isLoading.value = false
                         // Espresso does not know how to wait for data binding's loop so we execute changes sync.

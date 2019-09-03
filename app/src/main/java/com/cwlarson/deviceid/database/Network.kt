@@ -5,34 +5,57 @@ import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.content.Context
 import android.net.wifi.WifiInfo
+import android.net.wifi.WifiManager
 import android.os.Build
 import android.telephony.TelephonyManager
-import android.util.Log
-import androidx.annotation.WorkerThread
 import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.databinding.*
 import com.cwlarson.deviceid.util.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.math.BigInteger
 import java.net.InetAddress
 import java.nio.ByteOrder
+import java.util.*
 
-@WorkerThread
-internal class Network(private val context: Context, db: AppDatabase) {
-    companion object {
-        private const val TAG = "Network"
-    }
+class Network(private val context: Context, db: AppDatabase, scope: CoroutineScope) {
     private val wifiConnectionInfo: WifiInfo = context.wifiManager.connectionInfo
 
     init {
-        //Set Network Tiles
-        db.addItems(context,wifiMac(),wifiBSSID(),wifiSSID(),wifiFrequency(),wifiHiddenSSID(),
-                wifiIpAddress(),wifiLinkSpeed(),wifiNetworkID(),wifiRSSI(),wifiHostname(),
-                bluetoothMac(),bluetoothHostname(),simSerial(),simOperatorName(),simCountry(),
-                simState(),phoneNumber(),voicemailNumber(),cellNetworkName(),cellNetworkType(),
-                cellNetworkClass(),eSimID(),eSimEnabled(),eSimOSVersion())
+        scope.launch {
+            db.addItems(context, wifiMac(), wifiBSSID(), wifiSSID(), wifiFrequency(), wifiHiddenSSID(),
+                    wifiIpAddress(), wifiLinkSpeed(), wifiTxLinkSpeed(), wifiNetworkID(),
+                    wifiPasspointFqdn(), wifiPasspointProviderFriendlyName(), wifiRSSI(),
+                    wifiSignalLevel(), wifiHostname(), bluetoothMac(), bluetoothHostname(),
+                    phoneCount(), simSerial(), simOperatorName(), simCountry(), simState(),
+                    phoneNumber(), voicemailNumber(), cellNetworkName(), cellNetworkType(),
+                    cellNetworkClass(), eSimID(), eSimEnabled(), eSimOSVersion(),
+                    isConcurrentVoiceAndDataSupported(), isDataRoamingEnabled(),
+                    isHearingAidSupported(), isMultiSimSupported(), isRttSupported(),
+                    isSmsCapable(), isVoiceCapable(), deviceSoftwareVersion(), manufacturerCode(),
+                    nai())
+        }
     }
 
-    /*
+    @SuppressLint("MissingPermission")
+    private fun deviceSoftwareVersion() = Item("Device Software Version", ItemType.NETWORK).apply {
+        try {
+            if (context.hasPermission(UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE)) {
+                subtitle = context.telephonyManager.deviceSoftwareVersion
+            } else {
+                unavailableItem = UnavailableItem(UnavailableType.NEEDS_PERMISSION,
+                        context.resources.getString(R.string.permission_item_subtitle,
+                                context.packageManager.getPermissionInfo(Manifest.permission.READ_PHONE_STATE, 0)
+                                        .loadLabel(context.packageManager).toString()
+                                        .toUpperCase(Locale.getDefault())),
+                        UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE)
+            }
+        } catch (e: Exception) {
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
+        }
+    }
+    /**
      * Marshmallow has started to depreciate this method
      * http://developer.android.com/about/versions/marshmallow/android-6.0-changes.html#behavior-hardware-id
      */
@@ -42,36 +65,61 @@ internal class Network(private val context: Context, db: AppDatabase) {
             try {
                 subtitle = wifiConnectionInfo.macAddress
             } catch (e: Exception) {
-                Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+                Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
             }
 
         } else {
-            unavailableItem = UnavailableItem(UnavailableType.NO_LONGER_POSSIBLE, "6.0")
+            unavailableItem = UnavailableItem(UnavailableType.NO_LONGER_POSSIBLE,
+                    Build.VERSION_CODES.M.sdkToVersion())
         }
     }
 
     private fun wifiBSSID() = Item("Wi-Fi BSSID", ItemType.NETWORK).apply {
         try {
-            subtitle = wifiConnectionInfo.bssid
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                if (context.hasPermission(UnavailablePermission.MY_PERMISSIONS_REQUEST_LOCATION_STATE)) {
+                    subtitle = wifiConnectionInfo.bssid
+                } else {
+                    unavailableItem = UnavailableItem(UnavailableType.NEEDS_PERMISSION,
+                            context.resources.getString(R.string.permission_item_subtitle,
+                                    context.packageManager.getPermissionInfo(Manifest.permission.ACCESS_FINE_LOCATION, 0)
+                                            .loadLabel(context.packageManager).toString()
+                                            .toUpperCase(Locale.getDefault())),
+                            UnavailablePermission.MY_PERMISSIONS_REQUEST_LOCATION_STATE)
+                }
+            } else
+                subtitle = wifiConnectionInfo.bssid
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
     private fun wifiSSID() = Item("Wi-Fi SSID", ItemType.NETWORK).apply {
         try {
-            subtitle = wifiConnectionInfo.ssid
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                if (context.hasPermission(UnavailablePermission.MY_PERMISSIONS_REQUEST_LOCATION_STATE)) {
+                    subtitle = wifiConnectionInfo.ssid
+                } else {
+                    unavailableItem = UnavailableItem(UnavailableType.NEEDS_PERMISSION,
+                            context.resources.getString(R.string.permission_item_subtitle,
+                                    context.packageManager.getPermissionInfo(Manifest.permission.ACCESS_FINE_LOCATION, 0)
+                                            .loadLabel(context.packageManager).toString()
+                                            .toUpperCase(Locale.getDefault())),
+                            UnavailablePermission.MY_PERMISSIONS_REQUEST_LOCATION_STATE)
+                }
+            } else
+                subtitle = wifiConnectionInfo.ssid
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
     private fun wifiFrequency() = Item("Wi-Fi Frequency", ItemType.NETWORK).apply {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             try {
-                subtitle = wifiConnectionInfo.frequency.toString()
+                subtitle = wifiConnectionInfo.frequency.toString().plus(WifiInfo.FREQUENCY_UNITS)
             } catch (e: Exception) {
-                Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+                Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
             }
 
         }
@@ -81,7 +129,7 @@ internal class Network(private val context: Context, db: AppDatabase) {
         try {
             subtitle = wifiConnectionInfo.hiddenSSID.toString()
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -93,46 +141,95 @@ internal class Network(private val context: Context, db: AppDatabase) {
             val ipByteArray = BigInteger.valueOf(ipAddress.toLong()).toByteArray()
             subtitle = InetAddress.getByAddress(ipByteArray).hostAddress
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
     private fun wifiLinkSpeed() = Item("Wi-Fi Link Speed", ItemType.NETWORK).apply {
         try {
-            subtitle = Integer.toString(wifiConnectionInfo.linkSpeed)
+            subtitle = wifiConnectionInfo.linkSpeed.toString().plus(WifiInfo.LINK_SPEED_UNITS)
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
+        }
+    }
+
+    private fun wifiTxLinkSpeed() = Item("Wi-Fi Transmit Link Speed", ItemType.NETWORK).apply {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                subtitle = wifiConnectionInfo.txLinkSpeedMbps.toString().plus(WifiInfo.LINK_SPEED_UNITS)
+            } catch (e: Exception) {
+                Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
+            }
+        } else {
+            unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET,
+                    Build.VERSION_CODES.Q.sdkToVersion())
         }
     }
 
     private fun wifiNetworkID() = Item("Wi-Fi Network ID", ItemType.NETWORK).apply {
         try {
-            subtitle = Integer.toString(wifiConnectionInfo.networkId)
+            subtitle = wifiConnectionInfo.networkId.toString()
         } catch (e: NullPointerException) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
+        }
+    }
+
+    private fun wifiPasspointFqdn() = Item("Wi-Fi Passpoint Fully Qualified Domain Name", ItemType.NETWORK).apply {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                subtitle = wifiConnectionInfo.passpointFqdn
+            } catch (e: Exception) {
+                Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
+            }
+        } else {
+            unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET,
+                    Build.VERSION_CODES.Q.sdkToVersion())
+        }
+    }
+
+    private fun wifiPasspointProviderFriendlyName() = Item("Wi-Fi Passpoint Provider Friendly Name", ItemType.NETWORK).apply {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                subtitle = wifiConnectionInfo.passpointProviderFriendlyName
+            } catch (e: Exception) {
+                Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
+            }
+        } else {
+            unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET,
+                    Build.VERSION_CODES.Q.sdkToVersion())
         }
     }
 
     private fun wifiRSSI() = Item("Wi-Fi RSSI", ItemType.NETWORK).apply {
         try {
-            subtitle = Integer.toString(wifiConnectionInfo.rssi)
+            subtitle = wifiConnectionInfo.rssi.toString()
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
+    private fun wifiSignalLevel() = Item("Wi-Fi Signal Level", ItemType.NETWORK).apply {
+        try {
+            subtitle = WifiManager.calculateSignalLevel(wifiConnectionInfo.rssi, 100)
+                    .toString().plus("%")
+        } catch (e: Exception) {
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
+        }
+    }
+
+    @SuppressLint("PrivateApi","DiscouragedPrivateApi")
     private fun wifiHostname() = Item("Wi-Fi Hostname", ItemType.NETWORK).apply {
         try {
-            @SuppressLint("PrivateApi")
-            val getString = Build::class.java.getDeclaredMethod("getString", String::class.java)
-            getString.isAccessible = true
-            subtitle = getString.invoke(null, "net.hostname").toString()
+            Build::class.java.getDeclaredMethod("getString", String::class.java).run {
+                isAccessible = true
+                subtitle = invoke(null, "net.hostname")?.toString()
+            }
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
-    /*
+    /**
      * Marshmallow has started to depreciate this method
      * http://developer.android.com/about/versions/marshmallow/android-6.0-changes.html#behavior-hardware-id
      */
@@ -140,29 +237,79 @@ internal class Network(private val context: Context, db: AppDatabase) {
     private fun bluetoothMac() = Item("Bluetooth MAC Address", ItemType.NETWORK).apply {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
             try {
-                subtitle = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                subtitle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
                     context.bluetoothManager.adapter.address
                 } else {
                     BluetoothAdapter.getDefaultAdapter().address
                 }
             } catch (e: Exception) {
-                Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+                Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
             }
 
         } else {
-            unavailableItem = UnavailableItem(UnavailableType.NO_LONGER_POSSIBLE, "6.0")
+            unavailableItem = UnavailableItem(UnavailableType.NO_LONGER_POSSIBLE,
+                    Build.VERSION_CODES.M.sdkToVersion())
         }
     }
 
     private fun bluetoothHostname() = Item("Bluetooth Hostname", ItemType.NETWORK).apply {
         try {
-            subtitle = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            subtitle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
                 context.bluetoothManager.adapter.name
             } else {
                 BluetoothAdapter.getDefaultAdapter().name
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
+        }
+    }
+
+    private fun manufacturerCode() = Item("Manufacturer Code", ItemType.NETWORK).apply {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                subtitle = context.telephonyManager.manufacturerCode
+            } catch (e: Exception) {
+                Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
+            }
+        } else {
+            unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET,
+                    Build.VERSION_CODES.Q.sdkToVersion())
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun nai() = Item("Network Access Identifier (NAI)", ItemType.NETWORK).apply {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            try {
+                if (context.hasPermission(UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE)) {
+                    subtitle = context.telephonyManager.nai
+                } else {
+                    unavailableItem = UnavailableItem(UnavailableType.NEEDS_PERMISSION,
+                            context.resources.getString(R.string.permission_item_subtitle,
+                                    context.packageManager.getPermissionInfo(Manifest.permission.READ_PHONE_STATE, 0)
+                                            .loadLabel(context.packageManager).toString()
+                                            .toUpperCase(Locale.getDefault())),
+                            UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE)
+                }
+            } catch (e: Exception) {
+                Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
+            }
+        } else {
+            unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET,
+                    Build.VERSION_CODES.P.sdkToVersion())
+        }
+    }
+
+    private fun phoneCount() = Item("Phone Count", ItemType.NETWORK).apply {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            try {
+                subtitle = context.telephonyManager.phoneCount.toString()
+            } catch (e: Exception) {
+                Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
+            }
+        } else {
+            unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET,
+                    Build.VERSION_CODES.M.sdkToVersion())
         }
     }
 
@@ -171,7 +318,7 @@ internal class Network(private val context: Context, db: AppDatabase) {
         try {
             subtitle = context.telephonyManager.simSerialNumber
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -179,7 +326,7 @@ internal class Network(private val context: Context, db: AppDatabase) {
         try {
             subtitle = context.telephonyManager.simOperatorName
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -187,7 +334,7 @@ internal class Network(private val context: Context, db: AppDatabase) {
         try {
             subtitle = context.telephonyManager.simCountryIso
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -208,7 +355,7 @@ internal class Network(private val context: Context, db: AppDatabase) {
                 else -> "Network unknown"
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -221,11 +368,12 @@ internal class Network(private val context: Context, db: AppDatabase) {
                 unavailableItem = UnavailableItem(UnavailableType.NEEDS_PERMISSION,
                         context.resources.getString(R.string.permission_item_subtitle,
                                 context.packageManager.getPermissionInfo(Manifest.permission.READ_PHONE_STATE, 0)
-                                        .loadLabel(context.packageManager).toString()),
+                                        .loadLabel(context.packageManager).toString()
+                                        .toUpperCase(Locale.getDefault())),
                         UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE)
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -237,11 +385,13 @@ internal class Network(private val context: Context, db: AppDatabase) {
             } else {
                 unavailableItem = UnavailableItem(UnavailableType.NEEDS_PERMISSION,
                     context.resources.getString(R.string.permission_item_subtitle,
-                            context.packageManager.getPermissionInfo(Manifest.permission.READ_PHONE_STATE, 0)),
+                            context.packageManager.getPermissionInfo(Manifest.permission.READ_PHONE_STATE, 0)
+                                    .loadLabel(context.packageManager).toString()
+                                    .toUpperCase(Locale.getDefault())),
                         UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE)
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -249,7 +399,7 @@ internal class Network(private val context: Context, db: AppDatabase) {
         try {
             subtitle = context.telephonyManager.networkOperatorName
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -277,7 +427,7 @@ internal class Network(private val context: Context, db: AppDatabase) {
                 else -> { null }
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
         }
     }
 
@@ -302,11 +452,128 @@ internal class Network(private val context: Context, db: AppDatabase) {
                 TelephonyManager.NETWORK_TYPE_TD_SCDMA -> subtitle = "3G"
                 TelephonyManager.NETWORK_TYPE_LTE,
                 TelephonyManager.NETWORK_TYPE_IWLAN -> subtitle = "4G"
+                TelephonyManager.NETWORK_TYPE_NR -> subtitle = "5G"
                 TelephonyManager.NETWORK_TYPE_UNKNOWN -> { }
                 else -> { }
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+            Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
+        }
+    }
+
+    private fun isConcurrentVoiceAndDataSupported() = Item("Concurrent Voice and Data Supported", ItemType.NETWORK).apply {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            try {
+                subtitle = context.telephonyManager.isConcurrentVoiceAndDataSupported.toString()
+            } catch (e: Exception) {
+                Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
+            }
+        } else {
+            unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET,
+                    Build.VERSION_CODES.O.sdkToVersion())
+        }
+    }
+
+    private fun isDataRoamingEnabled() = Item("Data Roaming Enabled", ItemType.NETWORK).apply {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                if (context.hasPermission(UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE)) {
+                    subtitle = context.telephonyManager.isDataEnabled.toString()
+                } else {
+                    unavailableItem = UnavailableItem(UnavailableType.NEEDS_PERMISSION,
+                            context.resources.getString(R.string.permission_item_subtitle,
+                                    context.packageManager.getPermissionInfo(Manifest.permission.READ_PHONE_STATE, 0)
+                                            .loadLabel(context.packageManager).toString()
+                                            .toUpperCase(Locale.getDefault())),
+                            UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE)
+                }
+            } catch (e: Exception) {
+                Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
+            }
+        } else {
+            unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET,
+                    Build.VERSION_CODES.Q.sdkToVersion())
+        }
+    }
+
+    private fun isHearingAidSupported() = Item("Hearing Aid Compatibility Supported", ItemType.NETWORK).apply {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            try {
+                subtitle = context.telephonyManager.isSmsCapable.toString()
+            } catch (e: Exception) {
+                Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
+            }
+        } else {
+            unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET,
+                    Build.VERSION_CODES.M.sdkToVersion())
+        }
+    }
+
+    private fun isMultiSimSupported() = Item("Multi Sim Supported", ItemType.NETWORK).apply {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                if (context.hasPermission(UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE)) {
+                    subtitle = when(context.telephonyManager.isMultiSimSupported) {
+                        TelephonyManager.MULTISIM_ALLOWED -> "Supports multiple SIMs"
+                        TelephonyManager.MULTISIM_NOT_SUPPORTED_BY_HARDWARE -> "Device does not " +
+                                "support multiple SIMs"
+                        TelephonyManager.MULTISIM_NOT_SUPPORTED_BY_CARRIER -> "Device does support " +
+                                "multiple SIMS but restricted by carrier"
+                        else -> { null }
+                    }
+                } else {
+                    unavailableItem = UnavailableItem(UnavailableType.NEEDS_PERMISSION,
+                            context.resources.getString(R.string.permission_item_subtitle,
+                                    context.packageManager.getPermissionInfo(Manifest.permission.READ_PHONE_STATE, 0)
+                                            .loadLabel(context.packageManager).toString()
+                                            .toUpperCase(Locale.getDefault())),
+                            UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE)
+                }
+            } catch (e: Exception) {
+                Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
+            }
+        } else {
+            unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET,
+                    Build.VERSION_CODES.Q.sdkToVersion())
+        }
+    }
+
+    private fun isRttSupported() = Item("RTT Supported", ItemType.NETWORK).apply {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                subtitle = context.telephonyManager.isSmsCapable.toString()
+            } catch (e: Exception) {
+                Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
+            }
+        } else {
+            unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET,
+                    Build.VERSION_CODES.Q.sdkToVersion())
+        }
+    }
+
+    private fun isSmsCapable() = Item("SMS Capable", ItemType.NETWORK).apply {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            try {
+                subtitle = context.telephonyManager.isSmsCapable.toString()
+            } catch (e: Exception) {
+                Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
+            }
+        } else {
+            unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET,
+                    Build.VERSION_CODES.LOLLIPOP.sdkToVersion())
+        }
+    }
+
+    private fun isVoiceCapable() = Item("Voice Capable", ItemType.NETWORK).apply {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+            try {
+                subtitle = context.telephonyManager.isVoiceCapable.toString()
+            } catch (e: Exception) {
+                Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
+            }
+        } else {
+            unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET,
+                    Build.VERSION_CODES.LOLLIPOP_MR1.sdkToVersion())
         }
     }
 
@@ -315,10 +582,11 @@ internal class Network(private val context: Context, db: AppDatabase) {
             try {
                 subtitle = context.euiccManager.eid
             } catch (e: Exception) {
-                Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+                Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
             }
         } else {
-            unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET, "9.0")
+            unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET,
+                    Build.VERSION_CODES.P.sdkToVersion())
         }
     }
 
@@ -327,10 +595,11 @@ internal class Network(private val context: Context, db: AppDatabase) {
             try {
                 subtitle = context.euiccManager.isEnabled.toString()
             } catch (e: Exception) {
-                Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+                Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
             }
         } else {
-            unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET, "9.0")
+            unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET,
+                    Build.VERSION_CODES.P.sdkToVersion())
         }
     }
 
@@ -339,10 +608,11 @@ internal class Network(private val context: Context, db: AppDatabase) {
             try {
                 subtitle = context.euiccManager.euiccInfo?.osVersion
             } catch (e: Exception) {
-                Log.w(TAG, "Null in ${object{}.javaClass.enclosingMethod?.name}")
+                Timber.w("Null in ${object{}.javaClass.enclosingMethod?.name}")
             }
         } else {
-            unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET, "9.0")
+            unavailableItem = UnavailableItem(UnavailableType.NOT_POSSIBLE_YET,
+                    Build.VERSION_CODES.P.sdkToVersion())
         }
     }
 }

@@ -6,14 +6,16 @@ Licensed under the MIT License. For complete licensing information see [LICENSE.
 
 ### What is this repository for? ###
 
-This is a repository for the Android Device Info app that displays specific info about your Android device
+This is a repository for the Device Info Android app that displays specific info about your Android device
 
 ### Build Tools ###
-* Android Studio 3.3.2 (Gradle 4.10)
+* Android Studio 3.5 (Gradle 5.4.1)
 * AndroidX/Jetpack
-* Android 4.0 (API 14) or above (built against 9/API 28)
+* Android 4.0 (API 14) or above (built against 10/API 29)
+* Kotlin 1.3.50
 
 ### Android Permissions ###
+1. ACCESS_FINE_LOCATION - to read Wi-Fi SSID & BSSID
 1. ACCESS_NETWORK_STATE - to read SIM state
 1. ACCESS_WIFI_STATE - to read Wi-Fi MAC address
 1. BLUETOOTH - to read Bluetooth MAC address

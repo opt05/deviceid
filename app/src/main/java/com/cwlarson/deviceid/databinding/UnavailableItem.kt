@@ -19,7 +19,8 @@ class UnavailableTypeConverter {
 }
 
 enum class UnavailablePermission(val value: Int) {
-    MY_PERMISSIONS_REQUEST_READ_PHONE_STATE(1)
+    MY_PERMISSIONS_REQUEST_READ_PHONE_STATE(1),
+    MY_PERMISSIONS_REQUEST_LOCATION_STATE(2)
 }
 class UnavailablePermissionConverter {
     @TypeConverter

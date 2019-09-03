@@ -2,6 +2,7 @@
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
             xmlns:app="http://schemas.android.com/apk/res-auto"
             xmlns:tools="http://schemas.android.com/tools"
+            android:id="@+id/main"
             app:startDestination="@id/tab_device_dest">
     <fragment
         android:id="@+id/settings_dest"
@@ -14,7 +15,8 @@
         tools:layout="@layout/fragment_tabs">
         <argument
             android:name="tab"
-            android:defaultValue="0"/>
+            android:defaultValue="DEVICE"
+            app:argType="com.cwlarson.deviceid.databinding.ItemType"/>
     </fragment>
     <fragment
         android:id="@+id/tab_network_dest"
@@ -23,7 +25,8 @@
         tools:layout="@layout/fragment_tabs">
         <argument
             android:name="tab"
-            android:defaultValue="1"/>
+            android:defaultValue="NETWORK"
+            app:argType="com.cwlarson.deviceid.databinding.ItemType"/>
     </fragment>
     <fragment
         android:id="@+id/tab_software_dest"
@@ -32,7 +35,8 @@
         tools:layout="@layout/fragment_tabs">
         <argument
             android:name="tab"
-            android:defaultValue="2"/>
+            android:defaultValue="SOFTWARE"
+            app:argType="com.cwlarson.deviceid.databinding.ItemType"/>
     </fragment>
     <fragment
         android:id="@+id/tab_hardware_dest"
@@ -41,10 +45,51 @@
         tools:layout="@layout/fragment_tabs">
         <argument
             android:name="tab"
-            android:defaultValue="3"/>
+            android:defaultValue="HARDWARE"
+            app:argType="com.cwlarson.deviceid.databinding.ItemType"/>
     </fragment>
     <fragment
         android:id="@+id/search_fragment_dest"
         android:name="com.cwlarson.deviceid.SearchFragment"
         tools:layout="@layout/fragment_search"/>
+    <dialog
+        android:id="@+id/appUpdateDialog"
+        android:name="com.cwlarson.deviceid.dialog.AppUpdateDialog"
+        android:label="AppUpdateDialog" >
+        <argument android:name="title"
+            app:argType="reference" />
+        <argument
+            android:name="message"
+            app:argType="reference" />
+        <argument
+            android:name="button"
+            app:argType="reference" />
+    </dialog>
+    <action
+        android:id="@+id/action_global_appUpdateDialog"
+        app:destination="@id/appUpdateDialog" >
+        <argument android:name="title"
+            app:argType="reference" />
+        <argument
+            android:name="message"
+            app:argType="reference" />
+        <argument
+            android:name="button"
+            app:argType="reference" />
+    </action>
+    <dialog
+        android:id="@+id/itemClickDialog"
+        android:name="com.cwlarson.deviceid.dialog.ItemClickDialog"
+        android:label="ItemClickDialog" >
+        <argument
+            android:name="title"
+            app:argType="string"
+            app:nullable="true"
+            android:defaultValue="@null" />
+        <argument
+            android:name="type"
+            app:argType="com.cwlarson.deviceid.databinding.ItemType"
+            android:defaultValue="NONE" />
+    </dialog>
+    <action android:id="@+id/action_global_itemClickDialog" app:destination="@id/itemClickDialog" />
 </navigation>
