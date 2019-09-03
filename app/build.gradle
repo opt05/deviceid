@@ -44,16 +44,16 @@ android {
     }
 }
 
-def lifecycle_version = '2.2.0-alpha02'
+def lifecycle_version = '2.2.0-alpha03'
 def room_version = '2.1.0'
 def paging_version = '2.1.0'
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    implementation "androidx.core:core-ktx:1.1.0-rc02"
-    implementation "androidx.fragment:fragment-ktx:1.1.0-rc03"
+    implementation "androidx.core:core-ktx:1.1.0-rc03"
+    implementation "androidx.fragment:fragment-ktx:1.1.0-rc04"
     implementation "androidx.appcompat:appcompat:1.1.0-rc01"
-    implementation "androidx.recyclerview:recyclerview:1.1.0-beta01"
+    implementation "androidx.recyclerview:recyclerview:1.1.0-beta03"
     implementation "androidx.paging:paging-runtime-ktx:$paging_version"
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0-alpha02"
     implementation "com.google.android.material:material:1.1.0-alpha09"
@@ -81,5 +81,5 @@ dependencies {
     //Debug bridge for Android applications, enabling the powerful Chrome Developer Tools
     debugImplementation "com.facebook.stetho:stetho:1.5.1"
     //LeakCanary
-    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.0-beta-1'
+    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.0-beta-3'
 }

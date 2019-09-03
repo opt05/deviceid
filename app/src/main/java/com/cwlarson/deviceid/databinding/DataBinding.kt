@@ -144,7 +144,6 @@ fun setSearchHintVisibility(view: TextView, visibility: Int, searchView: SearchV
 /**
  * Applies the fullscreen mode (behind status and navigation bars) & left/right insets to supplied view.
  * This should be the rootView of the layout for best performance.
- * FIXME: This may not be needed after Android Q release with new support libraries
  */
 @BindingAdapter("systemUIVisibility")
 fun applySystemUiVisibility(view: View, applyVisibility: Boolean) {
@@ -171,7 +170,6 @@ fun appBarLayoutHideFix(view: AppBarLayout, visibility: Int) {
 /**
  * Set the bottom padding so that the content bottom is above the nav bar (y-axis).
  * Use such as: app:paddingBottomSystemWindowInsets="@{ true }"
- * FIXME: This may not be needed after Android Q release with new support libraries
  */
 @BindingAdapter("paddingLeftSystemWindowInsets", "paddingTopSystemWindowInsets",
         "paddingRightSystemWindowInsets", "paddingBottomSystemWindowInsets", "paddingActionBar",
