@@ -7,16 +7,16 @@ import android.animation.ObjectAnimator
 import android.os.Build
 import android.util.TypedValue
 import android.view.View
-import android.view.ViewGroup
+import android.view.ViewGroup.MarginLayoutParams
 import android.view.WindowInsets
 import android.widget.ImageView
-import android.widget.TextView
 import androidx.annotation.DrawableRes
 import androidx.annotation.RequiresApi
 import androidx.appcompat.widget.SearchView
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.view.*
 import androidx.databinding.BindingAdapter
+import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.vectordrawable.graphics.drawable.VectorDrawableCompat
 import com.cwlarson.deviceid.R
@@ -24,49 +24,69 @@ import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.card.MaterialCardView
 import timber.log.Timber
 import kotlin.math.max
+import kotlin.math.roundToInt
 
 @BindingAdapter("srcCompatBinding")
-fun bindSrcCompat(imageView: ImageView, @DrawableRes drawable: Int) {
-    val icon = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-        VectorDrawableCompat.create(imageView.context.resources, drawable, imageView.context.theme)
-    } else {
-        imageView.context.resources.getDrawable(drawable, imageView.context.theme)
+fun ImageView.bindSrcCompat(@DrawableRes drawable: Int) {
+    setImageDrawable(if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M)
+        VectorDrawableCompat.create(context.resources, drawable, context.theme)
+    else context.resources.getDrawable(drawable, context.theme))
+}
+
+@BindingAdapter(value=["searchBarOpen","searchBarExtraHorizontalMargin"], requireAll = true)
+fun View.searchBarExtraHorizontalMargin(isSearchOpen: Boolean, extraMargin: Float) {
+    val layoutParams = layoutParams as MarginLayoutParams
+    updateLayoutParams<MarginLayoutParams> {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            val start = getTag(R.id.origMarginStart) as Int? ?: layoutParams.marginStart
+            val end = getTag(R.id.origMarginEnd) as Int? ?: layoutParams.marginEnd
+            val extra = if(isSearchOpen) extraMargin.roundToInt() else 0
+            updateMarginsRelative(start = start + extra, end = end + extra)
+            if(getTag(R.id.origMarginStart) == null) setTag(R.id.origMarginStart, start)
+            if(getTag(R.id.origMarginEnd) == null) setTag(R.id.origMarginEnd, end)
+        } else {
+            val left = getTag(R.id.origMarginStart) as Int? ?: layoutParams.leftMargin
+            val right = getTag(R.id.origMarginEnd) as Int? ?: layoutParams.rightMargin
+            val extra = if(isSearchOpen) extraMargin.roundToInt() else 0
+            updateMargins(left = left + extra, right = right + extra)
+            if(getTag(R.id.origMarginStart) == null) setTag(R.id.origMarginStart, left)
+            if(getTag(R.id.origMarginEnd) == null) setTag(R.id.origMarginEnd, right)
+        }
     }
-    imageView.setImageDrawable(icon)
 }
 
 @BindingAdapter("animatedVisibility")
-fun setVisibility(view: View, visibility: Int) {
+fun View.setAnimatedVisibility(visible: Int) {
     // Were we animating before? If so, what was the visibility?
-    val endAnimVisibility = view.getTag(R.id.finalVisibility) as Int?
-    val oldVisibility = endAnimVisibility ?: view.visibility
+    val endAnimVisibility = getTag(R.id.finalVisibility) as Int?
+    val oldVisibility = endAnimVisibility ?: visibility
 
-    if (oldVisibility == visibility) {
+    if (oldVisibility == visible) {
         // just let it finish any current animation.
         return
     }
 
     val isVisible = oldVisibility == View.VISIBLE
-    val willBeVisible = visibility == View.VISIBLE
+    val willBeVisible = visible == View.VISIBLE
 
-    view.visibility = View.VISIBLE
+    visibility = View.VISIBLE
     var startAlpha = if (isVisible) 1f else 0f
     if (endAnimVisibility != null) {
-        startAlpha = view.alpha
+        startAlpha = alpha
     }
     val endAlpha = if (willBeVisible) 1f else 0f
 
     // Now create an animator
-    val alpha = ObjectAnimator.ofFloat(view, View.ALPHA, startAlpha, endAlpha)
+    val a = ObjectAnimator.ofFloat(this, View.ALPHA, startAlpha, endAlpha)
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-        alpha.setAutoCancel(true)
+        a.setAutoCancel(true)
     }
 
-    alpha.addListener(object : AnimatorListenerAdapter() {
+    a.addListener(object : AnimatorListenerAdapter() {
         private var isCanceled: Boolean = false
 
         override fun onAnimationStart(anim: Animator) {
-            view.setTag(R.id.finalVisibility, visibility)
+            setTag(R.id.finalVisibility, visible)
         }
 
         override fun onAnimationCancel(anim: Animator) {
@@ -74,55 +94,54 @@ fun setVisibility(view: View, visibility: Int) {
         }
 
         override fun onAnimationEnd(anim: Animator) {
-            view.setTag(R.id.finalVisibility, null)
+            setTag(R.id.finalVisibility, null)
             if (!isCanceled) {
-                view.alpha = 1f
-                view.visibility = visibility
+                alpha = 1f
+                visibility = visible
             }
         }
     })
-    alpha.start()
+    a.start()
 }
 
-@BindingAdapter(value=["animatedVisibility","searchView","searchViewHint","noFade"],
-        requireAll = true)
-fun setSearchHintVisibility(view: TextView, visibility: Int, searchView: SearchView,
-                            searchViewHint: String?, noFade: Boolean) {
+@BindingAdapter(value=["animatedVisibility","searchView","searchViewHint","noFade"], requireAll = true)
+fun View.setSearchHintVisibility(visible: Int, searchView: SearchView, searchViewHint: String?,
+                                 noFade: Boolean) {
     if(noFade) {
-        view.visibility = visibility
+        visibility = visible
         searchView.queryHint = searchViewHint
         return
     }
     // Were we animating before? If so, what was the visibility?
-    val endAnimVisibility = view.getTag(R.id.finalVisibility) as Int?
-    val oldVisibility = endAnimVisibility ?: view.visibility
+    val endAnimVisibility = getTag(R.id.finalVisibility) as Int?
+    val oldVisibility = endAnimVisibility ?: visibility
 
-    if (oldVisibility == visibility) {
+    if (oldVisibility == visible) {
         // just let it finish any current animation.
         return
     }
 
     val isVisible = oldVisibility == View.VISIBLE
-    val willBeVisible = visibility == View.VISIBLE
+    val willBeVisible = visible == View.VISIBLE
 
-    view.visibility = View.VISIBLE
+    visibility = View.VISIBLE
     var startAlpha = if (isVisible) 1f else 0f
     if (endAnimVisibility != null) {
-        startAlpha = view.alpha
+        startAlpha = alpha
     }
     val endAlpha = if (willBeVisible) 1f else 0f
 
     // Now create an animator
-    val alpha = ObjectAnimator.ofFloat(view, View.ALPHA, startAlpha, endAlpha)
+    val a = ObjectAnimator.ofFloat(this, View.ALPHA, startAlpha, endAlpha)
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-        alpha.setAutoCancel(true)
+        a.setAutoCancel(true)
     }
 
-    alpha.addListener(object : AnimatorListenerAdapter() {
+    a.addListener(object : AnimatorListenerAdapter() {
         private var isCanceled: Boolean = false
 
         override fun onAnimationStart(anim: Animator) {
-            view.setTag(R.id.finalVisibility, visibility)
+            setTag(R.id.finalVisibility, visible)
         }
 
         override fun onAnimationCancel(anim: Animator) {
@@ -130,15 +149,15 @@ fun setSearchHintVisibility(view: TextView, visibility: Int, searchView: SearchV
         }
 
         override fun onAnimationEnd(anim: Animator) {
-            view.setTag(R.id.finalVisibility, null)
+            setTag(R.id.finalVisibility, null)
             if (!isCanceled) {
-                view.alpha = 1f
-                view.visibility = visibility
+                alpha = 1f
+                visibility = visible
             }
-            searchView.queryHint = if(visibility == View.VISIBLE) null else searchViewHint
+            searchView.queryHint = if(visible == View.VISIBLE) null else searchViewHint
         }
     })
-    alpha.start()
+    a.start()
 }
 
 /**
@@ -146,9 +165,9 @@ fun setSearchHintVisibility(view: TextView, visibility: Int, searchView: SearchV
  * This should be the rootView of the layout for best performance.
  */
 @BindingAdapter("systemUIVisibility")
-fun applySystemUiVisibility(view: View, applyVisibility: Boolean) {
+fun View.applySystemUiVisibility(applyVisibility: Boolean) {
     if(applyVisibility && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-        view.systemUiVisibility =
+        systemUiVisibility =
                 // Tells the system that you wish to be laid out as if the navigation bar was hidden
                 View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
                 // Optional, if we want to be laid out fullscreen, behind the status bar
@@ -156,13 +175,13 @@ fun applySystemUiVisibility(view: View, applyVisibility: Boolean) {
                 // Tells the system that you wish to be laid out at the most extreme scenario of any other flags
                 View.SYSTEM_UI_FLAG_LAYOUT_STABLE
     } else if(applyVisibility && Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-        view.fitsSystemWindows = true
+        fitsSystemWindows = true
     }
 }
 
 @BindingAdapter("hideFix")
-fun appBarLayoutHideFix(view: AppBarLayout, visibility: Int) {
-    view.updateLayoutParams<CoordinatorLayout.LayoutParams> {
+fun AppBarLayout.appBarLayoutHideFix(visibility: Int) {
+    updateLayoutParams<CoordinatorLayout.LayoutParams> {
         height = if(visibility == View.VISIBLE) CoordinatorLayout.LayoutParams.WRAP_CONTENT else 0
     }
 }
@@ -174,16 +193,17 @@ fun appBarLayoutHideFix(view: AppBarLayout, visibility: Int) {
 @BindingAdapter("paddingLeftSystemWindowInsets", "paddingTopSystemWindowInsets",
         "paddingRightSystemWindowInsets", "paddingBottomSystemWindowInsets", "paddingActionBar",
         requireAll = false)
-fun applySystemWindows(view: View, applyLeft: Boolean, applyTop: Boolean, applyRight: Boolean,
-                       applyBottom: Boolean, applyActionBarPadding: Boolean) {
+fun View.applySystemWindows(applyLeft: Boolean = false, applyTop: Boolean = false,
+                       applyRight: Boolean = false, applyBottom: Boolean = false,
+                       applyActionBarPadding: Boolean = false) {
     val extra = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,8F,
-            view.resources.displayMetrics).toInt()
+            resources.displayMetrics).toInt()
     val tv = TypedValue()
-    val abHeight = if (view.context.theme.resolveAttribute(R.attr.actionBarSize, tv, true)) {
-        TypedValue.complexToDimensionPixelSize(tv.data, view.context.resources.displayMetrics)
+    val abHeight = if (context.theme.resolveAttribute(R.attr.actionBarSize, tv, true)) {
+        TypedValue.complexToDimensionPixelSize(tv.data, context.resources.displayMetrics)
     } else 0
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-        view.doOnApplyWindowInsets { v, insets, padding, margin ->
+        doOnApplyWindowInsets { v, insets, padding, margin ->
             val left = if (applyLeft) insets.systemWindowInsetLeft else 0
             val top = if (applyTop) insets.systemWindowInsetTop else 0
             val right = if (applyRight) insets.systemWindowInsetRight else 0
@@ -196,7 +216,7 @@ fun applySystemWindows(view: View, applyLeft: Boolean, applyTop: Boolean, applyR
                             it.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
                             val addtlHeight = max(0, (abHeight - (it.measuredHeight - it
                                     .paddingTop - it.paddingBottom)) / 2)
-                            it.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                            it.updateLayoutParams<MarginLayoutParams> {
                                 updateMargins(
                                         top = margin.top + top + addtlHeight,
                                         bottom = margin.bottom + bottom + addtlHeight,
@@ -208,6 +228,10 @@ fun applySystemWindows(view: View, applyLeft: Boolean, applyTop: Boolean, applyR
                         }
                     }
                 }
+                is RecyclerView -> {
+                    v.setPadding(padding.left + left, padding.top + top + if (applyActionBarPadding)
+                        abHeight else 0, padding.right + right, padding.bottom + bottom)
+                }
                 else -> {
                     if(v.getTag(R.id.hasInsetsSet) == null) {
                         v.setTag(R.id.hasInsetsSet, true)
@@ -216,36 +240,35 @@ fun applySystemWindows(view: View, applyLeft: Boolean, applyTop: Boolean, applyR
                     }
                 }
             }
-            if (view.parent is SwipeRefreshLayout) (view.parent as SwipeRefreshLayout)
+            if (parent is SwipeRefreshLayout) (parent as SwipeRefreshLayout)
                     .setProgressViewOffset(false, 0, padding.top + top + extra +
                             (if(applyActionBarPadding) abHeight else 0))
         }
     } else {
-        when (view) { // Fix for custom CardView since it cannot use padding
+        when (this) { // Fix for custom CardView since it cannot use padding
             is MaterialCardView -> {
-                if(view.getTag(R.id.hasInsetsSet) == null) {
-                    view.setTag(R.id.hasInsetsSet, true)
-                    view.doOnPreDraw {
+                if(getTag(R.id.hasInsetsSet) == null) {
+                    setTag(R.id.hasInsetsSet, true)
+                    doOnPreDraw {
                         it.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
                         val addtlHeight = max(0, (abHeight - (it.measuredHeight - it
                                 .paddingTop - it.paddingBottom)) / 2)
-                        it.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                        it.updateLayoutParams<MarginLayoutParams> {
                             updateMargins(top = topMargin + addtlHeight, bottom = bottomMargin + addtlHeight)
                         }
-                        Timber.d("${it.marginTop} / $addtlHeight - $abHeight / ${view
-                                .measuredHeight} / ${it.paddingTop} / ${it.paddingBottom}")
+                        Timber.d("${it.marginTop} / $addtlHeight - $abHeight / $measuredHeight / ${it.paddingTop} / ${it.paddingBottom}")
                     }
                 }
             }
             else -> {
-                if(view.getTag(R.id.hasInsetsSet) == null) {
-                    view.setTag(R.id.hasInsetsSet, true)
-                    view.updatePadding(top = view.paddingTop + if (applyActionBarPadding) abHeight else 0)
+                if(getTag(R.id.hasInsetsSet) == null) {
+                    setTag(R.id.hasInsetsSet, true)
+                    updatePadding(top = paddingTop + if (applyActionBarPadding) abHeight else 0)
                 }
             }
         }
-        if (view.parent is SwipeRefreshLayout) (view.parent as SwipeRefreshLayout)
-                .setProgressViewOffset(false, 0, view.paddingTop + extra)
+        if (parent is SwipeRefreshLayout) (parent as SwipeRefreshLayout)
+                .setProgressViewOffset(false, 0, paddingTop + extra)
     }
 }
 

@@ -9,13 +9,14 @@
         <variable name="model" type="com.cwlarson.deviceid.database.BottomSheetViewModel"/>
     </data>
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:background="?android:colorBackground"
         android:orientation="vertical"
-        android:layout_marginStart="@dimen/activity_horizontal_margin"
-        android:layout_marginEnd="@dimen/activity_horizontal_margin"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="16dp"
+        android:paddingTop="16dp"
+        android:paddingStart="16dp"
+        android:paddingLeft="16dp"
+        android:paddingEnd="16dp"
+        android:paddingRight="16dp"
         app:layout_behavior="@string/bottom_sheet_behavior"
         app:behavior_skipCollapsed="true">
         <TextView
@@ -46,10 +47,9 @@
             app:layout_constraintHorizontal_bias="0"/>
         <View
             android:id="@+id/bottom_divider"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="8dp"
             android:layout_width="match_parent"
             android:layout_height="1dp"
+            android:layout_marginTop="16dp"
             android:background="?android:attr/dividerVertical"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/bottom_subtitle"
@@ -57,10 +57,10 @@
             app:layout_constraintEnd_toEndOf="parent"/>
         <com.google.android.material.button.MaterialButton
             android:id="@+id/bottom_button_share"
+            android:padding="16dp"
             style="@style/AppTheme.BottomBarButtonStyle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:onClick="@{() -> handler.onShareClick(model.item)}"
             android:text="@string/menu_share"
             app:icon="@drawable/ic_action_share"
@@ -70,8 +70,8 @@
             app:layout_constraintBottom_toBottomOf="parent"/>
         <com.google.android.material.button.MaterialButton
             android:id="@+id/bottom_button_copy"
+            android:padding="16dp"
             android:onClick="@{() -> handler.onCopyClick(model.item)}"
-            android:layout_weight="1"
             style="@style/AppTheme.BottomBarButtonStyle"
             app:icon="@drawable/ic_action_copy"
             android:layout_width="0dp"

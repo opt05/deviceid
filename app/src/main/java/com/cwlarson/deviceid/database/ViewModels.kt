@@ -1,7 +1,6 @@
 package com.cwlarson.deviceid.database
 
 import android.app.Application
-import android.content.Context
 import androidx.lifecycle.*
 import androidx.paging.PagedList
 import androidx.paging.toLiveData
@@ -12,6 +11,7 @@ import com.cwlarson.deviceid.util.UpdateState
 import com.google.android.play.core.appupdate.AppUpdateManager
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.install.InstallState
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class AllItemsViewModel(application: Application) : AndroidViewModel(application) {
@@ -53,7 +53,7 @@ class AllItemsViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun refreshData(noStatus: Boolean = false) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             if(!noStatus) status.postValue(Status.LOADING)
             status.postValue(database.populateAsync(getApplication(),  itemType ?: ItemType.NONE))
         }
@@ -114,9 +114,16 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
     val hideBottomBar = MutableLiveData<Boolean>()
     val isSearchOpen = MutableLiveData<Boolean>()
     val titleVisibility = MutableLiveData<Pair<Boolean, Int>>()
+    var twoPane: Boolean = false
+        private set
 
-    fun loadAllData(context: Context?) {
-        viewModelScope.launch { database.populateAsync(context) }
+    fun loadAllData() {
+        viewModelScope.launch(Dispatchers.IO) { database.populateAsync(getApplication<Application>().applicationContext) }
+    }
+
+    fun initialize(twoPane: Boolean) {
+        if(this.twoPane == twoPane) return
+        this@MainActivityViewModel.twoPane = twoPane
     }
 }
 

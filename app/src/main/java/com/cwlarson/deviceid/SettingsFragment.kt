@@ -7,15 +7,15 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.view.updatePadding
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProviders
-import androidx.lifecycle.get
 import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import com.cwlarson.deviceid.database.AppUpdateViewModel
+import com.cwlarson.deviceid.database.MainActivityViewModel
 import com.cwlarson.deviceid.databinding.applySystemWindows
 import com.cwlarson.deviceid.util.FakeAppUpdateManagerWrapper
 import com.cwlarson.deviceid.util.UpdateState
@@ -33,18 +33,23 @@ fun SharedPreferences.setDarkTheme(context: Context?, newValue: Any? = null) {
 }
 
 class SettingsFragment: PreferenceFragmentCompat() {
-    private var appUpdateViewModel: AppUpdateViewModel? = null
+    private val appUpdateViewModel by activityViewModels<AppUpdateViewModel>()
+    private val mainActivityViewModel by activityViewModels<MainActivityViewModel>()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val layout = super.onCreateView(inflater, container, savedInstanceState)
-        applySystemWindows(listView, applyBottom = true, applyActionBarPadding = false,
-                applyLeft = false, applyRight = false, applyTop = false)
+        listView.clipToPadding = false
+        listView.clipChildren = false
+        listView.scrollBarStyle = View.SCROLLBARS_OUTSIDE_OVERLAY
+        if(mainActivityViewModel.twoPane) listView?.updatePadding(left = resources.getDimensionPixelSize(R.dimen
+                    .activity_horizontal_margin), right = resources.
+                    getDimensionPixelSize(R.dimen.activity_horizontal_margin))
+        listView.applySystemWindows(applyBottom = true)
         return layout
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        activity?.let { appUpdateViewModel = ViewModelProviders.of(it).get() }
         findPreference<ListPreference>(getString(R.string.pref_daynight_mode_key))?.onPreferenceChangeListener =
                 Preference.OnPreferenceChangeListener { _, newValue ->
                     preferenceManager.sharedPreferences.setDarkTheme(context, newValue)
@@ -52,7 +57,7 @@ class SettingsFragment: PreferenceFragmentCompat() {
                 }
         findPreference<Preference>(getString(R.string.pref_check_for_update_key))?.let { pref ->
             if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                appUpdateViewModel?.updateStatus?.observe(viewLifecycleOwner, Observer { ua ->
+                appUpdateViewModel.updateStatus.observe(viewLifecycleOwner, Observer { ua ->
                     pref.title = when (ua) {
                         UpdateState.Yes,
                         UpdateState.YesButNotAllowed ->
@@ -61,7 +66,7 @@ class SettingsFragment: PreferenceFragmentCompat() {
                             getString(R.string.pref_check_for_update_title_no)
                     }
                 })
-                appUpdateViewModel?.installState?.observe(viewLifecycleOwner, Observer { state ->
+                appUpdateViewModel.installState.observe(viewLifecycleOwner, Observer { state ->
                     pref.summary = when (state?.installStatus()) {
                         InstallStatus.CANCELED ->
                             getString(R.string.pref_check_for_update_summary_canceled)
@@ -86,14 +91,13 @@ class SettingsFragment: PreferenceFragmentCompat() {
                 })
 
                 pref.onPreferenceClickListener = Preference.OnPreferenceClickListener {
-                    appUpdateViewModel?.sendCheckForFlexibleUpdate()
-                            ?: Toast.makeText(context, R.string.update_unknown_title, Toast.LENGTH_SHORT).show()
+                    appUpdateViewModel.sendCheckForFlexibleUpdate()
                     true
                 }
             } else pref.isVisible = false // App Updates are not available on KitKat and below
         }
         findPreference<ListPreference>(getString(R.string.pref_fake_update_set_end_state_key))?.onPreferenceChangeListener = Preference.OnPreferenceChangeListener {  _, newValue ->
-            appUpdateViewModel?.fakeAppUpdateManager?.setEndState(FakeAppUpdateManagerWrapper.Companion.Type.valueOf(newValue.toString()))
+            appUpdateViewModel.fakeAppUpdateManager.setEndState(FakeAppUpdateManagerWrapper.Companion.Type.valueOf(newValue.toString()))
             true
         }
     }

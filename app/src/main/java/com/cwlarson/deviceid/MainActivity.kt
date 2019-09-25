@@ -12,6 +12,7 @@ import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Filter
+import androidx.activity.viewModels
 import androidx.annotation.ColorRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
@@ -19,8 +20,6 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProviders
-import androidx.lifecycle.get
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.onNavDestinationSelected
@@ -44,19 +43,17 @@ import kotlinx.coroutines.*
 import org.json.JSONArray
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
-import kotlin.coroutines.CoroutineContext
 
-class MainActivity : AppCompatActivity(), CoroutineScope, SharedPreferences
+class MainActivity : AppCompatActivity(), CoroutineScope by MainScope(), SharedPreferences
 .OnSharedPreferenceChangeListener, InstallStateUpdatedListener {
     private val topLevelDestinations = hashSetOf(R.id.tab_device_dest,
             R.id.tab_network_dest, R.id.tab_software_dest, R.id.tab_hardware_dest)
     private lateinit var binding: ActivityMainBinding
     private lateinit var preferences: SharedPreferences
     private lateinit var searchHistoryAdapter: SuggestionAdapter<String>
-    private val job = SupervisorJob()
-    override val coroutineContext: CoroutineContext
-        get() = Dispatchers.Main + job
-    private lateinit var appUpdateViewModel: AppUpdateViewModel
+    private val appUpdateViewModel by viewModels<AppUpdateViewModel>()
+    private val mainActivityViewModel by viewModels<MainActivityViewModel>()
+    private val searchItemsViewModel by viewModels<SearchItemsViewModel>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(R.style.AppTheme) //Removes splash screen
@@ -65,49 +62,50 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SharedPreferences
         preferences = PreferenceManager.getDefaultSharedPreferences(this).also {
             it.registerOnSharedPreferenceChangeListener(this)
         }
-        appUpdateViewModel = ViewModelProviders.of(this).get<AppUpdateViewModel>().apply {
+        appUpdateViewModel.apply {
             useFakeAppUpdateManager.value = preferences.getBoolean(
                     getString(R.string.pref_use_fake_update_manager_key), false)
         }
         binding = DataBindingUtil.setContentView<ActivityMainBinding>(this, R.layout.activity_main).apply {
             lifecycleOwner = this@MainActivity
-            model = ViewModelProviders.of(this@MainActivity).get<MainActivityViewModel>().apply {
+            model = mainActivityViewModel.apply {
+                initialize(navigationList != null)
                 hideSearchBar.observe(this@MainActivity, Observer {
                     setTranslucentStatus(!(it ?: false))
                 })
             }
-            setSupportActionBar(toolbar)
+            setSupportActionBar(appbarLayout.toolbar)
         }
         findNavController(R.id.nav_host_fragment).apply {
             //Setup menu
-            binding.menuToolbar.run {
+            binding.searchbarLayout.menuToolbar.run {
                 menuInflater.inflate(R.menu.base_menu, menu)
                 setOnMenuItemClickListener { item ->
                     item.onNavDestinationSelected(this@apply) ||
                             super.onOptionsItemSelected(item)
                 }
             }
-            setupActionBarWithNavController(this@apply,
+            setupActionBarWithNavController(this,
                     AppBarConfiguration.Builder(topLevelDestinations).build())
-            binding.bottomNavigation.setupWithNavController(this@apply)
+            binding.bottomNavigation?.setupWithNavController(this)
+            binding.navigationList?.setupWithNavController(this)
             addOnDestinationChangedListener { _, destination, _ ->
                 if(destination.id == R.id.itemClickDialog || destination.id == R.id.appUpdateDialog)
                     return@addOnDestinationChangedListener
-                binding.model?.hideSearchBar?.value = !topLevelDestinations.contains(destination.id)
+                mainActivityViewModel.hideSearchBar.value = !topLevelDestinations.contains(destination.id)
                         && destination.id != R.id.search_fragment_dest
-                binding.model?.hideBottomBar?.value = !topLevelDestinations.contains(destination
+                mainActivityViewModel.hideBottomBar.value = !topLevelDestinations.contains(destination
                         .id) || destination.id == R.id.search_fragment_dest
                 (destination.id == R.id.search_fragment_dest).apply {
                     if (this) supportActionBar?.setDisplayHomeAsUpEnabled(false)
-                    binding.model?.isSearchOpen?.value = this
-                    if (!this && binding.searchBar.query.isNotBlank())
-                        binding.searchBar.setQuery("", false)
+                    mainActivityViewModel.isSearchOpen.value = this
+                    if (!this && binding.searchbarLayout.searchBar.query.isNotBlank())
+                        binding.searchbarLayout.searchBar.setQuery("", false)
                 }
             }
-            binding.searchHandler = SearchClickHandler(this, binding.searchBar)
+            binding.searchHandler = SearchClickHandler(this, binding.searchbarLayout.searchBar)
         }
-        val searchModel = ViewModelProviders.of(this).get<SearchItemsViewModel>()
-        binding.searchBar.apply {
+        binding.searchbarLayout.searchBar.apply {
             setOnQueryTextFocusChangeListener { _, hasFocus ->
                 if(!hasFocus && preferences.getBoolean(
                                 getString(R.string.pref_search_history_key), false))
@@ -116,13 +114,13 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SharedPreferences
             setOnQueryTextListener(object : SearchView.OnQueryTextListener {
                 override fun onQueryTextSubmit(query: String?): Boolean {
                     query?.let { saveSearchHistoryItem(it) }
-                    searchModel.setSearchText(query)
+                    searchItemsViewModel.setSearchText(query)
                     binding.searchHandler?.onSearchSubmit(query)
                     return false
                 }
 
                 override fun onQueryTextChange(query: String?): Boolean {
-                    searchModel.setSearchText(query)
+                    searchItemsViewModel.setSearchText(query)
                     binding.searchHandler?.onSearchSubmit(query)
                     return false
                 }
@@ -148,12 +146,12 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SharedPreferences
         }
         if (savedInstanceState == null) {
             launch(Dispatchers.IO) {
-                (intent.action != Intent.ACTION_SEARCH).apply {
+                (intent.action != Intent.ACTION_SEARCH && !mainActivityViewModel.twoPane).apply {
                     if(this) delay(TimeUnit.SECONDS.toMillis(2))
-                    binding.model?.titleVisibility?.postValue(Pair(!this, View.GONE))
+                    mainActivityViewModel.titleVisibility.postValue(Pair(!this, View.GONE))
                 }
             }
-            binding.model?.loadAllData(this@MainActivity)
+            mainActivityViewModel.loadAllData()
             intent?.handle()
             launch(Dispatchers.IO) {
                 val updateInfo = appUpdateViewModel.getUpdateManager().appUpdateInfo
@@ -196,12 +194,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SharedPreferences
         launch(Dispatchers.IO) {
             if(appUpdateViewModel.getUpdateManager().appUpdateInfo.awaitIsFlexibleUpdateDownloaded()) {
                 // If the update is downloaded but not installed, notify the user to complete the update.
-                Snackbar.make(binding.coordinatorLayout,
-                        getString(R.string.update_download_finished), Snackbar.LENGTH_INDEFINITE)
-                        .setAnchorView(R.id.bottom_navigation)
-                        .setActionTextColor(ContextCompat.getColor(this@MainActivity, R.color.imageSecondary))
-                        .setAction(getString(R.string.update_restart))
-                        { appUpdateViewModel.getUpdateManager().completeUpdate()}.show()
+                binding.coordinatorLayout.snackbar(R.string.update_download_finished, Snackbar.LENGTH_INDEFINITE)
+                    .setActionTextColor(ContextCompat.getColor(this@MainActivity, R.color.imageSecondary))
+                    .setAction(getString(R.string.update_restart)) { appUpdateViewModel.getUpdateManager().completeUpdate()}.show()
             }
         }
 
@@ -221,7 +216,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SharedPreferences
 
     override fun onDestroy() {
         super.onDestroy()
-        coroutineContext.cancel()
+        cancel()
         preferences.unregisterOnSharedPreferenceChangeListener(this)
         appUpdateViewModel.installState.value = null
         appUpdateViewModel.checkForFlexibleUpdate.value = null
@@ -234,10 +229,10 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SharedPreferences
          requestCode == UnavailablePermission.MY_PERMISSIONS_REQUEST_LOCATION_STATE.value) {
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // GRANTED: Force new data updates
-                binding.model?.loadAllData(this@MainActivity)
-            } else {
+                mainActivityViewModel.loadAllData()
+            } /*else {
                 // DENIED: We do nothing (it is handled by the ViewAdapter)
-            }
+            }*/
         }
     }
 
@@ -248,7 +243,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SharedPreferences
 
     private fun Intent.handle() {
         if(this.action == Intent.ACTION_SEARCH) {
-            binding.searchBar.apply {
+            binding.searchbarLayout.searchBar.apply {
                 isFocusable = true
                 isFocusableInTouchMode = true
                 requestFocus()
@@ -341,12 +336,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SharedPreferences
                 state.installErrorCode() != InstallErrorCode.NO_ERROR_PARTIALLY_ALLOWED
                 || state.installStatus() == InstallStatus.FAILED) && wasManualUpdate) {
             Timber.d("Failed")
-            Snackbar.make(binding.coordinatorLayout,
-                    getString(R.string.update_download_failed), Snackbar.LENGTH_INDEFINITE)
-                    .setAnchorView(R.id.bottom_navigation)
-                    .setActionTextColor(ContextCompat.getColor(this@MainActivity, R.color.imageSecondary))
-                    .setAction(R.string.update_retry)
-                    { appUpdateViewModel.sendCheckForFlexibleUpdate() }.show()
+            binding.coordinatorLayout.snackbar(R.string.update_download_failed, Snackbar.LENGTH_INDEFINITE)
+                .setActionTextColor(ContextCompat.getColor(this@MainActivity, R.color.imageSecondary))
+                .setAction(R.string.update_retry) { appUpdateViewModel.sendCheckForFlexibleUpdate() }.show()
         } else
             when(state?.installErrorCode()) {
                 InstallErrorCode.ERROR_API_NOT_AVAILABLE -> Timber.e("The API is not available on this device.")
@@ -373,12 +365,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope, SharedPreferences
                             Timber.d("Downloaded")
                             // After the update is downloaded, show a notification
                             // and request user confirmation to restart the app.
-                            Snackbar.make(binding.coordinatorLayout,
-                                    getString(R.string.update_download_finished), Snackbar.LENGTH_INDEFINITE)
-                                    .setAnchorView(R.id.bottom_navigation)
-                                    .setActionTextColor(ContextCompat.getColor(this@MainActivity, R.color.imageSecondary))
-                                    .setAction(getString(R.string.update_restart))
-                                    { appUpdateViewModel.getUpdateManager().completeUpdate()}.show()
+                            binding.coordinatorLayout.snackbar(R.string.update_download_finished, Snackbar.LENGTH_INDEFINITE)
+                                .setActionTextColor(ContextCompat.getColor(this@MainActivity, R.color.imageSecondary))
+                                .setAction(getString(R.string.update_restart)) { appUpdateViewModel.getUpdateManager().completeUpdate()}.show()
                         }
                     }
                 }

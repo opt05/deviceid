@@ -6,8 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
-import androidx.lifecycle.ViewModelProviders
-import androidx.lifecycle.get
+import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.navArgs
 import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.database.BottomSheetViewModel
@@ -22,6 +21,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
  */
 class ItemClickDialog : BottomSheetDialogFragment() {
     private val args by navArgs<ItemClickDialogArgs>()
+    private val bottomSheetViewModel by viewModels<BottomSheetViewModel>()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? =
@@ -29,9 +29,8 @@ class ItemClickDialog : BottomSheetDialogFragment() {
                 R.layout.bottom_sheet, null, false).apply {
             lifecycleOwner = viewLifecycleOwner
             handler = ItemClickDialogHandler(activity, this@ItemClickDialog)
-            model = ViewModelProviders.of(this@ItemClickDialog).get<BottomSheetViewModel>().apply {
-                setItem(args.title ?: getString(R.string.not_found), args.type)
-            }
+            bottomSheetViewModel.setItem(args.title ?: getString(R.string.not_found), args.type)
+            model = bottomSheetViewModel
         }.root
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =

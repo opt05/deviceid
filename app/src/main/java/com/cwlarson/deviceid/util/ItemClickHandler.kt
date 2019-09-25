@@ -83,9 +83,7 @@ class ItemClickHandler(private val snackbarView: View, private val activity: Fra
             } else if (it.unavailableType != null) {
                 // Unavailable for another reason
                 val message = a.resources?.getString(R.string.snackbar_not_found_adapter, item.title)
-                Snackbar.make(snackbarView, message ?: "Unknown error", Snackbar.LENGTH_LONG)
-                        .setActionTextColor(ContextCompat.getColor(activity, R.color.imageSecondary))
-                        .setAnchorView(R.id.bottom_navigation).show()
+                snackbarView.snackbar(message ?: "Unknown error", Snackbar.LENGTH_LONG).show()
             }
         } ?: a.findNavController(R.id.nav_host_fragment).navigate(ItemClickDialogDirections
                 .actionGlobalItemClickDialog(item?.title, item?.itemType ?: ItemType.NONE))
@@ -108,12 +106,10 @@ class ItemClickHandler(private val snackbarView: View, private val activity: Fra
             }
             if (ContextCompat.checkSelfPermission(a, permission) != PackageManager.PERMISSION_GRANTED) {
                 if (ActivityCompat.shouldShowRequestPermissionRationale(a, permission)) {
-                    Snackbar.make(snackbarView,
-                            a.getString(R.string.permission_snackbar_retry,
+                    snackbarView.snackbar(a.getString(R.string.permission_snackbar_retry,
                                     a.packageManager.getPermissionInfo(Manifest.permission.READ_PHONE_STATE, 0)
                                             .loadLabel(a.packageManager).toString(), itemTitle), Snackbar.LENGTH_INDEFINITE)
                             .setActionTextColor(ContextCompat.getColor(a, R.color.imageSecondary))
-                            .setAnchorView(R.id.bottom_navigation)
                             .setAction(R.string.permission_snackbar_button
                     ) { ActivityCompat.requestPermissions(a,
                             arrayOf(permission), MY_PERMISSION.value) }.show()

@@ -13,32 +13,18 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:clipToPadding="false"
         android:layout_width="match_parent"
-        android:layout_height="?listPreferredItemHeight"
+        android:layout_height="wrap_content"
+        android:minHeight="?listPreferredItemHeight"
         android:background="?android:attr/selectableItemBackground"
         android:clickable="true"
         android:focusable="true"
         android:onClick="@{() -> handler.onClick(item)}"
         android:longClickable="true"
-        android:onLongClick="@{() -> handler.onLongClick(item)}">
-
-        <androidx.constraintlayout.widget.Guideline
-            android:id="@+id/guideline_top"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintGuide_begin="8dp"
-            android:orientation="horizontal"/>
-        <androidx.constraintlayout.widget.Guideline
-            android:id="@+id/guideline_bottom"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintGuide_end="8dp"
-            android:orientation="horizontal"/>
-        <androidx.constraintlayout.widget.Guideline
-            android:id="@+id/guideline_end"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintGuide_end="?listPreferredItemPaddingRight"
-            android:orientation="vertical"/>
+        android:onLongClick="@{() -> handler.onLongClick(item)}"
+        android:paddingLeft="0dp"
+        android:paddingRight="?listPreferredItemPaddingRight"
+        android:paddingStart="0dp"
+        android:paddingEnd="?listPreferredItemPaddingEnd">
 
         <ImageView
             android:id="@+id/left_icon"
@@ -48,23 +34,24 @@
             tools:src="@drawable/ic_battery"
             android:padding="12dp"
             app:srcCompatBinding="@{item.chartItem.chartDrawable}"
+            app:layout_constraintHorizontal_bias="0"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/item_title"
-            app:layout_constraintTop_toTopOf="@id/guideline_top"
-            app:layout_constraintBottom_toBottomOf="@id/guideline_bottom"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintHorizontal_chainStyle="packed"
             android:contentDescription="@string/chartview_image_icon"/>
 
         <TextView
             android:id="@+id/item_title"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:ellipsize="end"
             android:lines="1"
             android:text="@{item.title}"
             android:textAppearance="?textAppearanceListItem"
             app:layout_constraintBottom_toTopOf="@+id/item_bar"
-            app:layout_constraintEnd_toEndOf="@+id/guideline_end"
-            app:layout_constraintHorizontal_weight="1"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@id/left_icon"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintVertical_chainStyle="packed"
@@ -78,16 +65,16 @@
             android:layout_height="wrap_content"
             android:progress="@{item.chartItem.chartPercentage}"
             tools:progress="50"
-            app:layout_constraintStart_toStartOf="@id/item_title"
-            app:layout_constraintEnd_toEndOf="@+id/item_title"
+            android:visibility="@{TextUtils.isEmpty(item.subtitle) ? View.GONE : View.VISIBLE}"
+            app:layout_constraintStart_toEndOf="@id/left_icon"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/item_title"
             app:layout_constraintBottom_toTopOf="@+id/item_subtitle"
-            app:layout_constraintVertical_chainStyle="packed"
             app:layout_constraintHorizontal_weight="1"/>
 
         <TextView
             android:id="@+id/item_subtitle"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:ellipsize="end"
             android:maxLines="1"
@@ -95,11 +82,10 @@
             android:textAppearance="?textAppearanceListItemSecondary"
             android:textColor="?android:textColorSecondary"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="@+id/item_title"
-            app:layout_constraintHorizontal_weight="1"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="@id/item_title"
             app:layout_constraintTop_toBottomOf="@+id/item_bar"
-            app:layout_constraintVertical_chainStyle="packed"
+            app:layout_constraintHorizontal_bias="0"
             tools:text="50% - Discharging"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>

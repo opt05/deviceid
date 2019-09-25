@@ -27,7 +27,10 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.databinding.UnavailablePermission
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.google.android.material.snackbar.BaseTransientBottomBar
+import com.google.android.material.snackbar.Snackbar
 import com.google.android.play.core.appupdate.AppUpdateInfo
 import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.InstallStatus
@@ -42,11 +45,14 @@ import kotlin.coroutines.suspendCoroutine
  * of columns based on screen width
  * @return number of columns
  */
-fun Context?.calculateNoOfColumns(): Int {
+fun Context?.calculateNoOfColumns(twoPane: Boolean): Int {
     this?.let {
         val displayMetrics = it.resources.displayMetrics
-        val dpWidth = displayMetrics.widthPixels / displayMetrics.density
-        return (dpWidth / 300).toInt()
+        val dpWidth = (displayMetrics.widthPixels - if(twoPane)
+            resources.getDimensionPixelSize(R.dimen.navigation_list_width) else 0) /
+                displayMetrics.density
+        val calcValue = (dpWidth / 300).toInt()
+        return if(calcValue < 1) 1 else calcValue
     } ?: return 1
 }
 
@@ -64,6 +70,20 @@ fun Dialog.calculateBottomSheetMaxWidth(): Dialog {
     }
     return this
 }
+
+fun View.snackbar(@StringRes message: Int, @BaseTransientBottomBar.Duration duration: Int) =
+    Snackbar.make(this, message, duration).apply {
+        this@snackbar.rootView.findViewById<BottomNavigationView>(R.id.bottom_navigation)?.let {
+            anchorView = it
+        }
+    }
+
+fun View.snackbar(message: String, @BaseTransientBottomBar.Duration duration: Int) =
+        Snackbar.make(this, message, duration).apply {
+            this@snackbar.rootView.findViewById<BottomNavigationView>(R.id.bottom_navigation)?.let {
+                anchorView = it
+            }
+        }
 
 /**
  * Class to get system properties not available via Android SDK

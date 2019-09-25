@@ -10,17 +10,20 @@ android {
         applicationId "com.cwlarson.deviceid"
         minSdkVersion 14
         targetSdkVersion 29
-        versionCode 14
-        versionName "1.4.1"
+        versionCode 15
+        versionName "1.4.2"
     }
     signingConfigs {
         release {
-            def props = new Properties()
-            props.load(new FileInputStream(rootProject.file("release.properties")))
-            storeFile rootProject.file(props.keyStore)
-            storePassword props.keyStorePassword
-            keyAlias props.keyAlias
-            keyPassword props.keyAliasPassword
+            def keystorePropertiesFile = rootProject.file("release.properties")
+            if(keystorePropertiesFile.exists()) {
+                def props = new Properties()
+                props.load(new FileInputStream(keystorePropertiesFile))
+                storeFile rootProject.file(props.keyStore)
+                storePassword props.keyStorePassword
+                keyAlias props.keyAlias
+                keyPassword props.keyAliasPassword
+            }
         }
     }
     buildTypes {
@@ -36,7 +39,7 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-    kotlinOptions { jvmTarget = JavaVersion.VERSION_1_8}
+    kotlinOptions { jvmTarget = JavaVersion.VERSION_1_8 }
     kapt {
         arguments { arg("room.schemaLocation", "$projectDir/schemas".toString()) }
         // Increase the max count of errors from annotation processors. Default is 100.
@@ -44,19 +47,20 @@ android {
     }
 }
 
-def lifecycle_version = '2.2.0-alpha03'
+def lifecycle_version = '2.2.0-alpha05'
 def room_version = '2.1.0'
 def paging_version = '2.1.0'
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    implementation "androidx.core:core-ktx:1.1.0-rc03"
-    implementation "androidx.fragment:fragment-ktx:1.1.0-rc04"
-    implementation "androidx.appcompat:appcompat:1.1.0-rc01"
-    implementation "androidx.recyclerview:recyclerview:1.1.0-beta03"
+    implementation "androidx.core:core-ktx:1.1.0"
+    implementation "androidx.activity:activity-ktx:1.0.0"
+    implementation "androidx.fragment:fragment-ktx:1.1.0"
+    implementation "androidx.appcompat:appcompat:1.1.0"
+    implementation "androidx.recyclerview:recyclerview:1.1.0-beta04"
     implementation "androidx.paging:paging-runtime-ktx:$paging_version"
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0-alpha02"
-    implementation "com.google.android.material:material:1.1.0-alpha09"
+    implementation "com.google.android.material:material:1.1.0-alpha10"
     implementation "androidx.coordinatorlayout:coordinatorlayout:1.1.0-beta01"
     implementation "androidx.constraintlayout:constraintlayout:2.0.0-beta2"
     // ViewModel and LiveData
@@ -71,11 +75,11 @@ dependencies {
     implementation "androidx.navigation:navigation-fragment-ktx:$nav_version"
     implementation "androidx.navigation:navigation-ui-ktx:$nav_version"
     //Preference Compat
-    implementation "androidx.preference:preference-ktx:1.1.0-rc01"
+    implementation "androidx.preference:preference-ktx:1.1.0"
     // Kotlin coroutines
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.2.2"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.1"
     // App Updates
-    implementation 'com.google.android.play:core:1.6.1'
+    implementation 'com.google.android.play:core:1.6.3'
     // Timber
     implementation 'com.jakewharton.timber:timber:4.7.1'
     //Debug bridge for Android applications, enabling the powerful Chrome Developer Tools
