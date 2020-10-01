@@ -1,38 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
-    <data>
-        <variable name="count" type="String"/>
-    </data>
-    <LinearLayout
-        android:layout_width="match_parent"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?android:colorBackground"
+    android:clickable="false"
+    android:clipToPadding="false"
+    android:focusable="false"
+    android:longClickable="false"
+    android:orientation="horizontal"
+    android:paddingStart="?listPreferredItemPaddingStart"
+    android:paddingLeft="?listPreferredItemPaddingLeft"
+    android:paddingTop="8dp"
+    android:paddingEnd="?listPreferredItemPaddingEnd"
+    android:paddingRight="?listPreferredItemPaddingRight"
+    android:paddingBottom="8dp"
+    tools:ignore="Overdraw">
+
+    <TextView
+        android:id="@+id/header_title"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:clipToPadding="false"
-        android:clickable="false"
-        android:focusable="false"
-        android:longClickable="false"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp"
-        android:paddingStart="?listPreferredItemPaddingStart"
-        android:paddingLeft="?listPreferredItemPaddingLeft"
-        android:paddingEnd="?listPreferredItemPaddingEnd"
-        android:paddingRight="?listPreferredItemPaddingRight"
-        android:background="?android:windowBackground">
-        <TextView
-            android:id="@+id/header_title"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:textAppearance="?textAppearanceSubtitle2"
-            android:text="@string/textview_recyclerview_title"
-            android:textAllCaps="true"
-            android:layout_weight="1"/>
-        <TextView
-            android:id="@+id/header_count"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textAppearance="?textAppearanceSubtitle2"
-            android:text="@{count}"
-            tools:text="0"/>
-    </LinearLayout>
-</layout>
+        android:layout_weight="1"
+        android:text="@string/textview_recyclerview_title"
+        android:textAllCaps="true"
+        android:textAppearance="?textAppearanceSubtitle2" />
+
+    <TextView
+        android:id="@+id/header_count"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?textAppearanceSubtitle2"
+        tools:text="0" />
+</LinearLayout>

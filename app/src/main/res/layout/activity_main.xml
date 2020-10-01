@@ -1,50 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/coordinator_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
     tools:context=".MainActivity">
-    <data>
-        <import type="android.view.View"/>
-        <variable
-            name="model"
-            type="com.cwlarson.deviceid.database.MainActivityViewModel"/>
-        <variable
-            name="searchHandler"
-            type="com.cwlarson.deviceid.util.SearchClickHandler"/>
-    </data>
-    <androidx.coordinatorlayout.widget.CoordinatorLayout
-        android:id="@+id/coordinator_layout"
+
+    <include
+        android:id="@+id/appbar_layout"
+        layout="@layout/appbar_layout" />
+
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/nav_host_fragment"
+        android:name="androidx.navigation.fragment.NavHostFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:systemUIVisibility="@{ true }"
-        app:paddingLeftSystemWindowInsets="@{ true }"
-        app:paddingRightSystemWindowInsets="@{ true }">
+        app:defaultNavHost="true"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        app:navGraph="@navigation/nav_graph"
+        tools:layout_marginTop="?actionBarSize" />
 
-        <include layout="@layout/appbar_layout" android:id="@+id/appbar_layout"
-            app:hideSearchBar="@{safeUnbox(model.hideSearchBar)}"/>
+    <include
+        android:id="@+id/searchbar_layout"
+        layout="@layout/searchbar_layout" />
 
-        <fragment
-            android:id="@+id/nav_host_fragment"
-            android:name="androidx.navigation.fragment.NavHostFragment"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            tools:layout_marginTop="?actionBarSize"
-            app:layout_behavior="@string/appbar_scrolling_view_behavior"
-            app:defaultNavHost="true"
-            app:navGraph="@navigation/nav_graph"/>
+    <!-- Fix for Snackbar anchor not respecting margins... -->
+    <Space
+        android:id="@+id/bottom_navigation_spacer"
+        android:layout_width="match_parent"
+        android:layout_height="8dp"
+        android:layout_gravity="top"
+        app:layout_anchor="@id/bottom_navigation"
+        app:layout_anchorGravity="top"
+        app:layout_behavior="@string/hide_bottom_view_on_scroll_behavior"
+        app:layout_insetEdge="bottom"
+        tools:ignore="InconsistentLayout" />
 
-        <include layout="@layout/searchbar_layout" android:id="@+id/searchbar_layout"
-            app:model="@{model}" app:searchHandler="@{searchHandler}"/>
-
-        <com.google.android.material.bottomnavigation.BottomNavigationView
-            android:visibility="@{safeUnbox(model.hideBottomBar) ? View.GONE : View.VISIBLE}"
-            android:id="@+id/bottom_navigation"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom"
-            app:labelVisibilityMode="auto"
-            app:layout_behavior="@string/hide_bottom_view_on_scroll_behavior"
-            app:menu="@menu/navigation_menu"
-            app:paddingBottomSystemWindowInsets="@{true}"/>
-    </androidx.coordinatorlayout.widget.CoordinatorLayout>
-</layout>
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottom_navigation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        app:labelVisibilityMode="labeled"
+        app:layout_behavior="@string/hide_bottom_view_on_scroll_behavior"
+        app:layout_insetEdge="bottom"
+        app:menu="@menu/navigation_menu"
+        tools:ignore="InconsistentLayout" />
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

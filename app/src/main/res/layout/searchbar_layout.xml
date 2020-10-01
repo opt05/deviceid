@@ -1,98 +1,80 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools">
-    <data>
-        <import type="android.view.View"/>
-        <variable
-            name="model"
-            type="com.cwlarson.deviceid.database.MainActivityViewModel"/>
-        <variable
-            name="searchHandler"
-            type="com.cwlarson.deviceid.util.SearchClickHandler"/>
-        <variable name="searchPaddingExtra" type="float"/>
-    </data>
-    <com.google.android.material.card.MaterialCardView
-        app:searchBarExtraHorizontalMargin="@{searchPaddingExtra}"
-        app:searchBarOpen="@{safeUnbox(model.isSearchOpen())}"
-        android:layout_marginStart="?listPreferredItemPaddingStart"
-        android:layout_marginLeft="?listPreferredItemPaddingLeft"
-        android:layout_marginEnd="?listPreferredItemPaddingEnd"
-        android:layout_marginRight="?listPreferredItemPaddingRight"
-        app:paddingTopSystemWindowInsets="@{ true }"
-        android:id="@+id/searchview"
-        android:visibility="@{safeUnbox(model.hideSearchBar) ? View.GONE : View.VISIBLE}"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="50dp"
+    android:layout_marginStart="?listPreferredItemPaddingStart"
+    android:layout_marginLeft="?listPreferredItemPaddingLeft"
+    android:layout_marginEnd="?listPreferredItemPaddingEnd"
+    android:layout_marginRight="?listPreferredItemPaddingRight"
+    app:cardElevation="2dp"
+    app:cardPreventCornerOverlap="false"
+    app:cardUseCompatPadding="false"
+    app:layout_behavior=".search.SearchViewBehavior">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="50dp"
-        app:cardUseCompatPadding="false"
-        app:cardElevation="2dp"
-        app:cardPreventCornerOverlap="false"
-        app:layout_behavior=".util.SearchViewBehavior">
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-            <include layout="@layout/app_title_layout"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/app_title"
-                tools:visibility="gone"
-                app:animatedVisibility="@{safeUnbox(model.titleVisibility.second)}"
-                app:searchView="@{searchBar}"
-                app:searchViewHint="@{@string/search_hint_items}"
-                app:noFade="@{safeUnbox(model.titleVisibility.first)}"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toStartOf="parent"
-                app:layout_constraintStart_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-            <ImageButton
-                android:visibility="@{safeUnbox(model.isSearchOpen) ? View.VISIBLE : View.GONE}"
-                android:id="@+id/search_back_button"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:onClick="@{() -> searchHandler.onSearchNavigateUp()}"
-                style="?borderlessButtonStyle"
-                android:background="?selectableItemBackgroundBorderless"
-                app:srcCompat="@drawable/ic_arrow_back"
-                android:scaleType="centerInside"
-                app:layout_constraintDimensionRatio="1:1"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toStartOf="@id/search_bar"
-                android:contentDescription="@string/nav_app_bar_navigate_up_description"/>
-            <androidx.appcompat.widget.SearchView
-                android:id="@+id/search_bar"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:focusable="false"
-                android:focusableInTouchMode="false"
-                android:paddingStart="@{safeUnbox(model.isSearchOpen) ? @dimen/searchbar_padding_active : @dimen/searchbar_padding_inactive}"
-                android:paddingLeft="@{safeUnbox(model.isSearchOpen) ? @dimen/searchbar_padding_active : @dimen/searchbar_padding_inactive}"
-                android:paddingEnd="-8dp"
-                android:paddingRight="-8dp"
-                app:searchIcon="@null"
-                app:queryHint="@null"
-                app:defaultQueryHint="@null"
-                tools:queryHint="@string/search_hint_items"
-                app:iconifiedByDefault="false"
-                app:queryBackground="@android:color/transparent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toEndOf="@id/search_back_button"
-                app:layout_constraintEnd_toStartOf="@id/menu_toolbar"/>
-            <androidx.appcompat.widget.ActionMenuView
-                android:id="@+id/menu_toolbar"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:paddingStart="0dp"
-                android:paddingLeft="0dp"
-                android:paddingEnd="@dimen/searchbar_padding_inactive"
-                android:paddingRight="@dimen/searchbar_padding_inactive"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toEndOf="@id/search_bar"
-                app:layout_constraintEnd_toEndOf="parent"/>
-        </androidx.constraintlayout.widget.ConstraintLayout>
-    </com.google.android.material.card.MaterialCardView>
-</layout>
+        android:layout_height="wrap_content">
+
+        <include
+            android:id="@+id/app_title"
+            layout="@layout/app_title_layout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="parent"
+            app:layout_constraintStart_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:visibility="gone" />
+
+        <ImageButton
+            android:id="@+id/search_back_button"
+            style="?borderlessButtonStyle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="?selectableItemBackgroundBorderless"
+            android:contentDescription="@string/nav_app_bar_navigate_up_description"
+            android:scaleType="centerInside"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintDimensionRatio="1:1"
+            app:layout_constraintEnd_toStartOf="@id/search_bar"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/ic_arrow_back" />
+
+        <androidx.appcompat.widget.SearchView
+            android:id="@+id/search_bar"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:paddingStart="@dimen/searchbar_padding_inactive"
+            android:paddingLeft="@dimen/searchbar_padding_inactive"
+            android:paddingEnd="-8dp"
+            android:paddingRight="-8dp"
+            app:defaultQueryHint="@null"
+            app:iconifiedByDefault="false"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/menu_toolbar"
+            app:layout_constraintStart_toEndOf="@id/search_back_button"
+            app:layout_constraintTop_toTopOf="parent"
+            app:queryBackground="@android:color/transparent"
+            app:queryHint="@null"
+            app:searchIcon="@null"
+            tools:queryHint="@string/search_hint_items" />
+
+        <androidx.appcompat.widget.ActionMenuView
+            android:id="@+id/menu_toolbar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="0dp"
+            android:paddingLeft="0dp"
+            android:paddingEnd="@dimen/searchbar_padding_inactive"
+            android:paddingRight="@dimen/searchbar_padding_inactive"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/search_bar"
+            app:layout_constraintTop_toTopOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</com.google.android.material.card.MaterialCardView>

@@ -1,85 +1,89 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        xmlns:tools="http://schemas.android.com/tools">
-    <data>
-        <import type="android.text.TextUtils"/>
-        <import type="com.cwlarson.deviceid.R"/>
-        <variable name="handler" type="com.cwlarson.deviceid.util.ItemClickDialogHandler"/>
-        <variable name="model" type="com.cwlarson.deviceid.database.BottomSheetViewModel"/>
-    </data>
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:orientation="vertical"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="16dp"
+    android:paddingLeft="16dp"
+    android:paddingTop="16dp"
+    android:paddingEnd="16dp"
+    android:paddingRight="16dp"
+    app:behavior_skipCollapsed="true"
+    app:layout_behavior="@string/bottom_sheet_behavior">
+
+    <TextView
+        android:id="@+id/bottom_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:paddingTop="16dp"
-        android:paddingStart="16dp"
-        android:paddingLeft="16dp"
-        android:paddingEnd="16dp"
-        android:paddingRight="16dp"
-        app:layout_behavior="@string/bottom_sheet_behavior"
-        app:behavior_skipCollapsed="true">
-        <TextView
-            android:id="@+id/bottom_title"
-            android:textSize="18sp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@{TextUtils.isEmpty(model.item.title) ? @android:string/unknownName : model.item.title}"
-            tools:text="@tools:sample/lorem"
-            android:textColor="?android:attr/textColorPrimary"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toTopOf="@id/bottom_subtitle"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0"/>
-        <TextView
-            android:id="@+id/bottom_subtitle"
-            android:textSize="16sp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text='@{TextUtils.isEmpty(model.item.subtitle) ? @string/not_found : model.item.subtitle}'
-            tools:text="@tools:sample/lorem"
-            android:textColor="?android:attr/textColorSecondary"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/bottom_title"
-            app:layout_constraintBottom_toTopOf="@id/bottom_divider"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0"/>
-        <View
-            android:id="@+id/bottom_divider"
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginTop="16dp"
-            android:background="?android:attr/dividerVertical"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/bottom_subtitle"
-            app:layout_constraintBottom_toTopOf="@id/bottom_button_share"
-            app:layout_constraintEnd_toEndOf="parent"/>
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/bottom_button_share"
-            android:padding="16dp"
-            style="@style/AppTheme.BottomBarButtonStyle"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:onClick="@{() -> handler.onShareClick(model.item)}"
-            android:text="@string/menu_share"
-            app:icon="@drawable/ic_action_share"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/bottom_divider"
-            app:layout_constraintEnd_toStartOf="@id/bottom_button_copy"
-            app:layout_constraintBottom_toBottomOf="parent"/>
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/bottom_button_copy"
-            android:padding="16dp"
-            android:onClick="@{() -> handler.onCopyClick(model.item)}"
-            style="@style/AppTheme.BottomBarButtonStyle"
-            app:icon="@drawable/ic_action_copy"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="@string/menu_copy_to_clipboard"
-            app:layout_constraintStart_toEndOf="@id/bottom_button_share"
-            app:layout_constraintTop_toTopOf="@id/bottom_button_share"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"/>
-    </androidx.constraintlayout.widget.ConstraintLayout>
-</layout>
+        android:textColor="?android:attr/textColorPrimary"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toTopOf="@id/bottom_subtitle"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="@tools:sample/lorem" />
+
+    <TextView
+        android:id="@+id/bottom_subtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="?android:attr/textColorSecondary"
+        android:textSize="16sp"
+        app:layout_constraintBottom_toTopOf="@id/bottom_divider"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/bottom_title"
+        tools:text="@tools:sample/lorem" />
+
+    <View
+        android:id="@+id/bottom_divider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="16dp"
+        android:background="@color/divider"
+        app:layout_constraintBottom_toTopOf="@id/barrier"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/bottom_subtitle" />
+
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/barrier"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:barrierDirection="top"
+        app:constraint_referenced_ids="bottom_button_copy, bottom_button_share" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/bottom_button_share"
+        style="@style/AppTheme.BottomBarButtonStyle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:enabled="false"
+        android:padding="16dp"
+        android:text="@string/menu_share"
+        app:icon="@drawable/ic_action_share"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/bottom_button_copy"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/barrier"
+        tools:enabled="true" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/bottom_button_copy"
+        style="@style/AppTheme.BottomBarButtonStyle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:enabled="false"
+        android:padding="16dp"
+        android:text="@string/menu_copy_to_clipboard"
+        app:icon="@drawable/ic_action_copy"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/bottom_button_share"
+        app:layout_constraintTop_toBottomOf="@id/barrier"
+        tools:enabled="true" />
+</androidx.constraintlayout.widget.ConstraintLayout>

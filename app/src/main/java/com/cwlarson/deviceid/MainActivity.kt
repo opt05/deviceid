@@ -2,238 +2,231 @@ package com.cwlarson.deviceid
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
-import android.content.pm.PackageManager
 import android.os.Bundle
-import android.util.TypedValue
-import android.view.View
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
-import android.widget.Filter
 import androidx.activity.viewModels
-import androidx.annotation.ColorRes
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.SearchView
-import androidx.core.content.ContextCompat
-import androidx.core.content.edit
-import androidx.databinding.DataBindingUtil
-import androidx.lifecycle.Observer
-import androidx.navigation.findNavController
+import androidx.core.app.ActivityCompat
+import androidx.core.view.isVisible
+import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.onNavDestinationSelected
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
-import androidx.preference.PreferenceManager
-import com.cwlarson.deviceid.database.AppUpdateViewModel
-import com.cwlarson.deviceid.database.MainActivityViewModel
-import com.cwlarson.deviceid.database.SearchItemsViewModel
-import com.cwlarson.deviceid.databinding.ActivityMainBinding
-import com.cwlarson.deviceid.databinding.UnavailablePermission
-import com.cwlarson.deviceid.dialog.AppUpdateDialogDirections
+import com.cwlarson.deviceid.appupdates.*
+import com.cwlarson.deviceid.search.SearchViewModel
+import com.cwlarson.deviceid.settings.PreferenceManager
 import com.cwlarson.deviceid.util.*
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.play.core.appupdate.AppUpdateManager
 import com.google.android.play.core.install.InstallState
 import com.google.android.play.core.install.InstallStateUpdatedListener
 import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.InstallErrorCode
 import com.google.android.play.core.install.model.InstallStatus
-import kotlinx.coroutines.*
-import org.json.JSONArray
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.appbar_layout.view.*
+import kotlinx.android.synthetic.main.searchbar_layout.view.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
-import java.util.concurrent.TimeUnit
+import javax.inject.Inject
+import kotlin.system.exitProcess
 
-class MainActivity : AppCompatActivity(), CoroutineScope by MainScope(), SharedPreferences
-.OnSharedPreferenceChangeListener, InstallStateUpdatedListener {
-    private val topLevelDestinations = hashSetOf(R.id.tab_device_dest,
-            R.id.tab_network_dest, R.id.tab_software_dest, R.id.tab_hardware_dest)
-    private lateinit var binding: ActivityMainBinding
-    private lateinit var preferences: SharedPreferences
-    private lateinit var searchHistoryAdapter: SuggestionAdapter<String>
+@AndroidEntryPoint
+class MainActivity : AppCompatActivity(R.layout.activity_main), InstallStateUpdatedListener {
+    @Inject
+    lateinit var preferenceManager: PreferenceManager
+
+    @Inject
+    lateinit var appUpdateManager: AppUpdateManager
+    private val topLevelDestinations = setOf(
+        R.id.tab_device_dest, R.id.tab_network_dest, R.id.tab_software_dest, R.id.tab_hardware_dest
+    )
+
+    @ExperimentalCoroutinesApi
     private val appUpdateViewModel by viewModels<AppUpdateViewModel>()
     private val mainActivityViewModel by viewModels<MainActivityViewModel>()
-    private val searchItemsViewModel by viewModels<SearchItemsViewModel>()
 
+    @ExperimentalCoroutinesApi
+    private val searchItemsViewModel by viewModels<SearchViewModel>()
+    private lateinit var navController: NavController
+
+    @ExperimentalCoroutinesApi
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(R.style.AppTheme) //Removes splash screen
         super.onCreate(savedInstanceState)
-        setTaskDescription()
-        preferences = PreferenceManager.getDefaultSharedPreferences(this).also {
-            it.registerOnSharedPreferenceChangeListener(this)
-        }
-        appUpdateViewModel.apply {
-            useFakeAppUpdateManager.value = preferences.getBoolean(
-                    getString(R.string.pref_use_fake_update_manager_key), false)
-        }
-        binding = DataBindingUtil.setContentView<ActivityMainBinding>(this, R.layout.activity_main).apply {
-            lifecycleOwner = this@MainActivity
-            model = mainActivityViewModel.apply {
-                initialize(navigationList != null)
-                hideSearchBar.observe(this@MainActivity, Observer {
-                    setTranslucentStatus(!(it ?: false))
-                })
+        mainActivityViewModel.twoPane = navigation_list != null
+        navController = findNavControllerFixed(R.id.nav_host_fragment)
+        if(savedInstanceState == null) lifecycleScope.launch { setTaskDescription() }
+        mainActivityViewModel.startTitleFade(intent)
+        mainActivityViewModel.hideSearchBar.onEach { hidden ->
+            setTranslucentStatus(!hidden)
+            searchbar_layout.isVisible = !hidden
+            appbar_layout.appBarLayoutHideFix(hidden)
+        }.launchIn(lifecycleScope)
+        mainActivityViewModel.isSearchOpen.onEach { open ->
+            searchbar_layout.modifySearchLayout(open)
+        }.launchIn(lifecycleScope)
+        mainActivityViewModel.titleVisibility.onEach { visibility ->
+            searchbar_layout.setSearchHintVisibility(visibility)
+        }.launchIn(lifecycleScope)
+        mainActivityViewModel.hideBottomBar.onEach { hidden ->
+            bottom_navigation_spacer?.isVisible = !hidden
+            bottom_navigation?.isVisible = !hidden
+            navigation_list?.isVisible = !hidden
+        }.launchIn(lifecycleScope)
+        setSupportActionBar(appbar_layout.toolbar)
+        coordinator_layout.applySystemUiVisibility()
+        coordinator_layout.applySystemWindows(applyLeft = true, applyRight = true)
+        appbar_layout.applySystemWindows(applyTop = true)
+        bottom_navigation?.applySystemWindows(applyBottom = true)
+        navigation_list?.applySystemWindows(applyBottom = true, applyTop = true)
+        searchbar_layout.applySystemWindows(applyTop = true)
+        //Setup menu
+        searchbar_layout.menu_toolbar.run {
+            menuInflater.inflate(R.menu.base_menu, menu)
+            setOnMenuItemClickListener { item ->
+                item.onNavDestinationSelected(navController) || super.onOptionsItemSelected(item)
             }
-            setSupportActionBar(appbarLayout.toolbar)
         }
-        findNavController(R.id.nav_host_fragment).apply {
-            //Setup menu
-            binding.searchbarLayout.menuToolbar.run {
-                menuInflater.inflate(R.menu.base_menu, menu)
-                setOnMenuItemClickListener { item ->
-                    item.onNavDestinationSelected(this@apply) ||
-                            super.onOptionsItemSelected(item)
-                }
-            }
-            setupActionBarWithNavController(this,
-                    AppBarConfiguration.Builder(topLevelDestinations).build())
-            binding.bottomNavigation?.setupWithNavController(this)
-            binding.navigationList?.setupWithNavController(this)
-            addOnDestinationChangedListener { _, destination, _ ->
-                if(destination.id == R.id.itemClickDialog || destination.id == R.id.appUpdateDialog)
-                    return@addOnDestinationChangedListener
-                mainActivityViewModel.hideSearchBar.value = !topLevelDestinations.contains(destination.id)
+        setupActionBarWithNavController(
+            navController,
+            AppBarConfiguration.Builder(topLevelDestinations).build()
+        )
+        bottom_navigation?.setupWithNavController(navController)
+        navigation_list?.setupWithNavController(navController)
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            if (destination.id == R.id.tabs_detail_dialog_dest || destination.id == R.id.app_update_dialog_dest)
+                return@addOnDestinationChangedListener
+            mainActivityViewModel.updateHideSearchBar(
+                !topLevelDestinations.contains(destination.id)
                         && destination.id != R.id.search_fragment_dest
-                mainActivityViewModel.hideBottomBar.value = !topLevelDestinations.contains(destination
-                        .id) || destination.id == R.id.search_fragment_dest
-                (destination.id == R.id.search_fragment_dest).apply {
-                    if (this) supportActionBar?.setDisplayHomeAsUpEnabled(false)
-                    mainActivityViewModel.isSearchOpen.value = this
-                    if (!this && binding.searchbarLayout.searchBar.query.isNotBlank())
-                        binding.searchbarLayout.searchBar.setQuery("", false)
-                }
+            )
+            mainActivityViewModel.updateHideBottomBar(
+                !topLevelDestinations.contains(
+                    destination
+                        .id
+                ) || destination.id == R.id.search_fragment_dest
+            )
+            (destination.id == R.id.search_fragment_dest).apply {
+                if (this) supportActionBar?.setDisplayHomeAsUpEnabled(false)
+                mainActivityViewModel.updateIsSearchOpen(this)
+                if (!this && searchbar_layout.search_bar.query.isNotBlank())
+                    searchbar_layout.search_bar.setQuery("", false)
             }
-            binding.searchHandler = SearchClickHandler(this, binding.searchbarLayout.searchBar)
+            // Reshow search bar and bottom bar onBackPressed()
+            bottom_navigation_spacer?.showViewOnNavigationChange()
+            bottom_navigation?.showViewOnNavigationChange()
+            searchbar_layout?.showViewOnNavigationChange()
         }
-        binding.searchbarLayout.searchBar.apply {
-            setOnQueryTextFocusChangeListener { _, hasFocus ->
-                if(!hasFocus && preferences.getBoolean(
-                                getString(R.string.pref_search_history_key), false))
-                    query?.let { saveSearchHistoryItem(it.toString()) }
-            }
-            setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-                override fun onQueryTextSubmit(query: String?): Boolean {
-                    query?.let { saveSearchHistoryItem(it) }
-                    searchItemsViewModel.setSearchText(query)
-                    binding.searchHandler?.onSearchSubmit(query)
-                    return false
-                }
-
-                override fun onQueryTextChange(query: String?): Boolean {
-                    searchItemsViewModel.setSearchText(query)
-                    binding.searchHandler?.onSearchSubmit(query)
-                    return false
-                }
-            })
-            // Load history items in searchview
-            findViewById<SearchView.SearchAutoComplete?>(R.id.search_src_text)?.apply {
-                @ColorRes val colorRes = TypedValue().run {
-                    this@MainActivity.theme.resolveAttribute(R.attr.colorBackgroundFloating, this, true)
-                    resourceId
-                }
-                setDropDownBackgroundResource(colorRes)
-                searchHistoryAdapter = SuggestionAdapter(this@MainActivity,
-                        R.layout.searchview_history_item,
-                        getSearchHistoryItems(preferences), android.R.id.text1)
-                @SuppressLint("RestrictedApi")
-                threshold = 0
-                setAdapter(searchHistoryAdapter)
-                onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
-                    setQuery(searchHistoryAdapter.getItem(position), true)
-                }
-            } ?: Timber.wtf("SearchView.SearchAutoComplete id has changed and requires maintenance")
-
+        searchbar_layout.setupSearchBarLayout(navController, preferenceManager) { query, submit ->
+            if (submit) searchbar_layout.search_bar.setQuery(query, true)
+            else searchItemsViewModel.setSearchText(query)
         }
-        if (savedInstanceState == null) {
-            launch(Dispatchers.IO) {
-                (intent.action != Intent.ACTION_SEARCH && !mainActivityViewModel.twoPane).apply {
-                    if(this) delay(TimeUnit.SECONDS.toMillis(2))
-                    mainActivityViewModel.titleVisibility.postValue(Pair(!this, View.GONE))
-                }
-            }
-            mainActivityViewModel.loadAllData()
-            intent?.handle()
-            launch(Dispatchers.IO) {
-                val updateInfo = appUpdateViewModel.getUpdateManager().appUpdateInfo
+        appUpdateViewModel.checkForFlexibleUpdate.onEach {
+            if (it?.processed == false) withContext(Dispatchers.IO) {
+                val updateInfo = appUpdateManager.appUpdateInfo
                 val updateAvail = updateInfo.awaitIsUpdateAvailable(AppUpdateType.FLEXIBLE)
-                appUpdateViewModel.updateStatus.postValue(updateAvail)
-                if(updateAvail == UpdateState.Yes) {
-                    appUpdateViewModel.getUpdateManager().registerListener(this@MainActivity)
-                    appUpdateViewModel.getUpdateManager().startUpdateFlowForResult(updateInfo.result,
-                            AppUpdateType.FLEXIBLE, this@MainActivity, UPDATE_FLEXIBLE_REQUEST_CODE)
-                }
-            }
-        }
-        appUpdateViewModel.checkForFlexibleUpdate.observe(this, Observer {
-                    it?.getContentIfNotHandled()?.let { // Only proceed if the event has never been handled
-                        launch(Dispatchers.IO) {
-                            val updateInfo = appUpdateViewModel.getUpdateManager().appUpdateInfo
-                            val updateAvail = updateInfo.awaitIsUpdateAvailable(AppUpdateType.FLEXIBLE)
-                            appUpdateViewModel.updateStatus.postValue(updateAvail)
-                            when (updateAvail) {
-                                UpdateState.Yes -> {
-                                    appUpdateViewModel.getUpdateManager().registerListener(this@MainActivity)
-                                    appUpdateViewModel.getUpdateManager().startUpdateFlowForResult(updateInfo.result,
-                                            AppUpdateType.FLEXIBLE, this@MainActivity, UPDATE_FLEXIBLE_REQUEST_CODE)
-                                }
-                                is UpdateState.No -> {
-                                    appUpdateViewModel.installState.postValue(null)
-                                    withContext(Dispatchers.Main) {
-                                        findNavController(R.id.nav_host_fragment).navigate(AppUpdateDialogDirections
-                                                .actionGlobalAppUpdateDialog(updateAvail.title, updateAvail.message, updateAvail.button))
-                                    }
-                                }
-                            }
+                appUpdateViewModel.setUpdateState(updateAvail)
+                when (updateAvail) {
+                    UpdateState.Yes -> {
+                        appUpdateManager.registerListener(this@MainActivity)
+                        appUpdateManager.startUpdateFlowForResult(
+                            updateInfo.result,
+                            AppUpdateType.FLEXIBLE,
+                            this@MainActivity,
+                            UPDATE_FLEXIBLE_REQUEST_CODE
+                        )
+                    }
+                    is UpdateState.YesButNotAllowed -> { /* Do nothing... */ }
+                    is UpdateState.No -> {
+                        appUpdateViewModel.setInstallState(null)
+                        withContext(Dispatchers.Main) {
+                            navController.navigate(
+                                AppUpdateDialogDirections
+                                    .actionGlobalAppUpdateDialog(
+                                        updateAvail.title,
+                                        updateAvail.message,
+                                        updateAvail.button
+                                    )
+                            )
                         }
                     }
-                })
+                }
+            }
+        }.launchIn(lifecycleScope)
+        lifecycleScope.launch {
+            preferenceManager.observeSearchHistoryData().distinctUntilChanged().collectLatest {
+                searchbar_layout.updateSearchBarAdapter(it)
+            }
+        }
+        lifecycleScope.launch {
+            preferenceManager.observeUseFakeUpdateManager().distinctUntilChanged().collectLatest {
+                // Restart activity to use different AppUpdateManager
+                val intent =
+                    baseContext.packageManager.getLaunchIntentForPackage(baseContext.packageName)
+                ActivityCompat.finishAffinity(this@MainActivity)
+                startActivity(intent)
+                exitProcess(0)
+            }
+        }
+        if (savedInstanceState == null) {
+            intent?.handle()
+            lifecycleScope.launch(Dispatchers.IO) {
+                val updateInfo = appUpdateManager.appUpdateInfo
+                val updateAvail = updateInfo.awaitIsUpdateAvailable(AppUpdateType.FLEXIBLE)
+                appUpdateViewModel.setUpdateState(updateAvail)
+                if (updateAvail == UpdateState.Yes) {
+                    appUpdateManager.registerListener(this@MainActivity)
+                    appUpdateManager.startUpdateFlowForResult(
+                        updateInfo.result,
+                        AppUpdateType.FLEXIBLE, this@MainActivity, UPDATE_FLEXIBLE_REQUEST_CODE
+                    )
+                }
+            }
+        }
     }
 
     override fun onResume() {
         super.onResume()
-        launch(Dispatchers.IO) {
-            if(appUpdateViewModel.getUpdateManager().appUpdateInfo.awaitIsFlexibleUpdateDownloaded()) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            if (appUpdateManager.appUpdateInfo.awaitIsFlexibleUpdateDownloaded()) {
                 // If the update is downloaded but not installed, notify the user to complete the update.
-                binding.coordinatorLayout.snackbar(R.string.update_download_finished, Snackbar.LENGTH_INDEFINITE)
-                    .setActionTextColor(ContextCompat.getColor(this@MainActivity, R.color.imageSecondary))
-                    .setAction(getString(R.string.update_restart)) { appUpdateViewModel.getUpdateManager().completeUpdate()}.show()
+                coordinator_layout.snackbar(
+                    R.string.update_download_finished,
+                    Snackbar.LENGTH_INDEFINITE, R.string.update_restart
+                ) {
+                    appUpdateManager.completeUpdate()
+                }
             }
         }
-
     }
 
+    @ExperimentalCoroutinesApi
     public override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if(requestCode == UPDATE_FLEXIBLE_REQUEST_CODE && resultCode != Activity.RESULT_OK) {
+        if (requestCode == UPDATE_FLEXIBLE_REQUEST_CODE && resultCode != Activity.RESULT_OK) {
             Timber.d("Flexible update flow failed! Results code: $resultCode")
-            // If the update is cancelled or fails, you can request to start the update again.
-            appUpdateViewModel.installState.value = null
-            appUpdateViewModel.checkForFlexibleUpdate.value = null
-            appUpdateViewModel.getUpdateManager().unregisterListener(this)
+            appUpdateViewModel.resetState()
+            appUpdateManager.unregisterListener(this)
         }
 
     }
 
+    @ExperimentalCoroutinesApi
     override fun onDestroy() {
         super.onDestroy()
-        cancel()
-        preferences.unregisterOnSharedPreferenceChangeListener(this)
-        appUpdateViewModel.installState.value = null
-        appUpdateViewModel.checkForFlexibleUpdate.value = null
-        appUpdateViewModel.getUpdateManager().unregisterListener(this)
-    }
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE.value ||
-         requestCode == UnavailablePermission.MY_PERMISSIONS_REQUEST_LOCATION_STATE.value) {
-            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // GRANTED: Force new data updates
-                mainActivityViewModel.loadAllData()
-            } /*else {
-                // DENIED: We do nothing (it is handled by the ViewAdapter)
-            }*/
-        }
+        appUpdateViewModel.resetState()
+        appUpdateManager.unregisterListener(this)
     }
 
     override fun onNewIntent(intent: Intent?) {
@@ -242,132 +235,75 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope(), SharedP
     }
 
     private fun Intent.handle() {
-        if(this.action == Intent.ACTION_SEARCH) {
-            binding.searchbarLayout.searchBar.apply {
+        if (this.action == Intent.ACTION_SEARCH) {
+            searchbar_layout.search_bar.apply {
                 isFocusable = true
                 isFocusableInTouchMode = true
                 requestFocus()
+                setQuery("", false)
             }
-            binding.searchHandler?.onSearchSubmitIntent()
+            if (navController.currentDestination?.id != R.id.search_fragment_dest)
+                navController.navigate(R.id.search_fragment_dest)
         }
     }
 
-    override fun onSupportNavigateUp(): Boolean  =
-            findNavController(R.id.nav_host_fragment).navigateUp()
+    override fun onSupportNavigateUp(): Boolean = navController.navigateUp()
 
-    private inner class SuggestionAdapter<String>(context: Context, resource: Int, objects: MutableList<String>, textViewResourceId: Int) :
-            ArrayAdapter<String>(context, resource, textViewResourceId, objects) {
-        private val items = ArrayList<String>(objects)
-        private var filterItems = mutableListOf<String>()
-        private var filter = object: Filter() {
-            override fun performFiltering(constraint: CharSequence?): FilterResults =
-                FilterResults().apply {
-                    filterItems.clear()
-                    filterItems.addAll(if(constraint != null) {
-                        items.filter { s -> s.toString().contains(constraint, true) }
-                    } else items)
-                    values = filterItems
-                    count = filterItems.size
-                }
-            override fun publishResults(constraint: CharSequence?, results: FilterResults?) {
-                if(objects.isNotEmpty()) clear()
-                if(results != null && results.count > 0) {
-                    addAll(filterItems)
-                    notifyDataSetChanged()
-                } else notifyDataSetInvalidated()
-            }
-        }
-
-        override fun getItemId(position: Int): Long = position.toLong()
-
-        override fun getItem(position: Int): String? = filterItems[position]
-
-        override fun getCount(): Int = filterItems.size
-
-        override fun getFilter(): Filter = filter
-
-        fun updateList(newList: List<String>?) {
-            items.clear()
-            newList?.let { items.addAll(it) }
-            notifyDataSetChanged()
-        }
-    }
-
-    private fun saveSearchHistoryItem(item: String) {
-        if(preferences.getBoolean(getString(R.string.pref_search_history_key), false) && item.isNotBlank()) {
-            val jsonString = JSONArray(getSearchHistoryItems(preferences).run {
-                // Remove item in the list if already in history
-                removeAll { s -> s == item }
-                // Prepend item to top of list and remove older ones if more than 10 items
-                (listOf(item).plus(this)).take(10)
-            }).toString()
-            preferences.edit {
-                putString(getString(R.string.pref_search_history_data_key), jsonString)
-            }
-        }
-    }
-
-    private fun getSearchHistoryItems(preferences: SharedPreferences?) = mutableListOf<String>().apply {
-        val json = JSONArray(preferences?.getString(getString(R.string.pref_search_history_data_key), "[]"))
-        (0 until json.length()).forEach {
-            add(json.get(it).toString())
-        }
-    }
-
-    override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
-        if(key == getString(R.string.pref_search_history_data_key))
-            searchHistoryAdapter.updateList(getSearchHistoryItems(sharedPreferences))
-        else if(key == getString(R.string.pref_search_history_key) &&
-                sharedPreferences?.getBoolean(key, false) == false)
-            sharedPreferences.edit { remove(getString(R.string.pref_search_history_data_key)) }
-        else if(key == getString(R.string.pref_use_fake_update_manager_key)) {
-            // Restart activity to use different AppUpdateManager
-            baseContext.packageManager.getLaunchIntentForPackage(baseContext.packageName)?.apply {
-                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
-            }?.run { startActivity(this) }
-        }
-    }
-
-    override fun onStateUpdate(state: InstallState?) {
-        appUpdateViewModel.installState.postValue(state)
-        val wasManualUpdate = appUpdateViewModel.checkForFlexibleUpdate.value?.peekContent() ?: false
-        if((state?.installErrorCode() != InstallErrorCode.NO_ERROR ||
-                state.installErrorCode() != InstallErrorCode.NO_ERROR_PARTIALLY_ALLOWED
-                || state.installStatus() == InstallStatus.FAILED) && wasManualUpdate) {
+    @SuppressLint("SwitchIntDef")
+    @ExperimentalCoroutinesApi
+    override fun onStateUpdate(state: InstallState) {
+        appUpdateViewModel.setInstallState(state)
+        val wasManualUpdate = appUpdateViewModel.checkForFlexibleUpdate.value?.manual ?: false
+        if ((state.installErrorCode() != InstallErrorCode.NO_ERROR
+                    || state.installStatus() == InstallStatus.FAILED) && wasManualUpdate
+        ) {
             Timber.d("Failed")
-            binding.coordinatorLayout.snackbar(R.string.update_download_failed, Snackbar.LENGTH_INDEFINITE)
-                .setActionTextColor(ContextCompat.getColor(this@MainActivity, R.color.imageSecondary))
-                .setAction(R.string.update_retry) { appUpdateViewModel.sendCheckForFlexibleUpdate() }.show()
+            coordinator_layout.snackbar(
+                R.string.update_download_failed,
+                Snackbar.LENGTH_INDEFINITE, R.string.update_retry
+            ) {
+                appUpdateViewModel.sendCheckForFlexibleUpdate()
+            }
         } else
-            when(state?.installErrorCode()) {
-                InstallErrorCode.ERROR_API_NOT_AVAILABLE -> Timber.e("The API is not available on this device.")
-                InstallErrorCode.ERROR_DOWNLOAD_NOT_PRESENT -> Timber.e("The install/update has not been (fully) downloaded yet.")
-                InstallErrorCode.ERROR_INSTALL_NOT_ALLOWED -> Timber.e("The download/install is not allowed, due to the current device state.")
-                InstallErrorCode.ERROR_INSTALL_UNAVAILABLE -> Timber.e("The install is unavailable to this user or device.")
-                InstallErrorCode.ERROR_INTERNAL_ERROR -> Timber.e("An internal error happened in the Play Store.")
-                InstallErrorCode.ERROR_INVALID_REQUEST -> Timber.e("The request that was sent by the app is malformed.")
-                InstallErrorCode.ERROR_UNKNOWN -> Timber.e("An unknown error occurred.")
-                InstallErrorCode.NO_ERROR, InstallErrorCode.NO_ERROR_PARTIALLY_ALLOWED -> {
-                    val text = if(state.installErrorCode() == InstallErrorCode.NO_ERROR)
-                        "No error occurred; all types of update flow are allowed."
-                    else "No error occurred; only some types of update flow are allowed, while others are forbidden."
-                        Timber.e(text)
-                    when(state.installStatus()) {
+            when (state.installErrorCode()) {
+                InstallErrorCode.ERROR_API_NOT_AVAILABLE ->
+                    Timber.e("The API is not available on this device.")
+                InstallErrorCode.ERROR_APP_NOT_OWNED ->
+                    Timber.e("The app is not owned by any user on this device. An app is \"owned\" if it has been acquired from Play.")
+                InstallErrorCode.ERROR_DOWNLOAD_NOT_PRESENT ->
+                    Timber.e("The install/update has not been (fully) downloaded yet.")
+                InstallErrorCode.ERROR_INSTALL_NOT_ALLOWED ->
+                    Timber.e("The download/install is not allowed, due to the current device state.")
+                InstallErrorCode.ERROR_INSTALL_UNAVAILABLE ->
+                    Timber.e("The install is unavailable to this user or device.")
+                InstallErrorCode.ERROR_INTERNAL_ERROR ->
+                    Timber.e("An internal error happened in the Play Store.")
+                InstallErrorCode.ERROR_INVALID_REQUEST ->
+                    Timber.e("The request that was sent by the app is malformed.")
+                InstallErrorCode.ERROR_UNKNOWN ->
+                    Timber.e("An unknown error occurred.")
+                InstallErrorCode.ERROR_PLAY_STORE_NOT_FOUND ->
+                    Timber.e("The Play Store is not available on this device")
+                InstallErrorCode.NO_ERROR -> {
+                    Timber.e("No error occurred; all types of update flow are allowed.")
+                    when (state.installStatus()) {
                         InstallStatus.CANCELED -> Timber.d("Canceled")
                         InstallStatus.DOWNLOADING -> Timber.d("Downloading")
                         InstallStatus.INSTALLED -> Timber.d("Installed")
                         InstallStatus.INSTALLING -> Timber.d("Installing")
                         InstallStatus.PENDING -> Timber.d("Pending")
-                        InstallStatus.REQUIRES_UI_INTENT -> Timber.d("Required UI Intent")
+                        InstallStatus.FAILED -> Timber.d("Failed")
                         InstallStatus.UNKNOWN -> Timber.d("Unknown")
                         InstallStatus.DOWNLOADED -> {
                             Timber.d("Downloaded")
                             // After the update is downloaded, show a notification
                             // and request user confirmation to restart the app.
-                            binding.coordinatorLayout.snackbar(R.string.update_download_finished, Snackbar.LENGTH_INDEFINITE)
-                                .setActionTextColor(ContextCompat.getColor(this@MainActivity, R.color.imageSecondary))
-                                .setAction(getString(R.string.update_restart)) { appUpdateViewModel.getUpdateManager().completeUpdate()}.show()
+                            coordinator_layout.snackbar(
+                                R.string.update_download_finished,
+                                Snackbar.LENGTH_INDEFINITE, R.string.update_restart
+                            ) {
+                                appUpdateManager.completeUpdate()
+                            }
                         }
                     }
                 }

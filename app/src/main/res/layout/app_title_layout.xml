@@ -5,5 +5,5 @@
     android:layout_height="wrap_content"
     android:text="@string/app_name"
     android:textAppearance="@style/TextAppearance.Widget.AppCompat.Toolbar.Title"
-    app:fontFamily="@font/ubuntu_bold"
-    android:textColor="?colorAccent" />
+    android:textColor="?colorAccent"
+    app:fontFamily="@font/ubuntu_bold" />

@@ -25,7 +25,9 @@
     <color name="menuIconDefault">#8A000000</color>
     <color name="menuIconSelected">@color/colorPrimary</color>
     <color name="menuBackgroundSelected">#1F37474F</color>
-    
+    <color name="splashBackground">#37474f</color>
+    <color name="divider">#1F000000</color>
+
     <color name="imagePrimary">@color/colorSecondary</color>
     <color name="imageSecondary">@color/colorSecondaryVariant</color>
 </resources>

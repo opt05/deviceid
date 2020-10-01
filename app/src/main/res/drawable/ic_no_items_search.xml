@@ -1,6 +1,7 @@
 <vector xmlns:tools="http://schemas.android.com/tools"
-        android:height="24dp" android:viewportHeight="48"
-        android:viewportWidth="48" android:width="24dp" xmlns:android="http://schemas.android.com/apk/res/android"
+        android:height="120dp" android:viewportHeight="48"
+        android:viewportWidth="48" android:width="120dp"
+    xmlns:android="http://schemas.android.com/apk/res/android"
         tools:keep="@drawable/ic_no_items_search">
     <path android:fillAlpha="1" android:fillColor="@color/imagePrimary" android:pathData="M33,42l-28,0l0,-38l19,0l9,9z"/>
     <path android:fillAlpha="1" android:fillColor="@color/imageSecondary" android:pathData="M31.5,14l-8.5,0l0,-8.5z"/>

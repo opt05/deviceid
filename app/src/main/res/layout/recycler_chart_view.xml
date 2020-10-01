@@ -1,92 +1,77 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        xmlns:tools="http://schemas.android.com/tools">
-    <data>
-        <import type="com.cwlarson.deviceid.R"/>
-        <import type="android.view.View" />
-        <import type="android.text.TextUtils" />
-        <variable name="handler" type="com.cwlarson.deviceid.util.ItemClickHandler"/>
-        <variable name="item" type="com.cwlarson.deviceid.databinding.Item"/>
-    </data>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/top_layout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?selectableItemBackground"
+    android:clickable="true"
+    android:clipToPadding="false"
+    android:focusable="true"
+    android:longClickable="true"
+    android:minHeight="?listPreferredItemHeight"
+    android:paddingStart="0dp"
+    android:paddingLeft="0dp"
+    android:paddingEnd="?listPreferredItemPaddingEnd"
+    android:paddingRight="?listPreferredItemPaddingRight"
+    tools:ignore="Overdraw">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:clipToPadding="false"
-        android:layout_width="match_parent"
+    <ImageView
+        android:id="@+id/left_icon"
+        android:layout_width="?listPreferredItemHeight"
+        android:layout_height="?listPreferredItemHeight"
+        android:layout_gravity="center_vertical"
+        android:contentDescription="@string/chartview_image_icon"
+        android:padding="12dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/item_title"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:src="@drawable/ic_battery" />
+
+    <TextView
+        android:id="@+id/item_title"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:minHeight="?listPreferredItemHeight"
-        android:background="?android:attr/selectableItemBackground"
-        android:clickable="true"
-        android:focusable="true"
-        android:onClick="@{() -> handler.onClick(item)}"
-        android:longClickable="true"
-        android:onLongClick="@{() -> handler.onLongClick(item)}"
-        android:paddingLeft="0dp"
-        android:paddingRight="?listPreferredItemPaddingRight"
-        android:paddingStart="0dp"
-        android:paddingEnd="?listPreferredItemPaddingEnd">
+        android:ellipsize="end"
+        android:lines="1"
+        android:textAppearance="?textAppearanceListItem"
+        app:layout_constraintBottom_toTopOf="@+id/item_bar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/left_icon"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed"
+        tools:text="Battery" />
 
-        <ImageView
-            android:id="@+id/left_icon"
-            android:layout_gravity="center_vertical"
-            android:layout_width="?listPreferredItemHeight"
-            android:layout_height="?listPreferredItemHeight"
-            tools:src="@drawable/ic_battery"
-            android:padding="12dp"
-            app:srcCompatBinding="@{item.chartItem.chartDrawable}"
-            app:layout_constraintHorizontal_bias="0"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/item_title"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintHorizontal_chainStyle="packed"
-            android:contentDescription="@string/chartview_image_icon"/>
+    <ProgressBar
+        android:id="@+id/item_bar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:progressDrawable="@drawable/chart_bar"
+        app:layout_constraintBottom_toTopOf="@+id/item_subtitle"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_weight="1"
+        app:layout_constraintStart_toEndOf="@id/left_icon"
+        app:layout_constraintTop_toBottomOf="@+id/item_title"
+        tools:progress="50" />
 
-        <TextView
-            android:id="@+id/item_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:lines="1"
-            android:text="@{item.title}"
-            android:textAppearance="?textAppearanceListItem"
-            app:layout_constraintBottom_toTopOf="@+id/item_bar"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@id/left_icon"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_chainStyle="packed"
-            tools:text="Battery"/>
+    <TextView
+        android:id="@+id/item_subtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textAppearance="?textAppearanceListItemSecondary"
+        android:textColor="?android:textColorSecondary"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintStart_toStartOf="@id/item_title"
+        app:layout_constraintTop_toBottomOf="@+id/item_bar"
+        tools:text="50% - Discharging" />
 
-        <ProgressBar
-            android:id="@+id/item_bar"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:progressDrawable="@drawable/chart_bar"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:progress="@{item.chartItem.chartPercentage}"
-            tools:progress="50"
-            android:visibility="@{TextUtils.isEmpty(item.subtitle) ? View.GONE : View.VISIBLE}"
-            app:layout_constraintStart_toEndOf="@id/left_icon"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/item_title"
-            app:layout_constraintBottom_toTopOf="@+id/item_subtitle"
-            app:layout_constraintHorizontal_weight="1"/>
-
-        <TextView
-            android:id="@+id/item_subtitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:maxLines="1"
-            android:text='@{TextUtils.isEmpty(item.subtitle) ? @string/not_found : item.subtitle}'
-            android:textAppearance="?textAppearanceListItemSecondary"
-            android:textColor="?android:textColorSecondary"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="@id/item_title"
-            app:layout_constraintTop_toBottomOf="@+id/item_bar"
-            app:layout_constraintHorizontal_bias="0"
-            tools:text="50% - Discharging"/>
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
-</layout>
+</androidx.constraintlayout.widget.ConstraintLayout>

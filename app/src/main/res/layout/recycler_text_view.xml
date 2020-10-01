@@ -1,50 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools">
-    <data>
-        <import type="com.cwlarson.deviceid.R"/>
-        <import type="android.view.View" />
-        <import type="android.text.TextUtils" />
-        <variable name="handler" type="com.cwlarson.deviceid.util.ItemClickHandler"/>
-        <variable name="item" type="com.cwlarson.deviceid.databinding.Item"/>
-    </data>
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="?listPreferredItemHeight"
-        android:orientation="vertical"
-        android:gravity="center_vertical"
-        android:clipToPadding="false"
-        android:background="?android:attr/selectableItemBackground"
-        android:clickable="true"
-        android:focusable="true"
-        android:onClick="@{() -> handler.onClick(item)}"
-        android:longClickable="true"
-        android:onLongClick="@{() -> handler.onLongClick(item)}"
-        android:paddingStart="?listPreferredItemPaddingStart"
-        android:paddingLeft="?listPreferredItemPaddingLeft"
-        android:paddingEnd="?listPreferredItemPaddingEnd"
-        android:paddingRight="?listPreferredItemPaddingRight">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/top_layout"
+    android:layout_width="match_parent"
+    android:layout_height="?listPreferredItemHeight"
+    android:background="?selectableItemBackground"
+    android:clickable="true"
+    android:clipToPadding="false"
+    android:focusable="true"
+    android:gravity="center_vertical"
+    android:longClickable="true"
+    android:orientation="vertical"
+    android:paddingStart="?listPreferredItemPaddingStart"
+    android:paddingLeft="?listPreferredItemPaddingLeft"
+    android:paddingEnd="?listPreferredItemPaddingEnd"
+    android:paddingRight="?listPreferredItemPaddingRight"
+    tools:ignore="Overdraw">
 
-        <TextView
-            android:id="@+id/item_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:lines="1"
-            android:text="@{item.title}"
-            android:textAppearance="?textAppearanceListItem"
-            tools:text="Item Title"/>
+    <TextView
+        android:id="@+id/item_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:lines="1"
+        android:textAppearance="?textAppearanceListItem"
+        tools:text="Item Title" />
 
-        <TextView
-            android:id="@+id/item_subtitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:maxLines="2"
-            android:text='@{item.unavailableItem!=null ? item.unavailableItem.unavailableSupportText : item.subtitle}'
-            android:textAppearance="?textAppearanceListItemSecondary"
-            android:textColor="?android:textColorSecondary"
-            tools:text="Item Subtitle"/>
+    <TextView
+        android:id="@+id/item_subtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:textAppearance="?textAppearanceListItemSecondary"
+        android:textColor="?android:textColorSecondary"
+        tools:text="Item Subtitle" />
 
-    </LinearLayout>
-</layout>
+</LinearLayout>

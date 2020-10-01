@@ -1,67 +1,52 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/coordinator_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
     tools:context=".MainActivity">
-    <data>
-        <import type="android.view.View"/>
-        <variable
-            name="model"
-            type="com.cwlarson.deviceid.database.MainActivityViewModel"/>
-        <variable
-            name="searchHandler"
-            type="com.cwlarson.deviceid.util.SearchClickHandler"/>
-    </data>
-    <androidx.coordinatorlayout.widget.CoordinatorLayout
-        android:id="@+id/coordinator_layout"
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:systemUIVisibility="@{ true }"
-        app:paddingRightSystemWindowInsets="@{true}"
-        app:paddingLeftSystemWindowInsets="@{true}">
+        android:baselineAligned="false"
+        android:orientation="horizontal"
+        android:showDividers="none">
 
-        <LinearLayout
-            android:layout_width="match_parent"
+        <com.google.android.material.navigation.NavigationView
+            android:id="@+id/navigation_list"
+            android:layout_width="@dimen/navigation_list_width"
             android:layout_height="match_parent"
-            android:orientation="horizontal"
-            android:showDividers="none"
-            android:baselineAligned="false">
+            android:layout_marginEnd="16dp"
+            android:layout_marginRight="16dp"
+            app:headerLayout="@layout/fragment_navigation_header"
+            app:menu="@menu/navigation_menu"
+            tools:ignore="InconsistentLayout" />
 
-            <com.google.android.material.navigation.NavigationView
-                android:id="@+id/navigation_list"
-                android:visibility="@{safeUnbox(model.hideBottomBar) ? View.GONE : View.VISIBLE}"
-                android:layout_width="@dimen/navigation_list_width"
+        <androidx.coordinatorlayout.widget.CoordinatorLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="3">
+
+            <include
+                android:id="@+id/appbar_layout"
+                layout="@layout/appbar_layout" />
+
+            <androidx.fragment.app.FragmentContainerView
+                android:id="@+id/nav_host_fragment"
+                android:name="androidx.navigation.fragment.NavHostFragment"
+                android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_marginRight="16dp"
-                android:layout_marginEnd="16dp"
-                app:paddingBottomSystemWindowInsets="@{true}"
-                app:paddingTopSystemWindowInsets="@{true}"
-                app:menu="@menu/navigation_menu"
-                app:headerLayout="@layout/fragment_navigation_header"/>
+                app:defaultNavHost="true"
+                app:layout_behavior="@string/appbar_scrolling_view_behavior"
+                app:navGraph="@navigation/nav_graph"
+                tools:layout_marginTop="?actionBarSize" />
 
-            <androidx.coordinatorlayout.widget.CoordinatorLayout
-                android:layout_weight="3"
-                android:layout_width="0dp"
-                android:layout_height="match_parent">
+            <include
+                android:id="@+id/searchbar_layout"
+                layout="@layout/searchbar_layout" />
 
-                <include layout="@layout/appbar_layout" android:id="@+id/appbar_layout"
-                    app:hideSearchBar="@{safeUnbox(model.hideSearchBar)}"/>
-
-                <fragment
-                    android:id="@+id/nav_host_fragment"
-                    android:name="androidx.navigation.fragment.NavHostFragment"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    tools:layout_marginTop="?actionBarSize"
-                    app:layout_behavior="@string/appbar_scrolling_view_behavior"
-                    app:defaultNavHost="true"
-                    app:navGraph="@navigation/nav_graph"/>
-
-                <include layout="@layout/searchbar_layout" android:id="@+id/searchbar_layout"
-                    app:model="@{model}" app:searchHandler="@{searchHandler}"
-                    app:searchPaddingExtra="@{@dimen/activity_horizontal_margin}"/>
-
-            </androidx.coordinatorlayout.widget.CoordinatorLayout>
-        </LinearLayout>
-    </androidx.coordinatorlayout.widget.CoordinatorLayout>
-</layout>
+        </androidx.coordinatorlayout.widget.CoordinatorLayout>
+    </LinearLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
