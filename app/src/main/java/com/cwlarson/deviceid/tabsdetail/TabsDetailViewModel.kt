@@ -1,23 +1,24 @@
 package com.cwlarson.deviceid.tabsdetail
 
 import android.content.Context
-import androidx.hilt.Assisted
-import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import com.cwlarson.deviceid.data.*
 import com.cwlarson.deviceid.tabs.ItemType
+import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import javax.inject.Inject
 
-class TabsDetailViewModel @ViewModelInject constructor(
+@HiltViewModel
+class TabsDetailViewModel @Inject constructor(
     @ApplicationContext context: Context,
-    @Assisted private val savedStateHandle: SavedStateHandle
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
     private val tabData: TabData = when (savedStateHandle.get<ItemType>("type")) {
         ItemType.DEVICE -> DeviceRepository(context)
         ItemType.NETWORK -> NetworkRepository(context)
-        ItemType.SOFTWARE -> Software(context)
+        ItemType.SOFTWARE -> SoftwareRepository(context)
         ItemType.HARDWARE -> HardwareRepository(context)
         else -> throw IllegalArgumentException("Item type is undefined")
     }

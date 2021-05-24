@@ -79,7 +79,7 @@ private fun Int.getCodename(): String =
             else -> ""
         }
 
-class Software(private val context: Context, filterUnavailable: Boolean = false)
+class SoftwareRepository(private val context: Context, filterUnavailable: Boolean = false)
     : TabData(filterUnavailable) {
 
     override suspend fun list(): List<Item> = listOf(androidVersion(), patchLevel(),

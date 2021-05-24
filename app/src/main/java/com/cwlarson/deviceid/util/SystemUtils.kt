@@ -1,7 +1,6 @@
 @file:JvmName("SystemUtils")
 package com.cwlarson.deviceid.util
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.ActivityManager
@@ -9,7 +8,6 @@ import android.bluetooth.BluetoothManager
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.pm.PackageInfo
-import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.BitmapFactory
 import android.hardware.display.DisplayManager
@@ -18,13 +16,11 @@ import android.os.Build
 import android.telephony.TelephonyManager
 import android.telephony.euicc.EuiccManager
 import android.util.TypedValue
-import android.view.View
-import android.view.WindowManager
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import androidx.webkit.WebViewCompat
 import com.cwlarson.deviceid.R
-import com.cwlarson.deviceid.tabs.UnavailablePermission
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -62,20 +58,6 @@ class SystemProperty(private val context: Context) {
 }
 
 /**
- * Determine if the requested permission has be granted or not
- * @return if granted or not
- * TODO: Move to own class?
- */
-fun Context.hasPermission(permission: UnavailablePermission): Boolean = when (permission) {
-    UnavailablePermission.MY_PERMISSIONS_REQUEST_READ_PHONE_STATE ->
-        ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) ==
-                PackageManager.PERMISSION_GRANTED
-    UnavailablePermission.MY_PERMISSIONS_REQUEST_LOCATION_STATE ->
-        ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) ==
-                PackageManager.PERMISSION_GRANTED
-}
-
-/**
  * Sets the Android Recent App background color based on if night mode or not.
  * Only affects Lollipop and above
  */
@@ -83,12 +65,16 @@ suspend fun Activity.setTaskDescription() = withContext(Dispatchers.IO) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) return@withContext
     val color = TypedValue().run {
         val wasResolved = theme.resolveAttribute(R.attr.colorPrimarySurface, this, true)
-        ContextCompat.getColor(this@setTaskDescription,
-                if (wasResolved) resourceId else R.color.colorPrimary)
+        ContextCompat.getColor(
+            this@setTaskDescription,
+            if (wasResolved) resourceId else R.color.colorPrimary
+        )
     }
     val desc = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
-        ActivityManager.TaskDescription(getString(R.string.app_name),
-                R.mipmap.ic_launcher, color)
+        ActivityManager.TaskDescription(
+            getString(R.string.app_name),
+            R.mipmap.ic_launcher, color
+        )
     else {
         val bm = BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher)
         @Suppress("DEPRECATION")
@@ -102,40 +88,22 @@ suspend fun Activity.setTaskDescription() = withContext(Dispatchers.IO) {
  * @param makeTranslucent Should the status bar be translucent?
  */
 fun Activity.setTranslucentStatus(makeTranslucent: Boolean) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) return
     val isNight = (resources.configuration.uiMode and
             Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
-            && Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-        if (makeTranslucent)
-            window.setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS, WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
-        else
-            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
-        window.setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION, WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
-    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        var flags = window.decorView.systemUiVisibility
-        if (makeTranslucent) {
-            flags = if (isNight)
-                flags and View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
-            else
-                flags or View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-            window.statusBarColor = getColor(R.color.colorSurface)
-        } else {
-            flags = flags and View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
-            window.statusBarColor = if (isNight)
-                getColor(android.R.color.black)
-            else
-                getColor(R.color.colorPrimaryVariant)
-        }
-        window.decorView.systemUiVisibility = flags
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q)
-            window.setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION, WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
-        else {
-            window.navigationBarColor = getColor(android.R.color.transparent)
-            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
-        }
+    WindowCompat.getInsetsController(window, window.decorView)?.isAppearanceLightStatusBars =
+        !isNight && makeTranslucent
+    window.statusBarColor = when {
+        !makeTranslucent && isNight -> ContextCompat.getColor(this, android.R.color.black)
+        !makeTranslucent && !isNight -> ContextCompat.getColor(this, R.color.colorPrimaryVariant)
+        else -> ContextCompat.getColor(this, R.color.colorSurface)
     }
+    window.navigationBarColor = ContextCompat.getColor(
+        this,
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) android.R.color.transparent
+        else R.color.colorScrim
+    )
 }
-
 
 
 /**
@@ -144,15 +112,13 @@ fun Activity.setTranslucentStatus(makeTranslucent: Boolean) {
  * Allows quick lookup of the caller source just by clicking on the Hyperlink in the Log.
  */
 class HyperlinkedDebugTree : Timber.DebugTree() {
-    override fun createStackElementTag(element: StackTraceElement): String? {
-        with(element) {
-            return "($fileName:$lineNumber) $methodName"
-        }
+    override fun createStackElementTag(element: StackTraceElement): String {
+        with(element) { return "($fileName:$lineNumber) $methodName" }
     }
 }
 
 val Context.euiccManager: EuiccManager
-    @SuppressLint("WrongConstant") @RequiresApi(Build.VERSION_CODES.P)
+    @RequiresApi(Build.VERSION_CODES.P)
     get() = applicationContext.getSystemService(Context.EUICC_SERVICE) as EuiccManager
 
 val Context.telephonyManager: TelephonyManager
