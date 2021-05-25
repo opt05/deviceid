@@ -1,9 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+<layer-list xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <item android:drawable="?colorPrimarySurface" />
+    <item android:drawable="@color/splashBackground" />
 
-    <item android:drawable="@drawable/ic_launch_logo"
-        android:gravity="center"/>
+    <item>
+        <bitmap
+            android:gravity="center"
+            android:src="@drawable/ic_launch_logo"
+            android:tint="?colorOnPrimarySurface"
+            tools:ignore="VectorDrawableCompat" />
+    </item>
 
 </layer-list>

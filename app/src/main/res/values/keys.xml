@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Preference Keys -->
+    <string name="pref_hide_unavailable_key">hide_unables</string>
+    <string name="pref_daynight_mode_key">daynight_mode</string>
+    <string name="pref_auto_refresh_rate_key">refresh_rate</string>
+    <string name="pref_search_history_data_key">pref_search_history_data</string>
+    <string name="pref_search_history_key">pref_search_history</string>
+    <string name="pref_check_for_update_key">pref_check_for_update</string>
+    <string name="pref_use_fake_update_manager_key">pref_use_fake_update_manager</string>
+    <string name="pref_fake_update_set_end_state_key">pref_fake_update_set_end_state</string>
+</resources>

@@ -22,6 +22,9 @@
     <color name="colorOnSurface">#FFFFFF</color>
     <color name="colorOnError">#000000</color>
     <color name="colorScrim">#52000000</color>
+    <color name="menuIconDefault">#B3FFFFFF</color>
+    <color name="menuBackgroundSelected">#1F9BA3A7</color>
+    <color name="divider">#1FFFFFFF</color>
 
     <color name="imagePrimary">@color/colorSecondary</color>
     <color name="imageSecondary">#018786</color>

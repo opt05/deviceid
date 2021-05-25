@@ -1,20 +1,23 @@
 package com.cwlarson.deviceid
 
 import android.app.Application
-import android.os.Build
-import androidx.preference.PreferenceManager
-import com.cwlarson.deviceid.util.installStetho
+import com.cwlarson.deviceid.settings.PreferenceManager
+import com.cwlarson.deviceid.util.HyperlinkedDebugTree
+import dagger.hilt.android.HiltAndroidApp
 import timber.log.Timber
+import javax.inject.Inject
 
-@Suppress("unused")
+@HiltAndroidApp
 class MyApplication : Application() {
+    @Inject
+    lateinit var preferenceManager: PreferenceManager
+
     override fun onCreate() {
         super.onCreate()
-        installStetho()
-        Timber.plant(Timber.DebugTree())
-        PreferenceManager.setDefaultValues(this, R.xml.pref_general, false)
-        if(BuildConfig.DEBUG && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-            PreferenceManager.setDefaultValues(this, R.xml.pref_testing_app_update, true)
-        PreferenceManager.getDefaultSharedPreferences(this).setDarkTheme(this)
+        if(BuildConfig.DEBUG) Timber.plant(HyperlinkedDebugTree())
+        with(preferenceManager) {
+            setDefaultValues()
+            setDarkTheme(this@MyApplication)
+        }
     }
 }

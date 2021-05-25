@@ -1,59 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:app="http://schemas.android.com/apk/res-auto"
-        xmlns:tools="http://schemas.android.com/tools"
-    tools:context=".MainActivity$TabFragment">
-    <data>
-        <import type="android.view.View"/>
-        <import type="com.cwlarson.deviceid.database.Status"/>
-        <variable
-            name="model"
-            type="com.cwlarson.deviceid.database.AllItemsViewModel"/>
-        <variable
-            name="mainModel"
-            type="com.cwlarson.deviceid.database.MainActivityViewModel"/>
-    </data>
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/top_layout"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/top_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context=".tabs.TabFragment">
+
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipe_to_refresh_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
-        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-            android:id="@+id/swipe_to_refresh_layout"
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_view"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            app:refreshing="@{model.status != null &amp;&amp; model.status == Status.LOADING}"
-            app:onRefreshListener="@{() -> model.refreshData(false)}"
-            app:colorSchemeColors="@{@intArray/swipe_to_refresh_colors}"
-            app:enabled="@{!safeUnbox(model.refreshDisabled)}"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent">
-            <androidx.recyclerview.widget.RecyclerView
-                app:paddingTopSystemWindowInsets="@{!safeUnbox(mainModel.hideSearchBar)}"
-                app:paddingActionBar="@{!safeUnbox(mainModel.hideSearchBar)}"
-                app:paddingBottomSystemWindowInsets="@{ true }"
-                android:paddingTop="@dimen/recycler_top_padding"
-                android:clipToPadding="false"
-                android:clipChildren="false"
-                android:id="@+id/recycler_view"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                tools:listitem="@layout/recycler_text_view"
-                app:layout_behavior="@string/appbar_scrolling_view_behavior"
-                app:animatedVisibility="@{safeUnbox(model.itemsCount)>0?View.VISIBLE:View.GONE}"/>
-        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentTop="true"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:paddingTop="@dimen/recycler_top_padding"
+            android:visibility="gone"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior"
+            tools:listitem="@layout/recycler_text_view"
+            tools:visibility="visible" />
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-        <include
-            android:id="@+id/no_items"
-            layout="@layout/no_items_layout"
-            app:isVisible="@{safeUnbox(model.itemsCount)&lt;=0}"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"/>
+    <include
+        android:id="@+id/no_items"
+        layout="@layout/no_items_layout"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
-</layout>
+</androidx.constraintlayout.widget.ConstraintLayout>

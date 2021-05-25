@@ -4,4 +4,6 @@
     <dimen name="searchbar_padding_active">-16dp</dimen>
     <dimen name="searchbar_padding_inactive">0dp</dimen>
     <dimen name="recycler_top_padding">4dp</dimen>
+    <dimen name="app_shape_appearance_corner_size">12dp</dimen>
+    <dimen name="navigation_list_width">250dp</dimen>
 </resources>

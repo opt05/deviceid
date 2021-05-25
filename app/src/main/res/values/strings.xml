@@ -6,6 +6,7 @@
     <string name="not_possible_yet">Available starting on Android %s</string>
     <string name="copy_to_clipboard">Copied %s to clipboard!</string>
     <string name="send_to">Share text to…</string>
+    <string name="send_to_no_apps">No app available</string>
     <string name="menu_search">@android:string/search_go</string>
     <string name="menu_settings">Settings</string>
     <string name="menu_copy_to_clipboard">@android:string/copy</string>
@@ -16,7 +17,6 @@
     <string name="snackbar_not_found_adapter">Unable to retrieve %s from this device</string>
     <string name="permission_snackbar_button">Retry</string>
     <string name="textview_recyclerview_no_items">No items</string>
-    <string name="imageview_recyclerview_no_items_desc">No items icon</string>
     <string name="textview_recyclerview_no_search_items">No results</string>
     <string name="textview_recyclerview_title">Results</string>
     <string name="chartview_image_icon">Item icon</string>
@@ -45,30 +45,24 @@
     <string name="BATTERY_PLUGGED_AC">on AC</string>
     <!-- Preferences -->
     <string name="pref_title_app_settings">App Settings</string>
-    <string name="pref_hide_unavailable_key" translatable="false">hide_unables</string>
     <string name="pref_hide_unavailable_title">Hide not applicable</string>
     <string name="pref_hide_unavailable_summary_on">Hiding items not applicable to this
         device</string>
     <string name="pref_hide_unavailable_summary_off">Showing items not applicable to this
         device</string>
-    <string name="pref_daynight_mode_key" translatable="false">daynight_mode</string>
     <string name="pref_daynight_mode_title">Choose theme</string>
     <string name="pref_night_mode_system" translatable="false">mode_system</string>
     <string name="pref_night_mode_off" translatable="false">mode_off</string>
     <string name="pref_night_mode_on" translatable="false">mode_on</string>
 
-    <string name="pref_auto_refresh_rate_key">refresh_rate</string>
     <string name="pref_auto_refresh_rate_title">Auto refresh rate</string>
     <string name="pref_auto_refresh_rate_summary">In seconds, how often to auto refresh
         items (0 = off)</string>
 
-    <string name="pref_search_history_data_key">pref_search_history_data</string>
-    <string name="pref_search_history_key">pref_search_history</string>
     <string name="pref_search_history_title">Search history</string>
     <string name="pref_search_history_summary_on">Saving history (turning off clears
         history)</string>
     <string name="pref_search_history_summary_off">Not saving history</string>
-    <string name="pref_check_for_update_key">pref_check_for_update</string>
     <string name="pref_check_for_update_title_yes">App update available</string>
     <string name="pref_check_for_update_title_no">App update not available</string>
     <string name="pref_check_for_update_summary">Check for app update</string>
@@ -77,8 +71,6 @@
     <string name="pref_check_for_update_summary_installed">Installed!</string>
     <string name="pref_check_for_update_summary_installing">Installing…</string>
     <string name="pref_check_for_update_summary_pending">Pending…</string>
-    <string name="pref_check_for_update_summary_ui_intent">To perform the installation, a Play
-        Store UI flow needs to be started.</string>
     <string name="pref_check_for_update_summary_unknown">Unknown</string>
     <string name="pref_check_for_update_summary_downloaded">Downloaded - pending restart of
     app</string>
@@ -103,11 +95,89 @@
     <string name="update_download_failed">Failed to download an update.</string>
     <string name="update_retry">Retry</string>
     <!-- Fake App Update Preferences -->
-    <string name="pref_use_fake_update_manager_key">pref_use_fake_update_manager</string>
     <string name="pref_use_fake_update_manager_title">Test app updates\n(Requires app
         restart)</string>
     <string name="pref_use_fake_update_manager_summary_off">Using real AppUpdateManager</string>
     <string name="pref_use_fake_update_manager_summary_on">Using FakeAppUpdateManager</string>
-    <string name="pref_fake_update_set_end_state_key">pref_fake_update_set_end_state</string>
     <string name="pref_fake_update_set_end_state_title">Update flow end</string>
+    <!-- Item Titles -->
+    <string name="device_title_imei">IMEI / MEID</string>
+    <string name="device_title_model">Model Number</string>
+    <string name="device_title_serial">Serial</string>
+    <string name="device_title_android_id">Android/Hardware ID</string>
+    <string name="device_title_gsfid">Google Service Framework (GSF) ID</string>
+    <string name="network_title_wifi_mac">Wi-Fi MAC Address</string>
+    <string name="network_title_wifi_bssid">Wi-Fi BSSID</string>
+    <string name="network_title_wifi_ssid">Wi-Fi SSID</string>
+    <string name="network_title_wifi_frequency">Wi-Fi Frequency</string>
+    <string name="network_title_wifi_hidden_ssid">Wi-Fi Hidden SSID</string>
+    <string name="network_title_wifi_ip_address">Wi-Fi IP Address</string>
+    <string name="network_title_wifi_link_speed">Wi-Fi Link Speed</string>
+    <string name="network_title_wifi_tx_link_speed">Wi-Fi Transmit Link Speed</string>
+    <string name="network_title_wifi_network_id">Wi-Fi Network ID</string>
+    <string name="network_title_wifi_passpoint_fqdn">Wi-Fi Passpoint Fully Qualified Domain Name</string>
+    <string name="network_title_wifi_passpoint_friendly_name">Wi-Fi Passpoint Provider Friendly Name</string>
+    <string name="network_title_wifi_rssid">Wi-Fi RSSI</string>
+    <string name="network_title_wifi_signal_level">Wi-Fi Signal Level</string>
+    <string name="network_title_wifi_hostname">Wi-Fi Hostname</string>
+    <string name="network_title_bluetooth_mac">Bluetooth MAC Address</string>
+    <string name="network_title_bluetooth_hostname">Bluetooth Hostname</string>
+    <string name="network_title_phone_count">Phone Count</string>
+    <string name="network_title_sim_serial">Sim Serial</string>
+    <string name="network_title_sim_operator">Sim Operator Name</string>
+    <string name="network_title_sim_country">Sim Country</string>
+    <string name="network_title_sim_state">Sim State</string>
+    <string name="network_title_phone_number">Phone Number</string>
+    <string name="network_title_voicemail_number">Voicemail Number</string>
+    <string name="network_title_cell_network_name">Cell Network Name</string>
+    <string name="network_title_cell_network_type">Cell Network Type</string>
+    <string name="network_title_cell_network_class">Cell Network Class</string>
+    <string name="network_title_esim_id">eSIM ID</string>
+    <string name="network_title_esim_enabled">eSim Enabled</string>
+    <string name="network_title_esim_os_version">eSIM OS Version</string>
+    <string name="network_title_concurrent_voice_data_supported">Concurrent Voice and Data Supported</string>
+    <string name="network_title_data_roaming_enabled">Data Roaming Enabled</string>
+    <string name="network_title_hearing_aid_supported">Hearing Aid Compatibility Supported</string>
+    <string name="network_title_multi_sim_supported">Multi Sim Supported</string>
+    <string name="network_title_rtt_supported">RTT Supported</string>
+    <string name="network_title_sms_capable">SMS Capable</string>
+    <string name="network_title_voice_capable">Voice Capable</string>
+    <string name="network_title_device_software_version">Device Software Version</string>
+    <string name="network_title_manufacturer_code">Manufacturer Code</string>
+    <string name="network_title_nai">Network Access Identifier (NAI)</string>
+    <string name="software_title_android_version">Android Version</string>
+    <string name="software_title_patch_level">Security Patch Level</string>
+    <string name="software_title_preview_sdk_int">Preview SDK Number</string>
+    <string name="software_title_device_build_version">Build Version</string>
+    <string name="software_title_build_baseband">Build Baseband</string>
+    <string name="software_title_build_kernel">Kernel Version</string>
+    <string name="software_title_build_date">Build Date</string>
+    <string name="software_title_build_number">Build Number</string>
+    <string name="software_title_build_board">Build Board</string>
+    <string name="software_title_build_bootloader">Build Bootloader</string>
+    <string name="software_title_build_brand">Build Brand</string>
+    <string name="software_title_build_device">Build Device</string>
+    <string name="software_title_build_display">Build Display</string>
+    <string name="software_title_build_fingerprint">Build Fingerprint</string>
+    <string name="software_title_build_hardware">Build Hardware</string>
+    <string name="software_title_build_host">Build Host</string>
+    <string name="software_title_build_tags">Build Tags</string>
+    <string name="software_title_build_type">Build Type</string>
+    <string name="software_title_build_user">Build User</string>
+    <string name="software_title_open_gl_version">OpenGL Version</string>
+    <string name="software_title_google_play_services_version">Google Play Services Version</string>
+    <string name="software_title_google_play_services_install_date">Google Play Services Installed</string>
+    <string name="software_title_google_play_services_updated_date">Google Play Services Updated</string>
+    <string name="software_title_webview_version">WebView Version</string>
+    <string name="hardware_title_memory">Memory</string>
+    <string name="hardware_title_internal_storage">Internal Storage</string>
+    <string name="hardware_title_external_storage">External Storage</string>
+    <string name="hardware_title_battery">Battery</string>
+    <string name="hardware_title_display_name">Screen %s Name</string>
+    <string name="hardware_title_display_density">Screen %s Density</string>
+    <string name="hardware_title_display_hdr">Screen %s HDR</string>
+    <string name="hardware_title_display_rotation">Screen %s Rotation</string>
+    <string name="hardware_title_display_state">Screen %s State</string>
+    <string name="hardware_title_display_cutout">Screen %s Cutout</string>
+    <string name="hardware_title_display_refresh_rate">Screen %s Refresh Rate</string>
 </resources>

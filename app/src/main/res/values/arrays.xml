@@ -15,7 +15,7 @@
     <integer-array name="swipe_to_refresh_colors" tools:keep="@array/swipe_to_refresh_colors">
         <item>@color/colorSecondary</item>
     </integer-array>
-    
+
     <string-array name="pref_fake_update_event_entries">
         <item>No simulation</item>
         <item>None</item>

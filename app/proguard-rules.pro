@@ -16,16 +16,18 @@
 #   public *;
 #}
 
-# Kotlin Coroutines
-# ServiceLoader support
--keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {}
--keepnames class kotlinx.coroutines.CoroutineExceptionHandler {}
--keepnames class kotlinx.coroutines.android.AndroidExceptionPreHandler {}
--keepnames class kotlinx.coroutines.android.AndroidDispatcherFactory {}
-# Most of volatile fields are updated with AFU and should not be mangled
--keepclassmembernames class kotlinx.** {
-    volatile <fields>;
-}
-
-# AndroidX
+#-------------------------------------------------
+# Google Play App Updates
+# This fixes: Caused by: androidx.core.app.CoreComponentFactory$InstantiationException:
+# Unable to instantiate appComponentFactory androidx.core.app.CoreComponentFactory: make sure class
+# name exists
+#-------------------------------------------------
 -keep class androidx.core.app.CoreComponentFactory { *; }
+
+#-------------------------------------------------
+# JetPack Navigation
+# This fixes: Caused by: androidx.fragment.app.Fragment$InstantiationException:
+# Unable to instantiate fragment androidx.navigation.fragment.NavHostFragment: make sure class
+# name exists
+#-------------------------------------------------
+-keepnames class androidx.navigation.fragment.NavHostFragment

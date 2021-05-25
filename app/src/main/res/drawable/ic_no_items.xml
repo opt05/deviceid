@@ -1,7 +1,7 @@
-<vector android:height="24dp"
+<vector android:height="120dp"
         android:viewportHeight="48"
         android:viewportWidth="48"
-        android:width="24dp"
+        android:width="120dp"
         xmlns:android="http://schemas.android.com/apk/res/android"
         tools:keep="@drawable/ic_no_items"
         xmlns:tools="http://schemas.android.com/tools">
