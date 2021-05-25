@@ -1,24 +1,28 @@
 package com.cwlarson.deviceid.search
 
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.addRepeatingJob
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.data.Status
+import com.cwlarson.deviceid.databinding.FragmentSearchBinding
 import com.cwlarson.deviceid.settings.PreferenceManager
 import com.cwlarson.deviceid.tabs.HeaderDecoration
 import com.cwlarson.deviceid.tabs.TabsAdapter
 import com.cwlarson.deviceid.tabs.handleItemClick
 import com.cwlarson.deviceid.tabsdetail.copyItemToClipboard
 import com.cwlarson.deviceid.util.applySystemWindows
+import com.cwlarson.deviceid.util.registerRequestPermission
 import com.cwlarson.deviceid.util.setAnimatedVisibility
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.android.synthetic.main.fragment_search.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -26,13 +30,23 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class SearchFragment : Fragment(R.layout.fragment_search) {
+class SearchFragment : Fragment() {
     @Inject
     lateinit var preferenceManager: PreferenceManager
-
-    @ExperimentalCoroutinesApi
     private val searchViewModel by activityViewModels<SearchViewModel>()
     private var refreshJob: Job? = null
+    private var _binding: FragmentSearchBinding? = null
+    private val binding get() = _binding!!
+    @ExperimentalCoroutinesApi
+    private val registry = registerRequestPermission { granted ->
+        if (granted) searchViewModel.refresh()
+    }
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
+                              savedInstanceState: Bundle?): View {
+        _binding = FragmentSearchBinding.inflate(inflater, container, false)
+        return binding.root
+    }
 
     @FlowPreview
     @ExperimentalCoroutinesApi
@@ -42,10 +56,10 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
             if (isLongClick) {
                 activity.copyItemToClipboard(item)
             } else {
-                handleItemClick(item, top_layout)
+                handleItemClick(item, binding.topLayout, registry)
             }
         }
-        search_recycler_view.apply {
+        binding.searchRecyclerView.apply {
             layoutManager = LinearLayoutManager(context)
             adapter = myAdapter
             setHasFixedSize(true)
@@ -53,17 +67,17 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
             addItemDecoration(HeaderDecoration(myAdapter), -1)
             applySystemWindows(applyTop = true, applyBottom = true, applyActionBarPadding = true)
         }
-        viewLifecycleOwner.lifecycleScope.launch {
+        viewLifecycleOwner.addRepeatingJob(Lifecycle.State.STARTED) {
             searchViewModel.status.distinctUntilChanged().collectLatest {
-                search_progress.isVisible = it == Status.LOADING
+                binding.searchProgress.isVisible = it == Status.LOADING
             }
         }
-        viewLifecycleOwner.lifecycleScope.launch {
+        viewLifecycleOwner.addRepeatingJob(Lifecycle.State.STARTED) {
             searchViewModel.allItems.distinctUntilChanged().collectLatest {
                 myAdapter.submitList(it)
-                no_items.isVisible = it.isEmpty()
-                search_recycler_view.setAnimatedVisibility(if (it.isNotEmpty()) View.VISIBLE else View.GONE)
-                no_items.setAnimatedVisibility(if (it.isNullOrEmpty()) View.VISIBLE else View.GONE)
+                binding.noItems.root.isVisible = it.isEmpty()
+                binding.searchRecyclerView.setAnimatedVisibility(if (it.isNotEmpty()) View.VISIBLE else View.GONE)
+                binding.noItems.root.setAnimatedVisibility(if (it.isNullOrEmpty()) View.VISIBLE else View.GONE)
             }
         }
     }
@@ -83,5 +97,16 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
     override fun onPause() {
         super.onPause()
         refreshJob?.cancel()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+
+    @ExperimentalCoroutinesApi
+    override fun onDestroy() {
+        super.onDestroy()
+        registry.unregister()
     }
 }

@@ -1,25 +1,25 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-kapt'
 apply plugin: 'androidx.navigation.safeargs.kotlin'
 apply plugin: 'dagger.hilt.android.plugin'
 
 android {
-    compileSdkVersion 29
+    compileSdkVersion 30
     defaultConfig {
         applicationId "com.cwlarson.deviceid"
         minSdkVersion 14
-        targetSdkVersion 29
-        versionCode 15
+        targetSdkVersion 30
+        versionCode 1
         versionName "1.4.2"
         vectorDrawables.useSupportLibrary = true
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "com.cwlarson.deviceid.CustomTestRunner"
         // The following argument makes the Android Test Orchestrator run its
         // "pm clear" command after each test invocation. This command ensures
         // that the app's state is completely cleared between tests.
-        testInstrumentationRunnerArguments clearPackageData: 'true'
+        //testInstrumentationRunnerArguments clearPackageData: 'true'
     }
+    buildFeatures.viewBinding true
     signingConfigs {
         release {
             def keystorePropertiesFile = rootProject.file("release.properties")
@@ -45,32 +45,30 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-    kotlinOptions { jvmTarget = JavaVersion.VERSION_1_8 }
-    testOptions {
-        animationsDisabled true
-    }
+    kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8
+    testOptions.animationsDisabled true
 }
 
-def fragment_version = '1.2.5'
-def lifecycle_version = '2.2.0'
-def coroutines_version = '1.3.9'
-def hilt_androidx_version = '1.0.0-alpha02'
+def fragment_version = '1.3.4'
+def lifecycle_version = '2.4.0-alpha01'
+def coroutines_version = '1.5.0'
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
-    implementation "androidx.core:core-ktx:1.3.1"
-    implementation "androidx.activity:activity-ktx:1.1.0"
+    implementation "androidx.core:core-ktx:1.5.0"
+    implementation "androidx.activity:activity-ktx:1.2.3"
     implementation "androidx.fragment:fragment-ktx:$fragment_version"
-    implementation "androidx.recyclerview:recyclerview:1.1.0"
+    implementation "androidx.recyclerview:recyclerview:1.2.0"
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
-    implementation "com.google.android.material:material:1.2.1"
+    implementation "com.google.android.material:material:1.3.0"
     implementation "androidx.coordinatorlayout:coordinatorlayout:1.1.0"
-    implementation "androidx.constraintlayout:constraintlayout:2.0.1"
+    implementation "androidx.constraintlayout:constraintlayout:2.0.4"
     implementation "androidx.preference:preference-ktx:1.1.1"
-    implementation "androidx.webkit:webkit:1.3.0"
+    implementation "androidx.webkit:webkit:1.4.0"
     // Lifecycle
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version"
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version"
     implementation "androidx.lifecycle:lifecycle-process:$lifecycle_version"
     implementation "androidx.lifecycle:lifecycle-viewmodel-savedstate:$lifecycle_version"
     implementation "androidx.lifecycle:lifecycle-common-java8:$lifecycle_version"
@@ -80,18 +78,26 @@ dependencies {
     implementation ('com.google.android.play:core-ktx:1.8.1') { because("Google Play App Updates") }
     // Timber
     implementation 'com.jakewharton.timber:timber:4.7.1'
-    // Dagger
+    // Hilt
     implementation "com.google.dagger:hilt-android:$hilt_version"
     kapt "com.google.dagger:hilt-compiler:$hilt_version"
-    implementation "androidx.hilt:hilt-lifecycle-viewmodel:$hilt_androidx_version"
-    kapt "androidx.hilt:hilt-compiler:$hilt_androidx_version"
-    // Testing
+    // Instrumentation Testing
+    //androidTestImplementation 'androidx.test:core:1.3.0'
+    androidTestImplementation 'androidx.test:runner:1.3.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
+    androidTestImplementation 'org.mockito:mockito-android:3.10.0'
     debugImplementation "androidx.fragment:fragment-testing:$fragment_version"
     androidTestImplementation "com.google.dagger:hilt-android-testing:$hilt_version"
-    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutines_version"
-    androidTestImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutines_version"
-    testImplementation "androidx.navigation:navigation-testing:$nav_version"
+    kaptAndroidTest "com.google.dagger:hilt-android-compiler:$hilt_version"
+    androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutines_version") {
+        // conflicts with mockito due to direct inclusion of byte buddy
+        exclude group: "org.jetbrains.kotlinx", module: "kotlinx-coroutines-debug"
+    }
     androidTestImplementation "androidx.navigation:navigation-testing:$nav_version"
+    // Unit Testing
+    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutines_version"
+    testImplementation "androidx.navigation:navigation-testing:$nav_version"
     //LeakCanary
-    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.4'
+    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.7'
 }

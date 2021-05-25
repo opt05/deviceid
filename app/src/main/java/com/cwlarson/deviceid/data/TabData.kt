@@ -37,7 +37,7 @@ abstract class TabData(filterUnavailable: Boolean = false) {
 
     @ExperimentalCoroutinesApi
     val status: Flow<Status> = channelFlow {
-        callbackStatus = { if (!isClosedForSend) offer(it) }
+        callbackStatus = { if (!isClosedForSend) trySend(it) }
         callbackStatus?.invoke(Status.SUCCESS)
         awaitClose { callbackStatus = null }
     }.flowOn(Dispatchers.IO)
@@ -54,7 +54,7 @@ abstract class TabData(filterUnavailable: Boolean = false) {
         callbackData = {
             launch {
                 try {
-                    if (!isClosedForSend) offer(list()
+                    if (!isClosedForSend) trySend(list()
                             .sortedBy { item -> item.getFormattedString(context) }.filter { item ->
                                 if (filterUnavailable) !item.subtitle?.getSubTitleText().isNullOrBlank()
                                 else true
@@ -82,7 +82,7 @@ abstract class TabData(filterUnavailable: Boolean = false) {
                 callbackData = {
                     launch {
                         try {
-                            if (!isClosedForSend) offer(list()
+                            if (!isClosedForSend) trySend(list()
                                     .firstOrNull { item ->
                                         item.title == title &&
                                                 titleFormatArgs?.run { item.titleFormatArgs?.contentEquals(this) } ?: true

@@ -25,6 +25,7 @@ captures/
 .idea/codeStyles/
 .idea/caches/
 .idea/libraries/
+.idea/inspectionProfiles
 .idea/gradle.xml
 .idea/workspace.xml
 .idea/tasks.xml
@@ -43,6 +44,7 @@ captures/
 .idea/render.experimental.xml
 .idea/inspectionProfiles
 .idea/jarRepositories.xml
+.idea/runConfigurations.xml
 *.iml
  
 # OS-specific files

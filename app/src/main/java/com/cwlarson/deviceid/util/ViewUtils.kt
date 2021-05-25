@@ -9,16 +9,12 @@ import android.app.Dialog
 import android.content.Context
 import android.os.Build
 import android.util.TypedValue
-import android.view.Gravity
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.view.ViewGroup.MarginLayoutParams
-import android.view.WindowInsets
 import android.widget.AdapterView
 import android.widget.Toast
 import androidx.annotation.ColorRes
 import androidx.annotation.IdRes
-import androidx.annotation.RequiresApi
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
@@ -32,16 +28,16 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.SearchOpen
 import com.cwlarson.deviceid.TitleVisibility
+import com.cwlarson.deviceid.databinding.SearchbarLayoutBinding
 import com.cwlarson.deviceid.search.SuggestionAdapter
 import com.cwlarson.deviceid.settings.PreferenceManager
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.snackbar.BaseTransientBottomBar
 import com.google.android.material.snackbar.Snackbar
-import kotlinx.android.synthetic.main.activity_main.view.*
-import kotlinx.android.synthetic.main.searchbar_layout.view.*
 import timber.log.Timber
 import kotlin.math.max
+
 
 /**
  * For [androidx.recyclerview.widget.GridLayoutManager] to determine number
@@ -67,8 +63,10 @@ fun Dialog.calculateBottomSheetMaxWidth(): Dialog {
     setOnShowListener {
         val displayMetrics = context.resources.displayMetrics
         val dpWidth = displayMetrics.widthPixels / displayMetrics.density
-        window?.setLayout(if (dpWidth > 750) 750 else ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT)
+        window?.setLayout(
+            if (dpWidth > 750) 750 else ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        )
     }
     return this
 }
@@ -82,8 +80,10 @@ fun Dialog.calculateBottomSheetMaxWidth(): Dialog {
  * [Snackbar.LENGTH_LONG], [Snackbar.LENGTH_INDEFINITE], or a custom duration in milliseconds.
  * Default is [Snackbar.LENGTH_LONG] if not specified.
  */
-fun View.snackbar(text: CharSequence,
-                  @BaseTransientBottomBar.Duration duration: Int = Snackbar.LENGTH_LONG) {
+fun View.snackbar(
+    text: CharSequence,
+    @BaseTransientBottomBar.Duration duration: Int = Snackbar.LENGTH_LONG
+) {
     createSnackbar(text, duration).show()
 }
 
@@ -100,13 +100,15 @@ private typealias onActionClick = () -> Unit
  * @param action String resource to display for the action
  * @param onActionClick callback to be invoked when the action is clicked
  */
-fun View.snackbar(@StringRes text: Int,
-                  @BaseTransientBottomBar.Duration duration: Int = Snackbar.LENGTH_LONG,
-                  @StringRes action: Int,
-                  onActionClick: onActionClick) {
+fun View.snackbar(
+    @StringRes text: Int,
+    @BaseTransientBottomBar.Duration duration: Int = Snackbar.LENGTH_LONG,
+    @StringRes action: Int,
+    onActionClick: onActionClick
+) {
     createSnackbar(resources.getText(text), duration)
-            .setActionTextColor(ContextCompat.getColor(context, R.color.imageSecondary))
-            .setAction(action) { onActionClick.invoke() }.show()
+        .setActionTextColor(ContextCompat.getColor(context, R.color.imageSecondary))
+        .setAction(action) { onActionClick.invoke() }.show()
 }
 
 /**
@@ -120,18 +122,23 @@ fun View.snackbar(@StringRes text: Int,
  * @param action Text to display for the action
  * @param onActionClick callback to be invoked when the action is clicked
  */
-fun View.snackbar(text: CharSequence,
-                  @BaseTransientBottomBar.Duration duration: Int = Snackbar.LENGTH_LONG,
-                  action: CharSequence,
-                  onActionClick: onActionClick) {
+fun View.snackbar(
+    text: CharSequence,
+    @BaseTransientBottomBar.Duration duration: Int = Snackbar.LENGTH_LONG,
+    action: CharSequence,
+    onActionClick: onActionClick
+) {
     createSnackbar(text, duration)
-            .setActionTextColor(ContextCompat.getColor(context, R.color.imageSecondary))
-            .setAction(action) { onActionClick.invoke() }.show()
+        .setActionTextColor(ContextCompat.getColor(context, R.color.imageSecondary))
+        .setAction(action) { onActionClick.invoke() }.show()
 }
 
-private fun View.createSnackbar(text: CharSequence,
-                                @BaseTransientBottomBar.Duration duration: Int = Snackbar.LENGTH_LONG): Snackbar {
-    val v = rootView.bottom_navigation_spacer ?: rootView.coordinator_layout ?: rootView
+private fun View.createSnackbar(
+    text: CharSequence,
+    @BaseTransientBottomBar.Duration duration: Int = Snackbar.LENGTH_LONG
+): Snackbar {
+    val v = rootView.findViewById(R.id.bottom_navigation_spacer)
+        ?: rootView.findViewById(R.id.coordinator_layout) ?: rootView
     return Snackbar.make(v, text, duration).apply {
         if (v.id == R.id.bottom_navigation_spacer) {
             view.updateLayoutParams<CoordinatorLayout.LayoutParams> {
@@ -174,30 +181,34 @@ fun Context?.toast(@StringRes text: Int, duration: Int = Toast.LENGTH_SHORT) {
  * @param searchOpen is the [SearchView] currently open or not and is the app currently in a two
  * pane mode or not
  */
-fun View.modifySearchLayout(searchOpen: SearchOpen) {
-    val layoutParams = layoutParams as MarginLayoutParams
+fun SearchbarLayoutBinding.modifySearchLayout(searchOpen: SearchOpen) {
+    val layoutParams = root.layoutParams as MarginLayoutParams
     val extraMargin: Int = if (searchOpen.yes && searchOpen.twoPane)
-        resources.getDimensionPixelSize(R.dimen.activity_horizontal_margin) else 0
-    updateLayoutParams<MarginLayoutParams> {
+        root.resources.getDimensionPixelSize(R.dimen.activity_horizontal_margin) else 0
+    root.updateLayoutParams<MarginLayoutParams> {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            val start = getTag(R.id.origMarginStart) as Int? ?: layoutParams.marginStart
-            val end = getTag(R.id.origMarginEnd) as Int? ?: layoutParams.marginEnd
+            val start = root.getTag(R.id.origMarginStart) as Int? ?: layoutParams.marginStart
+            val end = root.getTag(R.id.origMarginEnd) as Int? ?: layoutParams.marginEnd
             updateMarginsRelative(start = start + extraMargin, end = end + extraMargin)
-            if (getTag(R.id.origMarginStart) == null) setTag(R.id.origMarginStart, start)
-            if (getTag(R.id.origMarginEnd) == null) setTag(R.id.origMarginEnd, end)
+            if (root.getTag(R.id.origMarginStart) == null) root.setTag(R.id.origMarginStart, start)
+            if (root.getTag(R.id.origMarginEnd) == null) root.setTag(R.id.origMarginEnd, end)
         } else {
-            val left = getTag(R.id.origMarginStart) as Int? ?: layoutParams.leftMargin
-            val right = getTag(R.id.origMarginEnd) as Int? ?: layoutParams.rightMargin
+            val left = root.getTag(R.id.origMarginStart) as Int? ?: layoutParams.leftMargin
+            val right = root.getTag(R.id.origMarginEnd) as Int? ?: layoutParams.rightMargin
             updateMargins(left = left + extraMargin, right = right + extraMargin)
-            if (getTag(R.id.origMarginStart) == null) setTag(R.id.origMarginStart, left)
-            if (getTag(R.id.origMarginEnd) == null) setTag(R.id.origMarginEnd, right)
+            if (root.getTag(R.id.origMarginStart) == null) root.setTag(R.id.origMarginStart, left)
+            if (root.getTag(R.id.origMarginEnd) == null) root.setTag(R.id.origMarginEnd, right)
         }
     }
     // Hide/Show back button
-    search_back_button.isVisible = searchOpen.yes
+    searchBackButton.isVisible = searchOpen.yes
     // Update SearchView padding
-    search_bar.updatePadding(left = context.resources.getDimensionPixelSize(if (searchOpen.yes)
-        R.dimen.searchbar_padding_active else R.dimen.searchbar_padding_inactive))
+    searchBar.updatePadding(
+        left = root.context.resources.getDimensionPixelSize(
+            if (searchOpen.yes)
+                R.dimen.searchbar_padding_active else R.dimen.searchbar_padding_inactive
+        )
+    )
 }
 
 /**
@@ -267,15 +278,15 @@ fun View.setAnimatedVisibility(visible: Int) {
  *
  * @param title The visibility to change the view to
  */
-fun View.setSearchHintVisibility(title: TitleVisibility) {
+fun SearchbarLayoutBinding.setSearchHintVisibility(title: TitleVisibility) {
     if (title.noFade) {
-        app_title.visibility = title.visible
-        search_bar.queryHint = context.getString(R.string.search_hint_items)
+        appTitle.root.visibility = title.visible
+        searchBar.queryHint = root.context.getString(R.string.search_hint_items)
         return
     }
     // Were we animating before? If so, what was the visibility?
-    val endAnimVisibility = app_title.getTag(R.id.finalVisibility) as Int?
-    val oldVisibility = endAnimVisibility ?: app_title.visibility
+    val endAnimVisibility = appTitle.root.getTag(R.id.finalVisibility) as Int?
+    val oldVisibility = endAnimVisibility ?: appTitle.root.visibility
 
     if (oldVisibility == title.visible) {
         // just let it finish any current animation.
@@ -285,13 +296,13 @@ fun View.setSearchHintVisibility(title: TitleVisibility) {
     val isVisible = oldVisibility == View.VISIBLE
     val willBeVisible = title.visible == View.VISIBLE
 
-    app_title.visibility = View.VISIBLE
+    appTitle.root.visibility = View.VISIBLE
     var startAlpha = if (isVisible) 1f else 0f
-    if (endAnimVisibility != null) startAlpha = alpha
+    if (endAnimVisibility != null) startAlpha = root.alpha
     val endAlpha = if (willBeVisible) 1f else 0f
 
     // Now create an animator
-    ObjectAnimator.ofFloat(app_title, View.ALPHA, startAlpha, endAlpha).apply {
+    ObjectAnimator.ofFloat(appTitle.root, View.ALPHA, startAlpha, endAlpha).apply {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2)
             setAutoCancel(true)
 
@@ -299,7 +310,7 @@ fun View.setSearchHintVisibility(title: TitleVisibility) {
             private var isCanceled: Boolean = false
 
             override fun onAnimationStart(anim: Animator) {
-                app_title.setTag(R.id.finalVisibility, title.visible)
+                appTitle.root.setTag(R.id.finalVisibility, title.visible)
             }
 
             override fun onAnimationCancel(anim: Animator) {
@@ -307,14 +318,14 @@ fun View.setSearchHintVisibility(title: TitleVisibility) {
             }
 
             override fun onAnimationEnd(anim: Animator) {
-                app_title.setTag(R.id.finalVisibility, null)
+                appTitle.root.setTag(R.id.finalVisibility, null)
                 if (!isCanceled) {
-                    app_title.alpha = 1f
-                    app_title.visibility = title.visible
+                    appTitle.root.alpha = 1f
+                    appTitle.root.visibility = title.visible
                 }
-                search_bar.queryHint =
-                        if (title.visible == View.VISIBLE) null
-                        else context.getString(R.string.search_hint_items)
+                searchBar.queryHint =
+                    if (title.visible == View.VISIBLE) null
+                    else root.context.getString(R.string.search_hint_items)
             }
         })
     }.start()
@@ -322,25 +333,28 @@ fun View.setSearchHintVisibility(title: TitleVisibility) {
 
 private typealias onQuery = (query: String?, needsToSubmit: Boolean) -> Unit
 
-fun View.setupSearchBarLayout(navController: NavController,
-                              preferenceManager: PreferenceManager,
-                              onQuery: onQuery) {
-    search_back_button.setOnClickListener {
-        isFocusable = false
-        isFocusableInTouchMode = false
-        clearFocus()
+fun SearchbarLayoutBinding.setupSearchBarLayout(
+    navController: NavController,
+    preferenceManager: PreferenceManager,
+    onQuery: onQuery
+) {
+    searchBackButton.setOnClickListener {
+        root.isFocusable = false
+        root.isFocusableInTouchMode = false
+        root.clearFocus()
         navController.navigateUp()
     }
-    search_bar.setOnQueryTextFocusChangeListener { _, hasFocus ->
+    searchBar.setOnQueryTextFocusChangeListener { _, hasFocus ->
         if (!hasFocus && preferenceManager.searchHistory)
-            search_bar.query?.let { preferenceManager.saveSearchHistoryItem(it.toString()) }
+            searchBar.query?.let { preferenceManager.saveSearchHistoryItem(it.toString()) }
     }
-    search_bar.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+    searchBar.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
         override fun onQueryTextSubmit(query: String?): Boolean {
             preferenceManager.saveSearchHistoryItem(query)
             onQuery.invoke(query, false)
             if (!query.isNullOrBlank() &&
-                    navController.currentDestination?.id != R.id.search_fragment_dest)
+                navController.currentDestination?.id != R.id.search_fragment_dest
+            )
                 navController.navigate(R.id.search_fragment_dest)
             return false
         }
@@ -348,22 +362,27 @@ fun View.setupSearchBarLayout(navController: NavController,
         override fun onQueryTextChange(query: String?): Boolean {
             onQuery.invoke(query, false)
             if (!query.isNullOrBlank() &&
-                    navController.currentDestination?.id != R.id.search_fragment_dest)
+                navController.currentDestination?.id != R.id.search_fragment_dest
+            )
                 navController.navigate(R.id.search_fragment_dest)
             return false
         }
     })
-    search_bar.findViewById<SearchView.SearchAutoComplete?>(R.id.search_src_text)?.apply {
+    searchBar.findViewById<SearchView.SearchAutoComplete>(R.id.search_src_text)?.apply {
         @ColorRes val colorRes = TypedValue().run {
-            this@setupSearchBarLayout.context.theme.resolveAttribute(R.attr.colorBackgroundFloating,
-                    this, true)
+            this@setupSearchBarLayout.root.context.theme.resolveAttribute(
+                R.attr.colorBackgroundFloating,
+                this, true
+            )
             resourceId
         }
         setDropDownBackgroundResource(colorRes)
-        val searchHistoryAdapter = SuggestionAdapter(this@setupSearchBarLayout.context,
-                R.layout.searchview_history_item,
-                preferenceManager.getSearchHistoryItems(),
-                android.R.id.text1)
+        val searchHistoryAdapter = SuggestionAdapter(
+            this@setupSearchBarLayout.root.context,
+            R.layout.searchview_history_item,
+            preferenceManager.getSearchHistoryItems(),
+            android.R.id.text1
+        )
         @SuppressLint("RestrictedApi")
         threshold = 0
         setAdapter(searchHistoryAdapter)
@@ -377,8 +396,8 @@ fun View.setupSearchBarLayout(navController: NavController,
  * Updates the history list of the [SearchView]
  * @param list History list of all the items, shown in the supplied order
  */
-fun View.updateSearchBarAdapter(list: List<String>) {
-    search_bar.findViewById<SearchView.SearchAutoComplete?>(R.id.search_src_text)?.apply {
+fun SearchbarLayoutBinding.updateSearchBarAdapter(list: List<String>) {
+    searchBar.findViewById<SearchView.SearchAutoComplete?>(R.id.search_src_text)?.apply {
         (adapter as? SuggestionAdapter)?.updateList(list)
     } ?: Timber.wtf("SearchView.SearchAutoComplete id has changed and requires maintenance")
 }
@@ -387,23 +406,17 @@ fun View.updateSearchBarAdapter(list: List<String>) {
  * Applies the fullscreen mode (behind status and navigation bars) & left/right insets to supplied view.
  * This should be the rootView of the layout for best performance.
  */
-fun View.applySystemUiVisibility() {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-        systemUiVisibility =
-                // Tells the system that you wish to be laid out as if the navigation bar was hidden
-                View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
-                        // Optional, if we want to be laid out fullscreen, behind the status bar
-                        //View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
-                        // Tells the system that you wish to be laid out at the most extreme scenario of any other flags
-                        View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-    } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-        fitsSystemWindows = true
+fun Window.applySystemUiVisibility() {
+    when {
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP ->
+            WindowCompat.setDecorFitsSystemWindows(this, false)
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP -> decorView.fitsSystemWindows = true
     }
 }
 
 /**
  * A fix for the hiding and showing of the [com.google.android.material.appbar.AppBarLayout] as
- * transitioning to each state messes with the searchview layout
+ * transitioning to each state messes with the [SearchView] layout
  *
  * @param appBarIsVisible is the appbar layout currently visible or not
  */
@@ -421,7 +434,7 @@ fun View.appBarLayoutHideFix(appBarIsVisible: Boolean) {
  * @return The [NavController]
  */
 fun AppCompatActivity.findNavControllerFixed(@IdRes viewId: Int): NavController =
-        (supportFragmentManager.findFragmentById(viewId) as NavHostFragment).navController
+    (supportFragmentManager.findFragmentById(viewId) as NavHostFragment).navController
 
 /**
  * Set the bottom padding so that the content bottom is above the nav bar (y-axis).
@@ -433,120 +446,112 @@ fun AppCompatActivity.findNavControllerFixed(@IdRes viewId: Int): NavController 
  * @param applyBottom should apply the bottom side inset or not
  * @param applyActionBarPadding should add extra top inset that is the height of the appbar
  */
-fun View.applySystemWindows(applyLeft: Boolean = false, applyTop: Boolean = false,
-                            applyRight: Boolean = false, applyBottom: Boolean = false,
-                            applyActionBarPadding: Boolean = false) {
-    val extra = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8F,
-            resources.displayMetrics).toInt()
+fun View.applySystemWindows(
+    applyLeft: Boolean = false, applyTop: Boolean = false,
+    applyRight: Boolean = false, applyBottom: Boolean = false,
+    applyActionBarPadding: Boolean = false
+) {
+    val extra = TypedValue.applyDimension(
+        TypedValue.COMPLEX_UNIT_DIP, 8F,
+        resources.displayMetrics
+    ).toInt()
     val tv = TypedValue()
     val abHeight = if (context.theme.resolveAttribute(R.attr.actionBarSize, tv, true)) {
         TypedValue.complexToDimensionPixelSize(tv.data, context.resources.displayMetrics)
     } else 0
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-        doOnApplyWindowInsets { v, insets, padding, margin ->
-            val left = if (applyLeft) insets.systemWindowInsetLeft else 0
-            val top = if (applyTop) insets.systemWindowInsetTop else 0
-            val right = if (applyRight) insets.systemWindowInsetRight else 0
-            val bottom = if (applyBottom) insets.systemWindowInsetBottom else 0
-            when (v) { // Fix for custom CardView since it cannot use padding
-                is MaterialCardView -> {
-                    if (v.getTag(R.id.hasInsetsSet) == null) {
-                        v.setTag(R.id.hasInsetsSet, true)
-                        v.doOnPreDraw {
-                            it.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
-                            val addtlHeight = max(0, (abHeight - (it.measuredHeight - it
-                                    .paddingTop - it.paddingBottom)) / 2)
-                            it.updateLayoutParams<MarginLayoutParams> {
-                                updateMargins(
-                                        top = margin.top + top + addtlHeight,
-                                        bottom = margin.bottom + bottom + addtlHeight,
-                                        left = margin.left + left,
-                                        right = margin.right + right
-                                )
-                            }
-                            Timber.d("${margin.top} / $top / $addtlHeight - $abHeight / ${it.measuredHeight}")
-                        }
-                    }
-                }
-                else -> {
-                    if (v.getTag(R.id.hasInsetsSet) == null) {
-                        v.setTag(R.id.hasInsetsSet, true)
-                        v.setPadding(padding.left + left, padding.top + top + if (applyActionBarPadding)
-                            abHeight else 0, padding.right + right, padding.bottom + bottom)
-                    }
-                }
-            }
-            if (parent is SwipeRefreshLayout) (parent as SwipeRefreshLayout)
-                    .setProgressViewOffset(false, 0, padding.top + top + extra +
-                            (if (applyActionBarPadding) abHeight else 0))
-        }
-    } else {
-        when (this) { // Fix for custom CardView since it cannot use padding
+    doOnApplyWindowInsets { v, insets, padding, margin ->
+        val left =
+            if (applyLeft) insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.ime()).left else 0
+        val top =
+            if (applyTop) insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.ime()).top else 0
+        val right =
+            if (applyRight) insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.ime()).right else 0
+        val bottom =
+            if (applyBottom) insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.ime()).bottom else 0
+        when (v) { // Fix for custom CardView since it cannot use padding
             is MaterialCardView -> {
                 if (getTag(R.id.hasInsetsSet) == null) {
                     setTag(R.id.hasInsetsSet, true)
                     doOnPreDraw {
                         it.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
-                        val addtlHeight = max(0, (abHeight - (it.measuredHeight - it
-                                .paddingTop - it.paddingBottom)) / 2)
+                        val addtlHeight = max(
+                            0, (abHeight - (it.measuredHeight - it
+                                .paddingTop - it.paddingBottom)) / 2
+                        )
                         it.updateLayoutParams<MarginLayoutParams> {
-                            updateMargins(top = topMargin + addtlHeight, bottom = bottomMargin + addtlHeight)
+                            updateMargins(
+                                top = margin.top + top + addtlHeight,
+                                bottom = margin.bottom + bottom + addtlHeight,
+                                left = margin.left + left,
+                                right = margin.right + right
+                            )
                         }
-                        Timber.d("${it.marginTop} / $addtlHeight - $abHeight / $measuredHeight / ${it.paddingTop} / ${it.paddingBottom}")
+                        Timber.d("${margin.top} / $top / $addtlHeight - $abHeight / ${it.measuredHeight}")
                     }
                 }
             }
             else -> {
                 if (getTag(R.id.hasInsetsSet) == null) {
                     setTag(R.id.hasInsetsSet, true)
-                    updatePadding(top = paddingTop + if (applyActionBarPadding) abHeight else 0)
+                    updatePadding(
+                        left = paddingLeft + left,
+                        right = paddingRight + right,
+                        top = paddingTop + top + if (applyActionBarPadding) abHeight else 0,
+                        bottom = paddingBottom + bottom
+                    )
                 }
             }
         }
-        if (parent is SwipeRefreshLayout) (parent as SwipeRefreshLayout)
-                .setProgressViewOffset(false, 0, paddingTop + extra)
+        (parent as? SwipeRefreshLayout)?.setProgressViewOffset(
+            false, 0, padding.top + top + extra +
+                    (if (applyActionBarPadding) abHeight else 0)
+        )
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.KITKAT_WATCH)
-private fun View.doOnApplyWindowInsets(f: (View, WindowInsets, InitialPadding, InitialMargin) -> Unit) {
+private fun View.doOnApplyWindowInsets(apply: (View, WindowInsetsCompat, InitialPadding, InitialMargin) -> Unit) {
     // Create a snapshot of the view's padding state
     val initialPadding = recordInitialPaddingForView(this)
     val initialMargin = recordInitialMarginForView(this)
     // Set an actual OnApplyWindowInsetsListener which proxies to the given
     // lambda, also passing in the original padding state
-    setOnApplyWindowInsetsListener { v, insets ->
-        f(v, insets, initialPadding, initialMargin)
-        // Always return the insets, so that children can also use them
-        insets
-    }
+    if(Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
+        apply(this, WindowInsetsCompat.Builder().build(), initialPadding, initialMargin)
+    else
+        ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets ->
+            apply(v, insets, initialPadding, initialMargin)
+            // Always return the insets, so that children can also use them
+            insets
+        }
     // request some insets
+    ViewCompat.requestApplyInsets(this)
     requestApplyInsetsWhenAttached()
 }
 
 private data class InitialPadding(val left: Int, val top: Int, val right: Int, val bottom: Int)
 
 private fun recordInitialPaddingForView(view: View) = InitialPadding(
-        view.paddingLeft, view.paddingTop, view.paddingRight, view.paddingBottom)
+    view.paddingLeft, view.paddingTop, view.paddingRight, view.paddingBottom
+)
 
 private data class InitialMargin(val left: Int, val top: Int, val right: Int, val bottom: Int)
 
 private fun recordInitialMarginForView(view: View) = InitialMargin(
-        view.marginStart, view.marginTop, view.marginEnd, view.marginBottom)
+    view.marginStart, view.marginTop, view.marginEnd, view.marginBottom
+)
 
 /**
  * Call [View.requestApplyInsets] in a safe away. If we're attached it calls it straight-away.
  * If not it sets an [View.OnAttachStateChangeListener] and waits to be attached before calling
  * [View.requestApplyInsets].
  */
-@RequiresApi(Build.VERSION_CODES.KITKAT_WATCH)
 private fun View.requestApplyInsetsWhenAttached() {
-    if (isAttachedToWindow) {
-        requestApplyInsets()
+    if (ViewCompat.isAttachedToWindow(this)) {
+        ViewCompat.requestApplyInsets(this)
     } else {
         addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
             override fun onViewAttachedToWindow(v: View) {
-                v.requestApplyInsets()
+                ViewCompat.requestApplyInsets(v)
             }
 
             override fun onViewDetachedFromWindow(v: View) = Unit

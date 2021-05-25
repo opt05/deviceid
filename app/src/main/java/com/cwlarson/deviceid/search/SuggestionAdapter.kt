@@ -31,7 +31,7 @@ internal class SuggestionAdapter(context: Context, resource: Int, objects: List<
 
     override fun getItemId(position: Int): Long = position.toLong()
 
-    override fun getItem(position: Int): String? = filterItems[position]
+    override fun getItem(position: Int): String = filterItems[position]
 
     override fun getCount(): Int = filterItems.size
 

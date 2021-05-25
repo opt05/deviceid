@@ -14,7 +14,8 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.data.sdkToVersion
-import kotlinx.android.synthetic.main.recycler_header_view.view.*
+import com.cwlarson.deviceid.databinding.RecyclerHeaderViewBinding
+import com.cwlarson.deviceid.util.loadPermissionLabel
 
 typealias onItemClick = (item: Item, isLongClick: Boolean) -> Unit
 
@@ -23,8 +24,7 @@ class TabsAdapter(private val clickHandler: onItemClick) :
         HeaderInterface<TabsAdapter.HeaderViewHolder> {
 
     override fun onCreateHeaderViewHolder(parent: ViewGroup): HeaderViewHolder =
-            HeaderViewHolder(LayoutInflater.from(parent.context).inflate(
-                    R.layout.recycler_header_view, parent, false))
+            HeaderViewHolder(RecyclerHeaderViewBinding.inflate(LayoutInflater.from(parent.context), parent, false))
 
     override fun onBindHeaderViewHolder(holder: HeaderViewHolder) = holder.bind()
 
@@ -104,17 +104,16 @@ class TabsAdapter(private val clickHandler: onItemClick) :
                 }
                 is ItemSubtitle.Permission -> {
                     textSubTitle.text = view.context.getString(R.string.permission_item_subtitle,
-                            view.context.packageManager.getPermissionInfo(sub.androidPermission, 0)
-                                    .loadLabel(view.context.packageManager))
+                        view.context.loadPermissionLabel(sub.permission))
                 }
                 else -> textSubTitle.text = view.context.getString(R.string.not_found)
             }
         }
     }
 
-    inner class HeaderViewHolder(private val view: View) : RecyclerView.ViewHolder(view) {
+    inner class HeaderViewHolder(private val binding: RecyclerHeaderViewBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind() {
-            view.header_count.text = this@TabsAdapter.itemCount.toString()
+            binding.headerCount.text = this@TabsAdapter.itemCount.toString()
         }
     }
 }

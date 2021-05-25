@@ -28,11 +28,13 @@ import java.io.File
 import java.util.*
 import kotlin.coroutines.resume
 
-class HardwareRepository(private val context: Context, filterUnavailable: Boolean = false)
-    : TabData(filterUnavailable) {
+class HardwareRepository(private val context: Context, filterUnavailable: Boolean = false) :
+    TabData(filterUnavailable) {
 
-    override suspend fun list(): List<Item> = listOf(ramSize(), formattedInternalMemory(),
-            formattedExternalMemory(), getBattery(), *getDisplayInfo())
+    override suspend fun list(): List<Item> = listOf(
+        ramSize(), formattedInternalMemory(),
+        formattedExternalMemory(), getBattery(), *getDisplayInfo()
+    )
 
     //Total memory is only available on API 16+
     private fun ramSize() = Item(R.string.hardware_title_memory, ItemType.HARDWARE).apply {
@@ -40,144 +42,189 @@ class HardwareRepository(private val context: Context, filterUnavailable: Boolea
             val mi = ActivityManager.MemoryInfo()
             context.activityManager.getMemoryInfo(mi)
             subtitle = ItemSubtitle.Chart(
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
-                        ChartItem(mi.availMem.toFloat(),
-                                0f,
-                                R.drawable.ic_memory,
-                                context.resources.getString(R.string
-                                        .hardware_storage_output_format_api15,
-                                        Formatter.formatFileSize(context, mi.availMem)))
-                    } else {
-                        ChartItem(mi.availMem.toFloat(),
-                                mi.totalMem.toFloat(),
-                                R.drawable.ic_memory,
-                                if (mi.totalMem > 0)
-                                    context.resources.getString(R.string
-                                            .hardware_storage_output_format,
-                                            Formatter.formatFileSize(context, mi.availMem),
-                                            Formatter.formatFileSize(context, mi.totalMem))
-                                else null)
-                    })
-        } catch (e: Throwable) {
-            Timber.w(e)
-        }
-    }
-
-    private fun formattedInternalMemory() = Item(R.string.hardware_title_internal_storage, ItemType.HARDWARE).apply {
-        try {
-            val dir = Environment.getDataDirectory()
-            val stat = StatFs(dir.path)
-
-            @Suppress("DEPRECATION")
-            val available = if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.JELLY_BEAN_MR2)
-                stat.blockSize.toLong() * stat.availableBlocks.toLong()
-            else stat.availableBytes
-
-            @Suppress("DEPRECATION")
-            val total = if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.JELLY_BEAN_MR2)
-                stat.blockCount.toLong() * stat.blockCount.toLong()
-            else stat.totalBytes
-            subtitle = ItemSubtitle.Chart(
-                    ChartItem(available.toFloat(),
-                            total.toFloat(),
-                            R.drawable.ic_storage,
-                            if (total > 0L)
-                                context.resources.getString(R.string.hardware_storage_output_format,
-                                        Formatter.formatFileSize(context, available),
-                                        Formatter.formatFileSize(context, total))
-                            else null)
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+                    ChartItem(
+                        mi.availMem.toFloat(),
+                        0f,
+                        R.drawable.ic_memory,
+                        context.resources.getString(
+                            R.string
+                                .hardware_storage_output_format_api15,
+                            Formatter.formatFileSize(context, mi.availMem)
+                        )
+                    )
+                } else {
+                    ChartItem(
+                        mi.availMem.toFloat(),
+                        mi.totalMem.toFloat(),
+                        R.drawable.ic_memory,
+                        if (mi.totalMem > 0)
+                            context.resources.getString(
+                                R.string
+                                    .hardware_storage_output_format,
+                                Formatter.formatFileSize(context, mi.availMem),
+                                Formatter.formatFileSize(context, mi.totalMem)
+                            )
+                        else null
+                    )
+                }
             )
         } catch (e: Throwable) {
             Timber.w(e)
         }
     }
 
-    private fun formattedExternalMemory() = Item(R.string.hardware_title_external_storage, ItemType.HARDWARE).apply {
-        try {
-            // Mounted and not emulated, most likely a real SD Card
-            val appsDir = ContextCompat.getExternalFilesDirs(context, null).filter {
-                it != null
-                        && EnvironmentCompat.getStorageState(it) == Environment.MEDIA_MOUNTED
-                        && !it.isExternalStorageEmulatedCompat()
+    private fun formattedInternalMemory() =
+        Item(R.string.hardware_title_internal_storage, ItemType.HARDWARE).apply {
+            try {
+                val dir = Environment.getDataDirectory()
+                val stat = StatFs(dir.path)
+
+                @Suppress("DEPRECATION")
+                val available = if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.JELLY_BEAN_MR2)
+                    stat.blockSize.toLong() * stat.availableBlocks.toLong()
+                else stat.availableBytes
+
+                @Suppress("DEPRECATION")
+                val total = if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.JELLY_BEAN_MR2)
+                    stat.blockCount.toLong() * stat.blockCount.toLong()
+                else stat.totalBytes
+                subtitle = ItemSubtitle.Chart(
+                    ChartItem(
+                        available.toFloat(),
+                        total.toFloat(),
+                        R.drawable.ic_storage,
+                        if (total > 0L)
+                            context.resources.getString(
+                                R.string.hardware_storage_output_format,
+                                Formatter.formatFileSize(context, available),
+                                Formatter.formatFileSize(context, total)
+                            )
+                        else null
+                    )
+                )
+            } catch (e: Throwable) {
+                Timber.w(e)
             }
-            val availSize = appsDir.map { it.freeSpace }.toTypedArray().sum()
-            val totalSize = appsDir.map { it.totalSpace }.toTypedArray().sum()
-            subtitle = ItemSubtitle.Chart(
-                    ChartItem(availSize.toFloat(),
-                            totalSize.toFloat(),
-                            R.drawable.ic_storage,
-                            if (totalSize > 0L)
-                                context.resources.getString(R.string.hardware_storage_output_format,
-                                        Formatter.formatFileSize(context, availSize),
-                                        Formatter.formatFileSize(context, totalSize))
-                            else null)
-            )
-        } catch (e: Throwable) {
-            Timber.w(e)
         }
-    }
+
+    private fun formattedExternalMemory() =
+        Item(R.string.hardware_title_external_storage, ItemType.HARDWARE).apply {
+            try {
+                // Mounted and not emulated, most likely a real SD Card
+                val appsDir = ContextCompat.getExternalFilesDirs(context, null).filter {
+                    it != null
+                            && EnvironmentCompat.getStorageState(it) == Environment.MEDIA_MOUNTED
+                            && !it.isExternalStorageEmulatedCompat()
+                }
+                val availSize = appsDir.map { it.freeSpace }.toTypedArray().sum()
+                val totalSize = appsDir.map { it.totalSpace }.toTypedArray().sum()
+                subtitle = ItemSubtitle.Chart(
+                    ChartItem(
+                        availSize.toFloat(),
+                        totalSize.toFloat(),
+                        R.drawable.ic_storage,
+                        if (totalSize > 0L)
+                            context.resources.getString(
+                                R.string.hardware_storage_output_format,
+                                Formatter.formatFileSize(context, availSize),
+                                Formatter.formatFileSize(context, totalSize)
+                            )
+                        else null
+                    )
+                )
+            } catch (e: Throwable) {
+                Timber.w(e)
+            }
+        }
 
     private fun File.isExternalStorageEmulatedCompat(): Boolean =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-                Environment.isExternalStorageEmulated(this)
-            else Environment.isExternalStorageEmulated()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+            Environment.isExternalStorageEmulated(this)
+        else Environment.isExternalStorageEmulated()
 
     private suspend fun getBattery(): Item =
-            suspendCancellableCoroutine { cont ->
-                val batteryReceiver = object : BroadcastReceiver() {
-                    override fun onReceive(c: Context?, intent: Intent?) {
-                        context.unregisterReceiver(this)
-                        intent?.action?.let { act ->
-                            val result = goAsync()
-                            val item = Item(R.string.hardware_title_battery, ItemType.HARDWARE)
-                            if (act == Intent.ACTION_BATTERY_CHANGED) {
-                                //int temperature = intent.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, 0)/10;
-                                val health = when (intent.getIntExtra(BatteryManager.EXTRA_HEALTH, 0)) {
-                                    BatteryManager.BATTERY_HEALTH_COLD -> context.getString(R.string.BATTERY_HEALTH_COLD)
-                                    BatteryManager.BATTERY_HEALTH_DEAD -> context.getString(R.string.BATTERY_HEALTH_DEAD)
-                                    BatteryManager.BATTERY_HEALTH_GOOD -> context.getString(R.string.BATTERY_HEALTH_GOOD)
-                                    BatteryManager.BATTERY_HEALTH_OVERHEAT -> context.getString(R.string.BATTERY_HEALTH_OVERHEAT)
-                                    BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE -> context.getString(R.string.BATTERY_HEALTH_OVER_VOLTAGE)
-                                    BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE -> context.getString(R.string.BATTERY_HEALTH_UNSPECIFIED_FAILURE)
-                                    else -> context.getString(R.string.BATTERY_HEALTH_UNKNOWN)
-                                }
-                                val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
-                                item.subtitle = ItemSubtitle.Chart(
-                                        ChartItem((100 - level).toFloat(),
-                                                100f,
-                                                R.drawable.ic_battery,
-                                                StringBuilder().apply {
-                                                    append("$level% - ")
-                                                    // Are we charging / charged?
-                                                    when (intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1)) {
-                                                        BatteryManager.BATTERY_STATUS_CHARGING -> append(context.getString(R.string.BATTERY_STATUS_CHARGING))
-                                                        BatteryManager.BATTERY_STATUS_FULL -> append(context.getString(R.string.BATTERY_STATUS_FULL))
-                                                        BatteryManager.BATTERY_STATUS_DISCHARGING -> append(context.getString(R.string.BATTERY_STATUS_DISCHARGING))
-                                                        BatteryManager.BATTERY_STATUS_NOT_CHARGING -> append(context.getString(R.string.BATTERY_STATUS_NOT_CHARGING))
-                                                        else -> append(context.getString(R.string.BATTERY_STATUS_UNKNOWN))
-                                                    }
-                                                    append(" ($health)")
-                                                    // How are we charging?
-                                                    val chargePlug = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1)
-                                                    val usbCharge = chargePlug == BatteryManager.BATTERY_PLUGGED_USB
-                                                    val acCharge = chargePlug == BatteryManager.BATTERY_PLUGGED_AC
-                                                    append(" ")
-                                                    if (usbCharge)
-                                                        append(context.getString(R.string.BATTERY_PLUGGED_USB))
-                                                    else if (acCharge)
-                                                        append(context.getString(R.string.BATTERY_PLUGGED_AC))
-                                                    //subTitle = String.valueOf(temperature+"\u00b0C");
-                                                }.toString()))
-                                // Must call finish() so the BroadcastReceiver can be recycled.
-                                result.finish()
+        suspendCancellableCoroutine { cont ->
+            val batteryReceiver = object : BroadcastReceiver() {
+                override fun onReceive(c: Context?, intent: Intent?) {
+                    context.unregisterReceiver(this)
+                    intent?.action?.let { act ->
+                        val result = goAsync()
+                        val item = Item(R.string.hardware_title_battery, ItemType.HARDWARE)
+                        if (act == Intent.ACTION_BATTERY_CHANGED) {
+                            //int temperature = intent.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, 0)/10;
+                            val health = when (intent.getIntExtra(BatteryManager.EXTRA_HEALTH, 0)) {
+                                BatteryManager.BATTERY_HEALTH_COLD -> context.getString(R.string.BATTERY_HEALTH_COLD)
+                                BatteryManager.BATTERY_HEALTH_DEAD -> context.getString(R.string.BATTERY_HEALTH_DEAD)
+                                BatteryManager.BATTERY_HEALTH_GOOD -> context.getString(R.string.BATTERY_HEALTH_GOOD)
+                                BatteryManager.BATTERY_HEALTH_OVERHEAT -> context.getString(R.string.BATTERY_HEALTH_OVERHEAT)
+                                BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE -> context.getString(R.string.BATTERY_HEALTH_OVER_VOLTAGE)
+                                BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE -> context.getString(
+                                    R.string.BATTERY_HEALTH_UNSPECIFIED_FAILURE
+                                )
+                                else -> context.getString(R.string.BATTERY_HEALTH_UNKNOWN)
                             }
-                            cont.resume(item)
+                            val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+                            item.subtitle = ItemSubtitle.Chart(
+                                ChartItem(
+                                    (100 - level).toFloat(),
+                                    100f,
+                                    R.drawable.ic_battery,
+                                    StringBuilder().apply {
+                                        append("$level% - ")
+                                        // Are we charging / charged?
+                                        when (intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1)) {
+                                            BatteryManager.BATTERY_STATUS_CHARGING -> append(
+                                                context.getString(
+                                                    R.string.BATTERY_STATUS_CHARGING
+                                                )
+                                            )
+                                            BatteryManager.BATTERY_STATUS_FULL -> append(
+                                                context.getString(
+                                                    R.string.BATTERY_STATUS_FULL
+                                                )
+                                            )
+                                            BatteryManager.BATTERY_STATUS_DISCHARGING -> append(
+                                                context.getString(R.string.BATTERY_STATUS_DISCHARGING)
+                                            )
+                                            BatteryManager.BATTERY_STATUS_NOT_CHARGING -> append(
+                                                context.getString(R.string.BATTERY_STATUS_NOT_CHARGING)
+                                            )
+                                            else -> append(context.getString(R.string.BATTERY_STATUS_UNKNOWN))
+                                        }
+                                        append(" ($health)")
+                                        // How are we charging?
+                                        val chargePlug =
+                                            intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1)
+                                        val usbCharge =
+                                            chargePlug == BatteryManager.BATTERY_PLUGGED_USB
+                                        val acCharge =
+                                            chargePlug == BatteryManager.BATTERY_PLUGGED_AC
+                                        append(" ")
+                                        if (usbCharge)
+                                            append(context.getString(R.string.BATTERY_PLUGGED_USB))
+                                        else if (acCharge)
+                                            append(context.getString(R.string.BATTERY_PLUGGED_AC))
+                                        //subTitle = String.valueOf(temperature+"\u00b0C");
+                                    }.toString()
+                                )
+                            )
+                            // Must call finish() so the BroadcastReceiver can be recycled.
+                            result.finish()
                         }
+                        cont.resume(item)
                     }
                 }
-                cont.invokeOnCancellation { context.unregisterReceiver(batteryReceiver) }
-                context.registerReceiver(batteryReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
             }
+            cont.invokeOnCancellation {
+                try {
+                    context.unregisterReceiver(batteryReceiver)
+                } catch (e: IllegalArgumentException) {
+                    /* Do nothing as receiver is not registered */
+                }
+            }
+            context.registerReceiver(batteryReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        }
 
     private fun getDisplayInfo(): Array<Item> = mutableListOf<Item>().apply {
         try {
@@ -203,26 +250,30 @@ class HardwareRepository(private val context: Context, filterUnavailable: Boolea
                     }
                     get(2).apply {
                         titleFormatArgs = arrayOf(display.displayId.toString())
-                        subtitle = ItemSubtitle.Text(when (display.rotation) {
-                            Surface.ROTATION_0 -> "0\u00B0"
-                            Surface.ROTATION_90 -> "90\u00B0"
-                            Surface.ROTATION_180 -> "180\u00B0"
-                            Surface.ROTATION_270 -> "270\u00B0"
-                            else -> null
-                        })
+                        subtitle = ItemSubtitle.Text(
+                            when (display.rotation) {
+                                Surface.ROTATION_0 -> "0\u00B0"
+                                Surface.ROTATION_90 -> "90\u00B0"
+                                Surface.ROTATION_180 -> "180\u00B0"
+                                Surface.ROTATION_270 -> "270\u00B0"
+                                else -> null
+                            }
+                        )
                     }
                     get(3).apply {
                         titleFormatArgs = arrayOf(display.displayId.toString())
                         subtitle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH)
-                            ItemSubtitle.Text(when (display.state) {
-                                Display.STATE_ON -> "STATE_ON"
-                                Display.STATE_OFF -> "STATE_OFF"
-                                Display.STATE_DOZE -> "STATE_DOZE"
-                                Display.STATE_DOZE_SUSPEND -> "STATE_DOZE_SUSPEND"
-                                Display.STATE_ON_SUSPEND -> "STATE_ON_SUSPEND"
-                                Display.STATE_VR -> "STATE_VR"
-                                else -> "STATE_UNKNOWN"
-                            })
+                            ItemSubtitle.Text(
+                                when (display.state) {
+                                    Display.STATE_ON -> "STATE_ON"
+                                    Display.STATE_OFF -> "STATE_OFF"
+                                    Display.STATE_DOZE -> "STATE_DOZE"
+                                    Display.STATE_DOZE_SUSPEND -> "STATE_DOZE_SUSPEND"
+                                    Display.STATE_ON_SUSPEND -> "STATE_ON_SUSPEND"
+                                    Display.STATE_VR -> "STATE_VR"
+                                    else -> "STATE_UNKNOWN"
+                                }
+                            )
                         else
                             ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.KITKAT_WATCH)
                     }
@@ -257,30 +308,32 @@ class HardwareRepository(private val context: Context, filterUnavailable: Boolea
                             width = rawW.invoke(display) as Int
                             height = rawH.invoke(display) as Int
                         }
-                        subtitle = ItemSubtitle.Text(when (context.resources.displayMetrics.densityDpi) {
-                            DisplayMetrics.DENSITY_LOW -> "LDPI"
-                            DisplayMetrics.DENSITY_MEDIUM -> "MDPI"
-                            DisplayMetrics.DENSITY_HIGH -> "HDPI"
-                            DisplayMetrics.DENSITY_XHIGH -> "XHDPI"
-                            DisplayMetrics.DENSITY_XXHIGH -> "XXHDPI"
-                            DisplayMetrics.DENSITY_XXXHIGH -> "XXXHDPI"
-                            DisplayMetrics.DENSITY_TV -> "TVDPI"
-                            DisplayMetrics.DENSITY_140 -> "140 DPI"
-                            DisplayMetrics.DENSITY_180 -> "180 DPI"
-                            DisplayMetrics.DENSITY_200 -> "200 DPI"
-                            DisplayMetrics.DENSITY_220 -> "220 DPI"
-                            DisplayMetrics.DENSITY_260 -> "260 DPI"
-                            DisplayMetrics.DENSITY_280 -> "280 DPI"
-                            DisplayMetrics.DENSITY_300 -> "300 DPI"
-                            DisplayMetrics.DENSITY_340 -> "340 DPI"
-                            DisplayMetrics.DENSITY_360 -> "360 DPI"
-                            DisplayMetrics.DENSITY_400 -> "400 DPI"
-                            DisplayMetrics.DENSITY_420 -> "420 DPI"
-                            DisplayMetrics.DENSITY_440 -> "440 DPI"
-                            DisplayMetrics.DENSITY_560 -> "560 DPI"
-                            DisplayMetrics.DENSITY_600 -> "600 DPI"
-                            else -> null
-                        }.plus(" (${height}x${width} pixels)").trim())
+                        subtitle = ItemSubtitle.Text(
+                            when (context.resources.displayMetrics.densityDpi) {
+                                DisplayMetrics.DENSITY_LOW -> "LDPI"
+                                DisplayMetrics.DENSITY_MEDIUM -> "MDPI"
+                                DisplayMetrics.DENSITY_HIGH -> "HDPI"
+                                DisplayMetrics.DENSITY_XHIGH -> "XHDPI"
+                                DisplayMetrics.DENSITY_XXHIGH -> "XXHDPI"
+                                DisplayMetrics.DENSITY_XXXHIGH -> "XXXHDPI"
+                                DisplayMetrics.DENSITY_TV -> "TVDPI"
+                                DisplayMetrics.DENSITY_140 -> "140 DPI"
+                                DisplayMetrics.DENSITY_180 -> "180 DPI"
+                                DisplayMetrics.DENSITY_200 -> "200 DPI"
+                                DisplayMetrics.DENSITY_220 -> "220 DPI"
+                                DisplayMetrics.DENSITY_260 -> "260 DPI"
+                                DisplayMetrics.DENSITY_280 -> "280 DPI"
+                                DisplayMetrics.DENSITY_300 -> "300 DPI"
+                                DisplayMetrics.DENSITY_340 -> "340 DPI"
+                                DisplayMetrics.DENSITY_360 -> "360 DPI"
+                                DisplayMetrics.DENSITY_400 -> "400 DPI"
+                                DisplayMetrics.DENSITY_420 -> "420 DPI"
+                                DisplayMetrics.DENSITY_440 -> "440 DPI"
+                                DisplayMetrics.DENSITY_560 -> "560 DPI"
+                                DisplayMetrics.DENSITY_600 -> "600 DPI"
+                                else -> null
+                            }.plus(" (${height}x${width} pixels)").trim()
+                        )
                     }
                 }
             } else

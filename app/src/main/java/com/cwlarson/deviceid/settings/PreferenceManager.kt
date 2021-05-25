@@ -126,12 +126,10 @@ private inline fun <reified T> SharedPreferences.observeKey(key: String, default
                                                             onlyChanges: Boolean = false,
                                                             dispatcher: CoroutineContext = Dispatchers.Default): Flow<T> {
     val flow: Flow<T> = callbackFlow {
-        if (!onlyChanges) offer(getItem(key, default))
+        if (!onlyChanges) trySend(getItem(key, default))
 
         val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, k ->
-            if (key == k) {
-                offer(getItem(key, default)!!)
-            }
+            if (key == k) trySend(getItem(key, default))
         }
 
         registerOnSharedPreferenceChangeListener(listener)

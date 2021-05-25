@@ -7,7 +7,8 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.updatePadding
 import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.addRepeatingJob
 import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
@@ -15,18 +16,12 @@ import androidx.preference.SwitchPreferenceCompat
 import com.cwlarson.deviceid.BuildConfig
 import com.cwlarson.deviceid.MainActivityViewModel
 import com.cwlarson.deviceid.R
-import com.cwlarson.deviceid.appupdates.AppUpdateViewModel
-import com.cwlarson.deviceid.appupdates.FakeAppUpdateManagerWrapper
-import com.cwlarson.deviceid.appupdates.UpdateState
 import com.cwlarson.deviceid.appupdates.UpdateType
-import com.cwlarson.deviceid.util.applySystemWindows
-import com.cwlarson.deviceid.util.toast
-import com.google.android.play.core.appupdate.AppUpdateManager
+import com.cwlarson.deviceid.util.*
 import com.google.android.play.core.install.model.InstallStatus
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.collect
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -35,9 +30,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
     lateinit var preferenceManager: PreferenceManager
 
     @Inject
-    lateinit var appUpdateManager: AppUpdateManager
-    @ExperimentalCoroutinesApi
-    private val appUpdateViewModel by activityViewModels<AppUpdateViewModel>()
+    lateinit var appUpdateUtils: AppUpdateUtils
     private val mainActivityViewModel by activityViewModels<MainActivityViewModel>()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -51,47 +44,58 @@ class SettingsFragment : PreferenceFragmentCompat() {
     }
 
     @ExperimentalCoroutinesApi
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         findPreference<ListPreference>(getString(R.string.pref_daynight_mode_key))?.setOnPreferenceChangeListener { _, newValue ->
             preferenceManager.setDarkTheme(newValue)
             true
         }
         findPreference<Preference>(getString(R.string.pref_check_for_update_key))?.let { pref ->
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                appUpdateViewModel.updateState.onEach { ua ->
-                    pref.title = when (ua) {
-                        UpdateState.Yes,
-                        UpdateState.YesButNotAllowed ->
-                            getString(R.string.pref_check_for_update_title_yes)
-                        else -> // is UpdateState.No
-                            getString(R.string.pref_check_for_update_title_no)
+                viewLifecycleOwner.addRepeatingJob(Lifecycle.State.STARTED) {
+                    appUpdateUtils.updateState.collect { ua ->
+                        pref.title = when (ua) {
+                            is UpdateState.Yes,
+                            UpdateState.YesButNotAllowed ->
+                                getString(R.string.pref_check_for_update_title_yes)
+                            is UpdateState.No ->
+                                getString(R.string.pref_check_for_update_title_no)
+                            else -> pref.title
+                        }
                     }
-                }.launchIn(viewLifecycleOwner.lifecycleScope)
-                appUpdateViewModel.installState.onEach { state ->
-                    pref.summary = when (state?.installStatus()) {
-                        InstallStatus.CANCELED ->
-                            getString(R.string.pref_check_for_update_summary_canceled)
-                        InstallStatus.DOWNLOADING ->
-                            getString(R.string.pref_check_for_update_summary_downloading)
-                        InstallStatus.INSTALLED ->
-                            getString(R.string.pref_check_for_update_summary_installed)
-                        InstallStatus.INSTALLING ->
-                            getString(R.string.pref_check_for_update_summary_installing)
-                        InstallStatus.PENDING ->
-                            getString(R.string.pref_check_for_update_summary_pending)
-                        InstallStatus.UNKNOWN ->
-                            getString(R.string.pref_check_for_update_summary_unknown)
-                        InstallStatus.DOWNLOADED ->
-                            getString(R.string.pref_check_for_update_summary_downloaded)
-                        InstallStatus.FAILED ->
-                            getString(R.string.pref_check_for_update_summary_failed)
-                        else -> getString(R.string.pref_check_for_update_summary)
+                }
+                viewLifecycleOwner.addRepeatingJob(Lifecycle.State.STARTED) {
+                    appUpdateUtils.installState.collect { state ->
+                        pref.summary = when(state) {
+                            is InstallState.Failed -> getString(R.string.pref_check_for_update_summary_failed)
+                            InstallState.Initial -> getString(R.string.pref_check_for_update_summary)
+                            is InstallState.NoError -> {
+                                when(state.status) {
+                                    InstallStatus.CANCELED ->
+                                        getString(R.string.pref_check_for_update_summary_canceled)
+                                    InstallStatus.DOWNLOADING ->
+                                        getString(R.string.pref_check_for_update_summary_downloading)
+                                    InstallStatus.INSTALLED ->
+                                        getString(R.string.pref_check_for_update_summary_installed)
+                                    InstallStatus.INSTALLING ->
+                                        getString(R.string.pref_check_for_update_summary_installing)
+                                    InstallStatus.PENDING ->
+                                        getString(R.string.pref_check_for_update_summary_pending)
+                                    InstallStatus.UNKNOWN ->
+                                        getString(R.string.pref_check_for_update_summary_unknown)
+                                    InstallStatus.DOWNLOADED ->
+                                        getString(R.string.pref_check_for_update_summary_downloaded)
+                                    InstallStatus.FAILED ->
+                                        getString(R.string.pref_check_for_update_summary_failed)
+                                    else -> getString(R.string.pref_check_for_update_summary)
+                                }
+                            }
+                        }
                     }
-                }.launchIn(viewLifecycleOwner.lifecycleScope)
+                }
 
                 pref.onPreferenceClickListener = Preference.OnPreferenceClickListener {
-                    appUpdateViewModel.sendCheckForFlexibleUpdate(true)
+                    appUpdateUtils.checkForFlexibleUpdate(true)
                     true
                 }
             } else pref.isVisible = false // App Updates are not available on KitKat and below
@@ -104,12 +108,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
             } else true
         }
         findPreference<ListPreference>(getString(R.string.pref_fake_update_set_end_state_key))?.setOnPreferenceChangeListener { _, newValue ->
-            appUpdateManager.let {
-                if (it is FakeAppUpdateManagerWrapper)
-                    it.setEndState(UpdateType.valueOf(newValue.toString()))
-                else
-                    context.toast("AppUpdateManger is not FakeAppUpdateManagerWrapper")
-            }
+            if(!appUpdateUtils.updateFakeAppUpdateManagerState(UpdateType.valueOf(newValue.toString())))
+                context.toast("AppUpdateManger is not FakeAppUpdateManagerWrapper")
             true
         }
     }

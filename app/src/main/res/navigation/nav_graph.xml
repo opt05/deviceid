@@ -87,7 +87,6 @@
             app:argType="reference" />
         <argument
             android:name="type"
-            android:defaultValue="NONE"
             app:argType="com.cwlarson.deviceid.tabs.ItemType" />
         <argument
             android:name="titleFormatArgs"

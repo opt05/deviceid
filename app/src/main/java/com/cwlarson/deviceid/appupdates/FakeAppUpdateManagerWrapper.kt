@@ -5,14 +5,12 @@ import android.content.Context
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
-import com.cwlarson.deviceid.MainActivity
 import com.cwlarson.deviceid.util.toast
 import com.google.android.play.core.appupdate.AppUpdateInfo
 import com.google.android.play.core.appupdate.testing.FakeAppUpdateManager
 import com.google.android.play.core.tasks.Task
 import kotlinx.coroutines.*
 
-@Suppress("unused")
 enum class UpdateType {
     /** No simulation.  */
     NO_SIMULATION,
@@ -58,7 +56,7 @@ enum class UpdateEvent {
  * error cases is a bit easier to do here.
  */
 class FakeAppUpdateManagerWrapper(private val context: Context) : FakeAppUpdateManager(context),
-        CoroutineScope by MainScope(), DefaultLifecycleObserver {
+    CoroutineScope by MainScope(), DefaultLifecycleObserver {
     companion object {
         private const val RESULT_IN_APP_UPDATE_FAILED = 1
         private const val STEP_DELAY_MS = 5000L
@@ -82,11 +80,15 @@ class FakeAppUpdateManagerWrapper(private val context: Context) : FakeAppUpdateM
         }
     }
 
-    override fun startUpdateFlowForResult(appUpdateInfo: AppUpdateInfo, appUpdateType: Int,
-                                          activity: Activity, requestCode: Int): Boolean {
+    @ExperimentalCoroutinesApi
+    override fun startUpdateFlowForResult(
+        appUpdateInfo: AppUpdateInfo, appUpdateType: Int,
+        activity: Activity, requestCode: Int
+    ): Boolean {
         runBlocking { toast("Starting update flow.") }
         // TODO: Simulate exceptions being thrown or returning false from the super call.
-        val success = super.startUpdateFlowForResult(appUpdateInfo, appUpdateType, activity, requestCode)
+        val success =
+            super.startUpdateFlowForResult(appUpdateInfo, appUpdateType, activity, requestCode)
         if (!success) return false
 
         val resultCode: Int = when (endState) {
@@ -101,8 +103,10 @@ class FakeAppUpdateManagerWrapper(private val context: Context) : FakeAppUpdateM
     /**
      * A helper class to wrap invocations to the Google Play API.
      */
-    private suspend fun eventHandler(updateEvent: UpdateEvent,
-                                     withDelay: Boolean = false) = withContext(Dispatchers.IO) {
+    private suspend fun eventHandler(
+        updateEvent: UpdateEvent,
+        withDelay: Boolean = false
+    ) = withContext(Dispatchers.IO) {
         if (withDelay) delay(STEP_DELAY_MS)
         when (updateEvent) {
             UpdateEvent.UPDATE_AVAILABLE -> {
@@ -151,22 +155,28 @@ class FakeAppUpdateManagerWrapper(private val context: Context) : FakeAppUpdateM
     override fun completeUpdate(): Task<Void> {
         launch {
             toast("Completing update.")
-            eventHandler(if (endState == UpdateType.FAIL_INSTALL) UpdateEvent.INSTALL_FAILS
-            else UpdateEvent.INSTALL_COMPLETES, true)
+            eventHandler(
+                if (endState == UpdateType.FAIL_INSTALL) UpdateEvent.INSTALL_FAILS
+                else UpdateEvent.INSTALL_COMPLETES, true
+            )
         }
         return super.completeUpdate()
     }
 
-    @ExperimentalCoroutinesApi
-    private suspend fun triggerDialogResponse(activity: Activity?, requestCode: Int, resultCode: Int) {
+    private suspend fun triggerDialogResponse(
+        activity: Activity?,
+        requestCode: Int,
+        resultCode: Int
+    ) {
         if (resultCode == Activity.RESULT_OK) {
             eventHandler(UpdateEvent.USER_ACCEPTS_UPDATE)
         } else if (resultCode == Activity.RESULT_CANCELED) {
             eventHandler(UpdateEvent.USER_REJECTS_UPDATE)
         }
 
-        if (activity is MainActivity)
-            activity.onActivityResult(requestCode, resultCode, null)
+        /*if (activity is MainActivity) {
+            //FIXME activity.onActivityResult(requestCode, resultCode, null)
+        }*/
         if (resultCode == Activity.RESULT_OK) {
             eventHandler(UpdateEvent.TRIGGER_DOWNLOAD, true)
         }
@@ -175,11 +185,12 @@ class FakeAppUpdateManagerWrapper(private val context: Context) : FakeAppUpdateM
     private suspend fun triggerDownload() {
         eventHandler(UpdateEvent.DOWNLOAD_STARTS)
         eventHandler(
-                when (endState) {
-                    UpdateType.FAIL_DOWNLOAD -> UpdateEvent.DOWNLOAD_FAILS
-                    UpdateType.FAIL_DOWNLOAD_CANCEL -> UpdateEvent.USER_CANCELS_DOWNLOAD
-                    else -> UpdateEvent.DOWNLOAD_COMPLETES
-                }, true)
+            when (endState) {
+                UpdateType.FAIL_DOWNLOAD -> UpdateEvent.DOWNLOAD_FAILS
+                UpdateType.FAIL_DOWNLOAD_CANCEL -> UpdateEvent.USER_CANCELS_DOWNLOAD
+                else -> UpdateEvent.DOWNLOAD_COMPLETES
+            }, true
+        )
     }
 
     private suspend fun toast(text: CharSequence) = withContext(Dispatchers.Main) {

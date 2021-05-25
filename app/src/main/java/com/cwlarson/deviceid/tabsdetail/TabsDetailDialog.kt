@@ -6,17 +6,17 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.addRepeatingJob
 import com.cwlarson.deviceid.R
+import com.cwlarson.deviceid.databinding.BottomSheetBinding
 import com.cwlarson.deviceid.tabs.Item
 import com.cwlarson.deviceid.util.calculateBottomSheetMaxWidth
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.android.synthetic.main.bottom_sheet.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.launch
 
 /**
  * A BottomSheetFragment with fixes for tablets
@@ -24,36 +24,43 @@ import kotlinx.coroutines.launch
  */
 @AndroidEntryPoint
 class TabsDetailDialog : BottomSheetDialogFragment() {
-    @ExperimentalStdlibApi
     private val tabsDetailViewModel by viewModels<TabsDetailViewModel>()
+    private var _binding: BottomSheetBinding? = null
+    private val binding get() = _binding!!
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
-                              savedInstanceState: Bundle?): View? =
-            inflater.inflate(R.layout.bottom_sheet, container, false)
+                              savedInstanceState: Bundle?): View {
+        _binding = BottomSheetBinding.inflate(inflater, container, false)
+        return binding.root
+    }
 
-    @ExperimentalStdlibApi
     @ExperimentalCoroutinesApi
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         var clickItem: Item? = null
-        viewLifecycleOwner.lifecycleScope.launch {
+        viewLifecycleOwner.addRepeatingJob(Lifecycle.State.STARTED) {
             tabsDetailViewModel.detailItem.distinctUntilChanged().collectLatest { item ->
                 clickItem = item
-                bottom_title.text = item?.getFormattedString(view.context) ?: getString(R.string.not_found)
-                bottom_subtitle.text = item?.subtitle?.getSubTitleText()
+                binding.bottomTitle.text = item?.getFormattedString(view.context) ?: getString(R.string.not_found)
+                binding.bottomSubtitle.text = item?.subtitle?.getSubTitleText()
                         ?: getString(R.string.not_found)
-                bottom_button_share.isEnabled = item != null
-                bottom_button_copy.isEnabled = item != null
+                binding.bottomButtonShare.isEnabled = item != null
+                binding.bottomButtonCopy.isEnabled = item != null
             }
         }
-        bottom_button_share.setOnClickListener {
+        binding.bottomButtonShare.setOnClickListener {
             clickItem?.let { if (activity.shareItem(it)) dialog?.dismiss() }
         }
-        bottom_button_copy.setOnClickListener {
+        binding.bottomButtonCopy.setOnClickListener {
             clickItem?.let { if (activity.copyItemToClipboard(it)) dialog?.dismiss() }
         }
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
             super.onCreateDialog(savedInstanceState).calculateBottomSheetMaxWidth()
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
 }
