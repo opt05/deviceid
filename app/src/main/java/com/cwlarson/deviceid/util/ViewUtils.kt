@@ -509,17 +509,20 @@ fun View.applySystemWindows(
     }
 }
 
-private fun View.doOnApplyWindowInsets(f: (View, WindowInsetsCompat, InitialPadding, InitialMargin) -> Unit) {
+private fun View.doOnApplyWindowInsets(apply: (View, WindowInsetsCompat, InitialPadding, InitialMargin) -> Unit) {
     // Create a snapshot of the view's padding state
     val initialPadding = recordInitialPaddingForView(this)
     val initialMargin = recordInitialMarginForView(this)
     // Set an actual OnApplyWindowInsetsListener which proxies to the given
     // lambda, also passing in the original padding state
-    ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets ->
-        f(v, insets, initialPadding, initialMargin)
-        // Always return the insets, so that children can also use them
-        insets
-    }
+    if(Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
+        apply(this, WindowInsetsCompat.Builder().build(), initialPadding, initialMargin)
+    else
+        ViewCompat.setOnApplyWindowInsetsListener(this) { v, insets ->
+            apply(v, insets, initialPadding, initialMargin)
+            // Always return the insets, so that children can also use them
+            insets
+        }
     // request some insets
     ViewCompat.requestApplyInsets(this)
     requestApplyInsetsWhenAttached()

@@ -136,7 +136,7 @@ class AppUpdateUtils @Inject constructor(private val appUpdateManager: AppUpdate
                                 && result.result.installStatus() == InstallStatus.DOWNLOADED
                     )
                 } else {
-                    Timber.e(result.exception)
+                    Timber.i(result.exception)
                     continuation.resume(false)
                 }
             }
