@@ -2,7 +2,7 @@
 
 ## License ##
 
-Licensed under the MIT License. For complete licensing information see [LICENSE.md](https://bitbucket.org/opt05/deviceid/src) in this project.
+Licensed under the MIT License. For complete licensing information see [LICENSE.md](https://github.com/opt05/deviceid/blob/master/LICENSE.md) in this project.
 
 ## What is this repository for? ##
 
@@ -25,7 +25,7 @@ This is a repository for the Device Info Android app that displays specific info
 
 ## Bugs and Features ##
 
-If you find a bug or need a feature, please report it to [https://bitbucket.org/opt05/deviceid/issues](https://bitbucket.org/opt05/deviceid/issues). Please keep in mind that this is a free software with very few volunteers working on it in their free time. You should also check if the fix or feature is already mentioned in the issues list. In many cases a stacktrace from crash is appreciated. If you can't get it via IDE, you can try aLogcat.
+If you find a bug or need a feature, please report it to [https://github.com/opt05/deviceid/issues](https://github.com/opt05/deviceid/issues). Please keep in mind that this is a free software with very few volunteers working on it in their free time. You should also check if the fix or feature is already mentioned in the issues list. In many cases a stacktrace from crash is appreciated. If you can't get it via IDE, you can try aLogcat.
 
 ## Contribution guidelines ##
 

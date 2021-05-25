@@ -45,6 +45,7 @@ captures/
 .idea/inspectionProfiles
 .idea/jarRepositories.xml
 .idea/runConfigurations.xml
+.idea/kotlinc.xml
 *.iml
  
 # OS-specific files
