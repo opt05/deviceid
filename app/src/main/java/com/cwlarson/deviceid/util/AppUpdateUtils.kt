@@ -24,7 +24,6 @@ import kotlinx.coroutines.flow.StateFlow
 import timber.log.Timber
 import javax.inject.Inject
 import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
 sealed class UpdateState {
@@ -127,7 +126,6 @@ class AppUpdateUtils @Inject constructor(private val appUpdateManager: AppUpdate
      * Used in [Activity.onResume] to check if flexible update has downloaded
      * while user was away from the app
      */
-    @Throws(Throwable::class)
     suspend fun awaitIsFlexibleUpdateDownloaded(): Boolean =
         suspendCoroutine { continuation ->
             appUpdateManager.appUpdateInfo.addOnCompleteListener { result ->
@@ -139,7 +137,7 @@ class AppUpdateUtils @Inject constructor(private val appUpdateManager: AppUpdate
                     )
                 } else {
                     Timber.e(result.exception)
-                    continuation.resumeWithException(result.exception ?: Throwable("Unknown"))
+                    continuation.resume(false)
                 }
             }
         }
