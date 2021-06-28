@@ -1,0 +1,46 @@
+name: Android CI
+
+on:
+  push:
+    branches: [ feature/*, develop ]
+  pull_request:
+    branches: [ feature/*, develop ]
+
+jobs:
+  build:
+    name: Run Tests
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{matrix.os}}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Cache gradle
+      uses: actions/cache@v2
+      with:
+        path: ~/.gradle/caches
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+    - name: set up JDK 11
+      uses: actions/setup-java@v2
+      with:
+        java-version: '11'
+        distribution: 'adopt'
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+    - name: Build with Gradle
+      run: ./gradlew build
+    - name: Run Kotlin Linter
+      if: matrix.os == 'ubuntu-latest'
+      run: ./gradlew ktlintCheck
+    - name: Unit tests
+      if: matrix.os == 'ubuntu-latest'
+      run: ./gradlew test --stacktrace
+    - name: Instrumented Tests
+      if: matrix.os == 'macOS-latest'
+      uses: reactivecircus/android-emulator-runner@v2
+      with:
+        api-level: 30
+        target: playstore
+        script: ./gradlew connectedCheck --stacktrace
