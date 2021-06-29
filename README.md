@@ -1,5 +1,7 @@
 # README #
 
+[![Android CI - Develop](https://github.com/opt05/deviceid/actions/workflows/android-develop.yml/badge.svg)](https://github.com/opt05/deviceid/actions/workflows/android-develop.yml)
+
 ## License ##
 
 Licensed under the MIT License. For complete licensing information see [LICENSE.md](https://github.com/opt05/deviceid/blob/master/LICENSE.md) in this project.
