@@ -1,6 +1,8 @@
-# README #
-
 [![Android CI - Develop](https://github.com/opt05/deviceid/actions/workflows/android-develop.yml/badge.svg)](https://github.com/opt05/deviceid/actions/workflows/android-develop.yml)
+
+This open source android project provides a quick panel to display the following information quick; IMEI/MEID, Device Model, Android ID, Wi-Fi MAC, Bluetooth MAC, Android Version, Android Build Version and Screen Density. More features to come soon.
+
+<a href='https://play.google.com/store/apps/details?id=com.cwlarson.deviceid&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png' width="200"/></a>
 
 ## License ##
 
