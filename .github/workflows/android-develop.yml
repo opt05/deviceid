@@ -2,9 +2,9 @@ name: Android CI - Develop
 
 on:
   push:
-    branches: [ feature/*, develop ]
+    branches: [ develop ]
   pull_request:
-    branches: [ feature/*, develop ]
+    branches: [ develop ]
 
 jobs:
   unit_tests:
@@ -49,5 +49,5 @@ jobs:
       uses: reactivecircus/android-emulator-runner@v2
       with:
         api-level: 30
-        target: playstore
+        target: google_apis
         script: ./gradlew connectedCheck --stacktrace
