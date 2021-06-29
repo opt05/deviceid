@@ -38,3 +38,7 @@ Contribution is very welcome! If you want to add a feature or fix a bug yourself
 ## Who do I talk to? ##
 
 Repo owner
+
+---
+
+<sup>Google Play and the Google Play logo are trademarks of Google LLC.</sup>
