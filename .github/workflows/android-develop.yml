@@ -33,6 +33,7 @@ jobs:
     name: Run instrumented tests
     runs-on: [ macos-latest ]
     steps:
+    - uses: actions/checkout@v2
     - name: Cache gradle
       uses: actions/cache@v2
       with:
@@ -49,5 +50,5 @@ jobs:
       uses: reactivecircus/android-emulator-runner@v2
       with:
         api-level: 30
-        target: google_apis
-        script: ./gradlew :app:connectedCheck --stacktrace
+        target: playstore
+        script: ./gradlew connectedCheck --stacktrace
