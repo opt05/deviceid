@@ -50,6 +50,7 @@ android {
     }
     kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
     testOptions.animationsDisabled = true
+    testBuildType = "debug"
 }
 
 val kotlinVersion: String by rootProject.extra
