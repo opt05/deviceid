@@ -2,9 +2,9 @@ name: Android CI - Develop
 
 on:
   push:
-    branches: [ feature/*, develop ]
+    branches: [ develop ]
   pull_request:
-    branches: [ feature/*, develop ]
+    branches: [ develop ]
 
 jobs:
   unit_tests:
@@ -26,8 +26,6 @@ jobs:
         distribution: 'adopt'
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
-    - name: Run Kotlin Linter
-      run: ./gradlew ktlintCheck
     - name: Unit tests
       run: ./gradlew testDebugUnitTest --stacktrace
       
@@ -35,6 +33,7 @@ jobs:
     name: Run instrumented tests
     runs-on: [ macos-latest ]
     steps:
+    - uses: actions/checkout@v2
     - name: Cache gradle
       uses: actions/cache@v2
       with:
