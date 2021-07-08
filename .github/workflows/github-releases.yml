@@ -1,0 +1,17 @@
+name: GitHub Releases
+
+on:
+  push:
+    tags: ['v*']
+    
+jobs:
+  github_release:
+    name: Create Github Release
+    runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/master' }}
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ncipollo/release-action@v1
+      with:
+        bodyFile: .github/whatsnew/whatsnew-en-US
+        token: ${{ secrets.GITHUB_TOKEN }}
