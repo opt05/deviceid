@@ -1,4 +1,4 @@
-[![Android CI - Develop](https://github.com/opt05/deviceid/actions/workflows/android-develop.yml/badge.svg)](https://github.com/opt05/deviceid/actions/workflows/android-develop.yml)
+[![Android CI - Master](https://github.com/opt05/deviceid/actions/workflows/android-master.yml/badge.svg)](https://github.com/opt05/deviceid/actions/workflows/android-master.yml) [![Android CI - Develop](https://github.com/opt05/deviceid/actions/workflows/android-develop.yml/badge.svg)](https://github.com/opt05/deviceid/actions/workflows/android-develop.yml)
 
 This open source android project provides a quick panel to display the following information quick; IMEI/MEID, Device Model, Android ID, Wi-Fi MAC, Bluetooth MAC, Android Version, Android Build Version and Screen Density. More features to come soon.
 
