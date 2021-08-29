@@ -53,4 +53,5 @@ jobs:
       with:
         api-level: 30
         target: playstore
+        emulator-build: 7425822 # https://github.com/ReactiveCircus/android-emulator-runner/issues/160
         script: ./gradlew connectedCheck --stacktrace
