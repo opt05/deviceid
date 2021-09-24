@@ -68,6 +68,7 @@ android {
         unitTests.isIncludeAndroidResources = true
         unitTests.all { it.jvmArgs("-Xmx2g") }
     }
+    testBuildType = "debug"
     kapt.correctErrorTypes = true
     packagingOptions {
         // for JNA and JNA-platform
