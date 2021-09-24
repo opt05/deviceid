@@ -1,27 +1,46 @@
 package com.cwlarson.deviceid.di
 
-import android.content.Context
-import com.cwlarson.deviceid.appupdates.FakeAppUpdateManagerWrapper
+import com.cwlarson.deviceid.data.*
 import com.cwlarson.deviceid.settings.PreferenceManager
-import com.google.android.play.core.appupdate.AppUpdateManager
+import com.cwlarson.deviceid.util.AppUpdateUtils
 import dagger.Module
 import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import org.mockito.Mockito
+import dagger.hilt.testing.TestInstallIn
+import org.mockito.kotlin.mock
 import javax.inject.Singleton
 
 @Module
-@InstallIn(SingletonComponent::class)
+@TestInstallIn(
+    components = [SingletonComponent::class],
+    replaces = [AppModule::class, DatabaseModule::class, ActivityModule::class]
+)
 object TestAppModule {
-    @Singleton
     @Provides
-    fun providesPreferences(): PreferenceManager = Mockito.mock(PreferenceManager::class.java)
+    @Singleton
+    fun providesPreferences(): PreferenceManager = mock()
 
-    @Singleton
     @Provides
-    fun providesAppManger(@ApplicationContext context: Context,
-                          preferenceManager: PreferenceManager): AppUpdateManager =
-        FakeAppUpdateManagerWrapper(context)
+    @Singleton
+    fun providesAppUpdateUtils(): AppUpdateUtils = mock()
+
+    @Provides
+    @Singleton
+    fun providesAllRepository(): AllRepository = mock()
+
+    @Provides
+    @Singleton
+    fun providesDeviceRepository(): DeviceRepository = mock()
+
+    @Provides
+    @Singleton
+    fun providesHardwareRepository(): HardwareRepository = mock()
+
+    @Provides
+    @Singleton
+    fun providesNetworkRepository(): NetworkRepository = mock()
+
+    @Provides
+    @Singleton
+    fun providesSoftwareRepository(): SoftwareRepository = mock()
 }

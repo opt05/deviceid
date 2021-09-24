@@ -6,9 +6,6 @@ import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.*
 import com.cwlarson.deviceid.R
-import com.cwlarson.deviceid.appupdates.FakeAppUpdateManagerWrapper
-import com.cwlarson.deviceid.appupdates.UpdateType
-import com.cwlarson.deviceid.settings.SettingsFragment
 import com.google.android.play.core.appupdate.AppUpdateInfo
 import com.google.android.play.core.appupdate.AppUpdateManager
 import com.google.android.play.core.appupdate.AppUpdateOptions
@@ -19,16 +16,17 @@ import com.google.android.play.core.install.model.InstallStatus
 import com.google.android.play.core.install.model.UpdateAvailability
 import com.google.android.play.core.ktx.installErrorCode
 import com.google.android.play.core.ktx.installStatus
+import com.google.android.play.core.ktx.requestAppUpdateInfo
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import javax.inject.Inject
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 sealed class UpdateState {
     object Initial : UpdateState()
-    object Checking: UpdateState()
+    object Checking : UpdateState()
     data class Yes(internal val appUpdateInfo: AppUpdateInfo, val manual: Boolean) : UpdateState()
     object YesButNotAllowed : UpdateState()
     data class No(
@@ -43,66 +41,58 @@ sealed class InstallState {
     data class NoError(@InstallStatus val status: Int) : InstallState()
 }
 
-class AppUpdateUtils @Inject constructor(private val appUpdateManager: AppUpdateManager,
- private val activity: Context) :
-    InstallStateUpdatedListener, LifecycleObserver {
+open class AppUpdateUtils @Inject constructor(
+    private val appUpdateManager: AppUpdateManager,
+    private val activity: Context
+) : InstallStateUpdatedListener, LifecycleObserver {
     private val _updateState = MutableStateFlow<UpdateState>(UpdateState.Initial)
-    val updateState: StateFlow<UpdateState> = _updateState
+    open val updateState = _updateState.asStateFlow()
     private val _installState = MutableStateFlow<InstallState>(InstallState.Initial)
-    val installState: StateFlow<InstallState> = _installState
+    open val installState = _installState.asStateFlow()
 
     init {
-        if(activity is LifecycleOwner) activity.lifecycle.addObserver(this)
+        if (activity is LifecycleOwner) activity.lifecycle.addObserver(this)
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
     fun onDestroy() {
         unregisterListener()
-        if(activity is LifecycleOwner) activity.lifecycle.removeObserver(this)
+        if (activity is LifecycleOwner) activity.lifecycle.removeObserver(this)
     }
 
-    fun checkForFlexibleUpdate(manual: Boolean = false) {
-        if(_updateState.value is UpdateState.Checking) return
-        _updateState.value = UpdateState.Checking
-        appUpdateManager.appUpdateInfo.addOnCompleteListener { result ->
-            if (result.isSuccessful) {
-                Timber.d(result.result.updateAvailability().toString())
-                _updateState.value = when (val avail = result.result.updateAvailability()) {
-                    UpdateAvailability.UPDATE_AVAILABLE -> {
-                        if (result.result.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE)) {
-                            UpdateState.Yes(result.result, manual)
-                        } else UpdateState.YesButNotAllowed
-                    }
-                    UpdateAvailability.UPDATE_NOT_AVAILABLE ->
-                        if (!manual) UpdateState.Initial else
-                            UpdateState.No(
-                                avail, R.string.update_notavailable_title, R.string
-                                    .update_notavailable_message, R.string.update_notavailable_ok
-                            )
-                    UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS ->
-                        if (!manual) UpdateState.Initial else
-                            UpdateState.No(
-                                avail, R.string.update_inprogress_title, R.string
-                                    .update_inprogress_message, R.string.update_inprogress_ok
-                            )
-                    else -> { // UpdateAvailability.UNKNOWN
-                        Timber.e("Unknown update availability type: $avail")
-                        _installState.value = InstallState.Initial
-                        UpdateState.No(
-                            avail, R.string.update_unknown_title, R.string
-                                .update_unknown_message, R.string.update_unknown_ok
-                        )
-                    }
+    open suspend fun checkForFlexibleUpdate(manual: Boolean = false) = withContext(Dispatchers.IO) {
+        try {
+            if (_updateState.value is UpdateState.Checking) return@withContext
+            _updateState.value = UpdateState.Checking
+            val result = appUpdateManager.requestAppUpdateInfo()
+            _updateState.value = when (val avail = result.updateAvailability()) {
+                UpdateAvailability.UPDATE_AVAILABLE -> {
+                    if (result.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE))
+                        UpdateState.Yes(result, manual) else UpdateState.YesButNotAllowed
                 }
-                if(activity is AppCompatActivity) startFlexibleUpdate(activity)
-            } else {
-                Timber.e(result.exception)
-                _updateState.value = UpdateState.Initial
+                UpdateAvailability.UPDATE_NOT_AVAILABLE ->
+                    if (!manual) UpdateState.Initial else
+                        UpdateState.No(
+                            avail, R.string.update_notavailable_title, R.string
+                                .update_notavailable_message, R.string.update_notavailable_ok
+                        )
+                else -> { // UpdateAvailability.UNKNOWN
+                    Timber.e("Unknown update availability type: $avail")
+                    _installState.value = InstallState.Initial
+                    UpdateState.No(
+                        avail, R.string.update_unknown_title, R.string.update_unknown_message,
+                        R.string.update_unknown_ok
+                    )
+                }
             }
+            if (activity is AppCompatActivity) startFlexibleUpdate(activity)
+        } catch (e: Throwable) {
+            Timber.e(e)
+            _updateState.value = UpdateState.Initial
         }
     }
 
-    private fun startFlexibleUpdate(activity: Activity) {
+    private fun startFlexibleUpdate(activity: AppCompatActivity) {
         with(_updateState.value) {
             if (this is UpdateState.Yes) {
                 appUpdateManager.registerListener(this@AppUpdateUtils)
@@ -111,7 +101,7 @@ class AppUpdateUtils @Inject constructor(private val appUpdateManager: AppUpdate
                     activity,
                     AppUpdateOptions.defaultOptions(AppUpdateType.FLEXIBLE)
                 ).addOnFailureListener {
-                    Timber.d("Flexible update flow failed: ${it?.message}")
+                    Timber.d("Flexible update flow failed: ${it.message}")
                     _installState.value = InstallState.Initial
                 }
             } else unregisterListener()
@@ -126,20 +116,12 @@ class AppUpdateUtils @Inject constructor(private val appUpdateManager: AppUpdate
      * Used in [Activity.onResume] to check if flexible update has downloaded
      * while user was away from the app
      */
-    suspend fun awaitIsFlexibleUpdateDownloaded(): Boolean =
-        suspendCoroutine { continuation ->
-            appUpdateManager.appUpdateInfo.addOnCompleteListener { result ->
-                if (result.isSuccessful) {
-                    continuation.resume(
-                        result.result.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
-                                && result.result.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE)
-                                && result.result.installStatus() == InstallStatus.DOWNLOADED
-                    )
-                } else {
-                    Timber.i(result.exception)
-                    continuation.resume(false)
-                }
-            }
+    open suspend fun awaitIsFlexibleUpdateDownloaded(): Boolean =
+        try {
+            appUpdateManager.requestAppUpdateInfo().installStatus() == InstallStatus.DOWNLOADED
+        } catch (e: Throwable) {
+            Timber.i(e)
+            false
         }
 
     /**
@@ -148,19 +130,12 @@ class AppUpdateUtils @Inject constructor(private val appUpdateManager: AppUpdate
      * You should call this method to complete an update that has already been started and
      * is in the [InstallStatus.DOWNLOADED] state.
      */
-    fun completeUpdate() {
+    open fun completeUpdate() {
         appUpdateManager.completeUpdate()
     }
 
-    /**
-     * Used by [SettingsFragment] to set [FakeAppUpdateManagerWrapper.setEndState]
-     * @return If was successful or not
-     */
-    fun updateFakeAppUpdateManagerState(type: UpdateType): Boolean =
-        (appUpdateManager as? FakeAppUpdateManagerWrapper)?.setEndState(type) != null
-
     override fun onStateUpdate(state: com.google.android.play.core.install.InstallState) {
-        val wasManualUpdate = when(val s = _updateState.value) {
+        val wasManualUpdate = when (val s = _updateState.value) {
             is UpdateState.Yes -> s.manual
             else -> false
         }
@@ -199,7 +174,7 @@ class AppUpdateUtils @Inject constructor(private val appUpdateManager: AppUpdate
                 )
             InstallErrorCode.ERROR_PLAY_STORE_NOT_FOUND ->
                 InstallState.Failed(
-                    "The Play Store is not available on this device",
+                    "The Play Store is not available on this device.",
                     wasManualUpdate
                 )
             InstallErrorCode.NO_ERROR -> {

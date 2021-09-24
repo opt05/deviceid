@@ -1,99 +1,92 @@
 package com.cwlarson.deviceid.data
 
 import android.content.Context
-import androidx.annotation.Keep
-import androidx.annotation.StringRes
+import com.cwlarson.deviceid.settings.PreferenceManager
 import com.cwlarson.deviceid.tabs.Item
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.*
 
-@Keep
-enum class Status { LOADING, ERROR, SUCCESS }
-internal typealias CallbackData = () -> Unit
-internal typealias CallbackStatus = (Status) -> Unit
+sealed class TabDataStatus {
+    object Loading : TabDataStatus()
+    data class Success(val list: List<Item>) : TabDataStatus()
+    object Error : TabDataStatus()
+}
 
-abstract class TabData(filterUnavailable: Boolean = false) {
-    private var callbackData: CallbackData? = null
-    private var callbackStatus: CallbackStatus? = null
-    var filterUnavailable: Boolean = filterUnavailable
-        set(value) {
-            if (value != field) {
-                field = value
-                refresh(true)
-            }
-        }
-    var searchText: String? = null
-        set(value) {
-            if (value != field) {
-                field = value
-                refresh(true)
-            }
-        }
+sealed class TabDetailStatus {
+    object Loading : TabDetailStatus()
+    data class Success(val item: Item) : TabDetailStatus()
+    object Error : TabDetailStatus()
+}
+
+abstract class TabData(
+    private val context: Context,
+    private val preferenceManager: PreferenceManager
+) {
+    internal abstract fun items(): Flow<List<Item>>
 
     @ExperimentalCoroutinesApi
-    val status: Flow<Status> = channelFlow {
-        callbackStatus = { if (!isClosedForSend) trySend(it) }
-        callbackStatus?.invoke(Status.SUCCESS)
-        awaitClose { callbackStatus = null }
-    }.flowOn(Dispatchers.IO)
-
-    fun refresh(noStatus: Boolean = false) {
-        if (!noStatus) callbackStatus?.invoke(Status.LOADING)
-        callbackData?.invoke()
-    }
-
-    abstract suspend fun list(): List<Item>
-
-    @ExperimentalCoroutinesApi
-    fun subscribe(context: Context): Flow<List<Item>> = channelFlow {
-        callbackData = {
-            launch {
+    open fun list(): Flow<TabDataStatus> = channelFlow {
+        trySend(TabDataStatus.Loading)
+        preferenceManager.getFilters().collectLatest { filters ->
+            if(!filters.swipeRefreshDisabled) trySend(TabDataStatus.Loading)
+            items().collectLatest { items ->
                 try {
-                    if (!isClosedForSend) trySend(list()
-                            .sortedBy { item -> item.getFormattedString(context) }.filter { item ->
-                                if (filterUnavailable) !item.subtitle?.getSubTitleText().isNullOrBlank()
-                                else true
-                            }.filter { item ->
-                                searchText?.let { text ->
-                                    if (text.isNotBlank()) {
-                                        item.getFormattedString(context).contains(text, true) ||
-                                                item.subtitle?.getSubTitleText()?.contains(text, true) == true
-                                    } else false
-                                } ?: true
-                            })
-                    callbackStatus?.invoke(Status.SUCCESS)
+                    val result = items.filter { item ->
+                        if (filters.hideUnavailable) !item.subtitle.getSubTitleText()
+                            .isNullOrBlank()
+                        else true
+                    }.sortedBy { item -> item.getFormattedString(context) }
+                    trySend(TabDataStatus.Success(result))
                 } catch (e: Throwable) {
-                    callbackStatus?.invoke(Status.ERROR)
+                    trySend(TabDataStatus.Error)
                 }
             }
         }
-        callbackData?.invoke()
-        awaitClose { callbackData = null }
     }.flowOn(Dispatchers.IO)
 
     @ExperimentalCoroutinesApi
-    fun subscribe(@StringRes title: Int?, titleFormatArgs: Array<String>?): Flow<Item?> =
-            channelFlow {
-                callbackData = {
-                    launch {
-                        try {
-                            if (!isClosedForSend) trySend(list()
-                                    .firstOrNull { item ->
-                                        item.title == title &&
-                                                titleFormatArgs?.run { item.titleFormatArgs?.contentEquals(this) } ?: true
-                                    })
-                            callbackStatus?.invoke(Status.SUCCESS)
-                        } catch (e: Throwable) {
-                            callbackStatus?.invoke(Status.ERROR)
-                        }
+    open fun details(item: Item): Flow<TabDetailStatus> = channelFlow {
+        trySend(TabDetailStatus.Loading)
+        items().collectLatest { items ->
+            try {
+                val result = items.first { i ->
+                    i.title == item.title &&
+                            item.titleFormatArgs?.run {
+                                i.titleFormatArgs?.containsAll(this)
+                            } ?: true
+                }
+                trySend(TabDetailStatus.Success(result))
+            } catch (e: Throwable) {
+                trySend(TabDetailStatus.Error)
+            }
+        }
+    }.flowOn(Dispatchers.IO)
+
+    @ExperimentalCoroutinesApi
+    open fun search(searchText: StateFlow<String>): Flow<TabDataStatus> = channelFlow {
+        trySend(TabDataStatus.Loading)
+        preferenceManager.getFilters().collectLatest { filters ->
+            items().collectLatest { items ->
+                searchText.collectLatest { text ->
+                    try {
+                        val result = items.filter { item ->
+                            if (filters.hideUnavailable) !item.subtitle.getSubTitleText()
+                                .isNullOrBlank()
+                            else true
+                        }.filter { item ->
+                            if (text.isNotBlank()) {
+                                item.getFormattedString(context).contains(text, true) ||
+                                        item.subtitle.getSubTitleText()
+                                            ?.contains(text, true) == true
+                            } else false
+                        }.sortedBy { item -> item.getFormattedString(context) }
+                        trySend(TabDataStatus.Success(result))
+                    } catch (e: Throwable) {
+                        trySend(TabDataStatus.Error)
                     }
                 }
-                callbackData?.invoke()
-                awaitClose { callbackData = null }
-            }.flowOn(Dispatchers.IO)
+            }
+        }
+    }.flowOn(Dispatchers.IO)
 }

@@ -1,76 +1,18 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <style name="AppTheme.Base" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">@color/colorPrimaryVariant</item>
-        <item name="colorSecondary">@color/colorSecondary</item>
-        <item name="colorError">@color/colorError</item>
         <item name="colorPrimaryVariant">@color/colorPrimaryVariant</item>
-        <item name="colorSecondaryVariant">@color/colorSecondaryVariant</item>
-        <item name="colorSurface">@color/colorSurface</item>
         <item name="colorOnPrimary">@color/colorOnPrimary</item>
+        <item name="colorSecondary">@color/colorSecondary</item>
+        <item name="colorSecondaryVariant">@color/colorSecondaryVariant</item>
         <item name="colorOnSecondary">@color/colorOnSecondary</item>
-        <item name="colorOnBackground">@color/colorOnBackground</item>
-        <item name="colorOnError">@color/colorOnError</item>
-        <item name="colorOnSurface">@color/colorOnSurface</item>
-        <item name="scrimBackground">@color/colorScrim</item>
-        <item name="fontFamily">@font/open_sans</item>
-        <item name="bottomNavigationStyle">@style/Widget.MaterialComponents.BottomNavigationView.PrimarySurface</item>
-        <item name="toolbarStyle">@style/Widget.MaterialComponents.Toolbar.PrimarySurface</item>
-        <item name="materialCardViewStyle">@style/Widget.MaterialComponents.CardView</item>
-        <item name="materialAlertDialogTheme">@style/AppTheme.AlertDialog</item>
-        <item name="navigationViewStyle">@style/AppTheme.NavigationView</item>
-        <item name="searchViewStyle">@style/AppTheme.SearchView</item>
-        <item name="shapeAppearanceSmallComponent">@style/AppShapeAppearance.SmallComponent</item>
-        <item name="shapeAppearanceMediumComponent">@style/AppShapeAppearance.MediumComponent</item>
-        <item name="shapeAppearanceLargeComponent">@style/AppShapeAppearance.LargeComponent</item>
     </style>
 
-    <style name="AppTheme" parent="AppTheme.Base"/>
-
-    <style name="AppTheme.ToolbarTheme" parent="ThemeOverlay.MaterialComponents.Dark.ActionBar">
-        <item name="fontFamily">@font/ubuntu_bold</item>
-    </style>
-
-    <style name="AppTheme.AlertDialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
-        <item name="colorPrimary">@color/colorSecondary</item>
-    </style>
-
-    <style name="AppTheme.SearchView" parent="Widget.AppCompat.SearchView">
-        <item name="android:textSize">16sp</item>
-    </style>
-
-    <style name="AppShapeAppearance.LargeComponent" parent="ShapeAppearance.MaterialComponents.LargeComponent">
-        <item name="cornerFamily">rounded</item>
-        <item name="cornerSize">@dimen/app_shape_appearance_corner_size</item>
-    </style>
-
-    <style name="AppShapeAppearance.SmallComponent" parent="ShapeAppearance.MaterialComponents.SmallComponent">
-        <item name="cornerFamily">rounded</item>
-        <item name="cornerSize">@dimen/app_shape_appearance_corner_size</item>
-    </style>
-
-    <style name="AppShapeAppearance.MediumComponent" parent="ShapeAppearance.MaterialComponents.MediumComponent">
-        <item name="cornerFamily">rounded</item>
-        <item name="cornerSize">@dimen/app_shape_appearance_corner_size</item>
-    </style>
-
-    <style name="AppTheme.BottomBarButtonStyle" parent="Widget.MaterialComponents.Button.TextButton.Icon">
-        <item name="colorPrimary">@color/colorSecondary</item>
-    </style>
-
-    <style name="AppTheme.NavigationView" parent="Widget.Design.NavigationView">
-        <item name="elevation">0dp</item>
-        <item name="android:textAppearance">@style/TextAppearance.MaterialComponents.Body2</item>
-        <item name="itemTextColor">@drawable/menu_nav_list_icon_and_text</item>
-        <item name="itemIconTint">@drawable/menu_nav_list_icon_and_text</item>
-        <item name="itemBackground">@drawable/menu_nav_list_background</item>
-    </style>
-
-    <style name="AppTheme.SplashTheme" parent="AppTheme.Base">
+    <style name="AppTheme.SplashTheme" parent="AppTheme">
         <item name="android:windowBackground">@drawable/launch_screen</item>
-        <item name="android:windowTranslucentNavigation" tools:targetApi="kitkat">true</item>
-        <item name="android:windowDrawsSystemBarBackgrounds" tools:targetApi="lollipop">true</item>
-        <item name="android:statusBarColor" tools:targetApi="lollipop">?colorPrimarySurface</item>
+        <item name="android:windowTranslucentNavigation">true</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">#37474f</item>
     </style>
-
 </resources>

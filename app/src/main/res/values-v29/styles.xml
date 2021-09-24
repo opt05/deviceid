@@ -3,7 +3,7 @@
     <style name="AppTheme.SplashTheme" parent="AppTheme">
         <item name="android:windowSplashscreenContent">@drawable/launch_screen</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
-        <item name="android:navigationBarColor">?colorPrimarySurface</item>
-        <item name="android:statusBarColor">?colorPrimarySurface</item>
+        <item name="android:navigationBarColor">#37474f</item>
+        <item name="android:statusBarColor">#37474f</item>
     </style>
 </resources>

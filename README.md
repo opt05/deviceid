@@ -10,10 +10,10 @@ This is a repository for the Device Info Android app that displays specific info
 
 ## Build Tools ##
 
-* Android Studio 4.2.1 (Gradle 6.7.1)
+* Android Studio Arctic Fox (Gradle 7.0)
 * AndroidX/Jetpack
-* Android 4.0 (API 14) or above (built against 11/API 30)
-* Kotlin 1.5.0
+* Android 5.0 (API 21) or above (built against 11/API 30)
+* Kotlin 1.5
 
 ## Android Permissions ##
 

@@ -1,67 +1,51 @@
 package com.cwlarson.deviceid
 
 import android.content.Intent
-import android.view.View
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.cwlarson.deviceid.settings.PreferenceManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
-data class TitleVisibility(val visible: Int, val noFade: Boolean)
-data class SearchOpen(val yes: Boolean, val twoPane: Boolean)
+internal data class TitleVisibility(val visible: Boolean, val noFade: Boolean)
 
 @HiltViewModel
-class MainActivityViewModel @Inject constructor(
-    private val savedStateHandle: SavedStateHandle
-) : ViewModel() {
-    companion object {
-        private const val KEY_TWO_PANE = "twoPane"
-    }
-
-    private val _hideSearchBar = MutableStateFlow(false)
-    val hideSearchBar: StateFlow<Boolean> = _hideSearchBar
-    private val _hideBottomBar = MutableStateFlow(false)
-    val hideBottomBar: StateFlow<Boolean> = _hideBottomBar
-    private val _isSearchOpen = MutableStateFlow(SearchOpen(false, twoPane))
-    val isSearchOpen: StateFlow<SearchOpen> = _isSearchOpen
-    private val _titleVisibility = MutableStateFlow(TitleVisibility(View.VISIBLE, false))
-    val titleVisibility: StateFlow<TitleVisibility> = _titleVisibility
+class MainActivityViewModel @Inject constructor(private val preferenceManager: PreferenceManager) :
+    ViewModel() {
+    private val _titleVisibility = MutableStateFlow(TitleVisibility(visible = true, noFade = false))
+    internal val titleVisibility = _titleVisibility.asStateFlow()
     private var titleFadeRunning = false
-    var twoPane: Boolean
-        get() = savedStateHandle.get<Boolean>(KEY_TWO_PANE) ?: false
-        set(value) = savedStateHandle.set(KEY_TWO_PANE, value)
 
-    fun updateHideSearchBar(hide: Boolean) {
-        _hideSearchBar.value = hide
-    }
+    internal val isSearchHistory = preferenceManager.searchHistory
 
-    fun updateHideBottomBar(hide: Boolean) {
-        _hideBottomBar.value = hide
-    }
+    internal val darkTheme = preferenceManager.darkTheme
 
-    fun updateIsSearchOpen(open: Boolean) {
-        _isSearchOpen.value = SearchOpen(open, twoPane)
-    }
-
-    fun startTitleFade(intent: Intent) {
-        if (titleFadeRunning || titleVisibility.value.visible == View.GONE)
+    fun startTitleFade(twoPane: Boolean, intent: Intent) {
+        if (titleFadeRunning || !titleVisibility.value.visible)
             return
         else if (twoPane || intent.action == Intent.ACTION_SEARCH)
-            _titleVisibility.value = TitleVisibility(View.GONE, true)
+            _titleVisibility.value = TitleVisibility(visible = false, noFade = true)
         else {
             titleFadeRunning = true
             viewModelScope.launch(Dispatchers.IO) {
                 delay(TimeUnit.SECONDS.toMillis(2))
-                _titleVisibility.value = TitleVisibility(View.GONE, false)
+                _titleVisibility.value = TitleVisibility(visible = false, noFade = false)
                 titleFadeRunning = false
             }
         }
     }
+
+    fun saveSearchHistory(query: String) {
+        viewModelScope.launch { preferenceManager.saveSearchHistoryItem(query) }
+    }
+
+    @ExperimentalCoroutinesApi
+    fun getSearchHistoryItems(query: String) = preferenceManager.getSearchHistoryItems(query)
 }

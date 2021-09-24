@@ -1,12 +1,16 @@
 <resources>
     <string name="app_name">Device Info</string>
+    <string name="nav_app_bar_navigate_up_description">Navigate up</string>
     <string name="search_hint_items">Search all</string>
+    <string name="search_clear">Clear search</string>
     <string name="not_found">Unable to determine</string>
     <string name="no_longer_possible">Not possible since Android %s</string>
     <string name="not_possible_yet">Available starting on Android %s</string>
     <string name="copy_to_clipboard">Copied %s to clipboard!</string>
     <string name="send_to">Share text to…</string>
     <string name="send_to_no_apps">No app available</string>
+    <string name="menu_back">Navigate back</string>
+    <string name="menu_overflow">More options</string>
     <string name="menu_search">@android:string/search_go</string>
     <string name="menu_settings">Settings</string>
     <string name="menu_copy_to_clipboard">@android:string/copy</string>
@@ -19,30 +23,72 @@
     <string name="textview_recyclerview_no_items">No items</string>
     <string name="textview_recyclerview_no_search_items">No results</string>
     <string name="textview_recyclerview_title">Results</string>
-    <string name="chartview_image_icon">Item icon</string>
     <string name="bottom_nav_title_device">Device</string>
     <string name="bottom_nav_title_network">Network</string>
     <string name="bottom_nav_title_software">Software</string>
     <string name="bottom_nav_title_hardware">Hardware</string>
     <string name="hardware_storage_output_format">%1$s of %2$s free</string>
-    <string name="hardware_storage_output_format_api15">%1$s used</string>
     <string name="search_shortcut_short_label">@string/menu_search</string>
     <string name="search_shortcut_long_label">@string/menu_search</string>
     <string name="search_disabled_message">Search (disabled)</string>
-    <string name="BATTERY_HEALTH_GOOD">good</string>
-    <string name="BATTERY_HEALTH_COLD">cold</string>
-    <string name="BATTERY_HEALTH_DEAD">dead</string>
-    <string name="BATTERY_HEALTH_OVERHEAT">overheat</string>
-    <string name="BATTERY_HEALTH_OVER_VOLTAGE">over voltage</string>
-    <string name="BATTERY_HEALTH_UNSPECIFIED_FAILURE">unspecified failure</string>
-    <string name="BATTERY_HEALTH_UNKNOWN">unknown</string>
-    <string name="BATTERY_STATUS_CHARGING">Charging</string>
-    <string name="BATTERY_STATUS_FULL">Full</string>
-    <string name="BATTERY_STATUS_DISCHARGING">Discharging</string>
-    <string name="BATTERY_STATUS_NOT_CHARGING">Not Charging</string>
-    <string name="BATTERY_STATUS_UNKNOWN">@string/not_found</string>
-    <string name="BATTERY_PLUGGED_USB">over USB</string>
-    <string name="BATTERY_PLUGGED_AC">on AC</string>
+    <string name="search_loading">Searching…</string>
+    <string name="general_loading">Loading…</string>
+    <string name="general_error">Something went wrong</string>
+    <string name="battery_health_good">good</string>
+    <string name="battery_health_cold">cold</string>
+    <string name="battery_health_dead">dead</string>
+    <string name="battery_health_overheat">overheat</string>
+    <string name="battery_health_over_voltage">over voltage</string>
+    <string name="battery_health_unspecified_failure">unspecified failure</string>
+    <string name="battery_health_unknown">unknown</string>
+    <string name="battery_status_charging">Charging</string>
+    <string name="battery_status_full">Full</string>
+    <string name="battery_status_discharging">Discharging</string>
+    <string name="battery_status_not_charging">Not Charging</string>
+    <string name="battery_status_unknown">@string/not_found</string>
+    <string name="battery_plugged_usb">over USB</string>
+    <string name="battery_plugged_ac">on AC</string>
+    <string name="battery_plugged_wireless">wirelessly</string>
+    <string name="display_rotation_0">0\u00B0</string>
+    <string name="display_rotation_90">90\u00B0</string>
+    <string name="display_rotation_180">180\u00B0</string>
+    <string name="display_rotation_270">270\u00B0</string>
+    <string name="display_state_on">On</string>
+    <string name="display_state_off">Off</string>
+    <string name="display_state_doze">Doze</string>
+    <string name="display_state_doze_suspend">Doze suspend</string>
+    <string name="display_state_on_suspend">On suspend</string>
+    <string name="display_state_vr">VR</string>
+    <string name="display_state_unknown">Unknown</string>
+    <string name="display_cutout_top">Top</string>
+    <string name="display_cutout_bottom">Bottom</string>
+    <string name="display_cutout_left">Left</string>
+    <string name="display_cutout_right">Right</string>
+    <string name="display_refresh_rate">%1$dHz</string>
+    <string name="display_density_ldpi">LDPI</string>
+    <string name="display_density_mdpi">MDPI</string>
+    <string name="display_density_hdpi">HDPI</string>
+    <string name="display_density_xhdpi">XHDPI</string>
+    <string name="display_density_xxhdpi">XXHDPI</string>
+    <string name="display_density_xxxhdpi">XXXHDPI</string>
+    <string name="display_density_tvdpi">TVDPI</string>
+    <string name="display_density_140">140 DPI</string>
+    <string name="display_density_180">180 DPI</string>
+    <string name="display_density_200">200 DPI</string>
+    <string name="display_density_220">220 DPI</string>
+    <string name="display_density_260">260 DPI</string>
+    <string name="display_density_280">280 DPI</string>
+    <string name="display_density_300">300 DPI</string>
+    <string name="display_density_340">340 DPI</string>
+    <string name="display_density_360">360 DPI</string>
+    <string name="display_density_400">400 DPI</string>
+    <string name="display_density_420">420 DPI</string>
+    <string name="display_density_440">440 DPI</string>
+    <string name="display_density_450">450 DPI</string>
+    <string name="display_density_560">560 DPI</string>
+    <string name="display_density_600">600 DPI</string>
+    <string name="display_density_format_with_name">%1$s (%2$dx%3$d pixels)</string>
+    <string name="display_density_format_without_name">%1$dx%2$d pixels</string>
     <!-- Preferences -->
     <string name="pref_title_app_settings">App Settings</string>
     <string name="pref_hide_unavailable_title">Hide not applicable</string>
@@ -57,7 +103,7 @@
 
     <string name="pref_auto_refresh_rate_title">Auto refresh rate</string>
     <string name="pref_auto_refresh_rate_summary">In seconds, how often to auto refresh
-        items (0 = off)</string>
+        items</string>
 
     <string name="pref_search_history_title">Search history</string>
     <string name="pref_search_history_summary_on">Saving history (turning off clears
@@ -76,10 +122,6 @@
     app</string>
     <string name="pref_check_for_update_summary_failed">Check for app update failed!</string>
     <!-- App Updates -->
-    <string name="update_inprogress_title">Update in progress</string>
-    <string name="update_inprogress_message">An update is already in progress and will be
-        completed shortly.</string>
-    <string name="update_inprogress_ok">Got it</string>
     <string name="update_notavailable_title">Latest version installed</string>
     <string name="update_notavailable_message">It seems that you&#8217;re already running the
         latest available version of this app.
@@ -91,15 +133,9 @@
     </string>
     <string name="update_unknown_ok">Got it</string>
     <string name="update_download_finished">An update has just been downloaded.</string>
-    <string name="update_restart">Restart app</string>
+    <string name="update_restart">Restart</string>
     <string name="update_download_failed">Failed to download an update.</string>
     <string name="update_retry">Retry</string>
-    <!-- Fake App Update Preferences -->
-    <string name="pref_use_fake_update_manager_title">Test app updates\n(Requires app
-        restart)</string>
-    <string name="pref_use_fake_update_manager_summary_off">Using real AppUpdateManager</string>
-    <string name="pref_use_fake_update_manager_summary_on">Using FakeAppUpdateManager</string>
-    <string name="pref_fake_update_set_end_state_title">Update flow end</string>
     <!-- Item Titles -->
     <string name="device_title_imei">IMEI / MEID</string>
     <string name="device_title_model">Model Number</string>
@@ -120,6 +156,7 @@
     <string name="network_title_wifi_rssid">Wi-Fi RSSI</string>
     <string name="network_title_wifi_signal_level">Wi-Fi Signal Level</string>
     <string name="network_title_wifi_hostname">Wi-Fi Hostname</string>
+    <string name="network_title_wifi_canonical_hostname">Wi-Fi Canonical Hostname</string>
     <string name="network_title_bluetooth_mac">Bluetooth MAC Address</string>
     <string name="network_title_bluetooth_hostname">Bluetooth Hostname</string>
     <string name="network_title_phone_count">Phone Count</string>

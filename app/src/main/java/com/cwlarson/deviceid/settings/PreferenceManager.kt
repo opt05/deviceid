@@ -1,153 +1,170 @@
 package com.cwlarson.deviceid.settings
 
 import android.content.Context
-import android.content.SharedPreferences
 import android.os.Build
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.content.edit
-import androidx.preference.PreferenceManager
-import com.cwlarson.deviceid.BuildConfig
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.*
 import com.cwlarson.deviceid.R
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.*
 import org.json.JSONArray
 import timber.log.Timber
+import java.io.IOException
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
-import kotlin.coroutines.CoroutineContext
 
-open class PreferenceManager @Inject constructor(@ApplicationContext private val context: Context,
-                                                 private val preferences: SharedPreferences) {
+data class Filters(val hideUnavailable: Boolean, val swipeRefreshDisabled: Boolean)
 
-    open fun setDefaultValues() {
-        try {
-            PreferenceManager.setDefaultValues(context, R.xml.pref_general, false)
-            if (BuildConfig.DEBUG && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-                PreferenceManager.setDefaultValues(context, R.xml.pref_testing_app_update, true)
-        } catch (e: Throwable) {
-            Timber.e("Unable to set default preferences")
-        }
+data class UserPreferences(
+    val hideUnavailable: Boolean = false,
+    val autoRefreshRate: Int = 0,
+    val darkTheme: String = "mode_system",
+    val searchHistory: Boolean = false,
+    val forceRefresh: Boolean = false
+)
+
+open class PreferenceManager @Inject constructor(
+    private val context: Context,
+    private val dataStore: DataStore<Preferences>
+) {
+    private object PreferencesKeys {
+        val HIDE_UNAVAILABLE = booleanPreferencesKey("hide_unables")
+        val DAYNIGHT_MODE = stringPreferencesKey("daynight_mode")
+        val AUTO_REFRESH_RATE = intPreferencesKey("refresh_rate")
+        val SEARCH_HISTORY_DATA = stringPreferencesKey("pref_search_history_data")
+        val SEARCH_HISTORY = booleanPreferencesKey("pref_search_history")
     }
 
-    open fun setDarkTheme(newValue: Any? = null) {
+    private val preferences: Flow<Preferences> = dataStore.data.catch { exception ->
+        // dataStore.data throws an IOException when an error is encountered when reading data
+        if (exception is IOException) {
+            Timber.e(exception, "Error reading preferences.")
+            emit(emptyPreferences())
+        } else throw exception
+    }
+
+    open fun getFilters(): Flow<Filters> =
+        combineTransform(hideUnavailable, autoRefreshRate, forceRefresh) { hide, rate, refresh ->
+            Timber.d("New filter: $hide / $rate / $refresh")
+            emit(Filters(hide, rate > 0))
+        }
+
+    open val userPreferencesFlow: Flow<UserPreferences> = dataStore.data.catch { exception ->
+        // dataStore.data throws an IOException when an error is encountered when reading data
+        if (exception is IOException) {
+            Timber.e(exception, "Error reading preferences.")
+            emit(emptyPreferences())
+        } else throw exception
+    }.map { preferences ->
+        UserPreferences(
+            preferences[PreferencesKeys.HIDE_UNAVAILABLE] ?: false,
+            preferences[PreferencesKeys.AUTO_REFRESH_RATE] ?: 0,
+            preferences[PreferencesKeys.DAYNIGHT_MODE]
+                ?: context.getString(R.string.pref_night_mode_system),
+            preferences[PreferencesKeys.SEARCH_HISTORY] ?: false
+        )
+    }
+
+    open val darkTheme: Flow<Boolean?>
+        get() = preferences.map {
+            when (it[PreferencesKeys.DAYNIGHT_MODE]) {
+                context.getString(R.string.pref_night_mode_off) -> false
+                context.getString(R.string.pref_night_mode_on) -> true
+                else -> null
+            }
+        }
+
+    open suspend fun setDarkTheme(newValue: String? = null) {
+        val setValue = newValue?.let { v ->
+            dataStore.edit { it[PreferencesKeys.DAYNIGHT_MODE] = v }
+        } ?: preferences.map {
+            it[PreferencesKeys.DAYNIGHT_MODE] ?: context.getString(R.string.pref_night_mode_system)
+        }
+
         AppCompatDelegate.setDefaultNightMode(
-                when (newValue
-                        ?: preferences.getString(context.getString(R.string.pref_daynight_mode_key),
-                                context.getString(R.string.pref_night_mode_system))) {
-                    context.getString(R.string.pref_night_mode_off) -> AppCompatDelegate.MODE_NIGHT_NO
-                    context.getString(R.string.pref_night_mode_on) -> AppCompatDelegate.MODE_NIGHT_YES
-                    else -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
-                        AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM else AppCompatDelegate.MODE_NIGHT_AUTO_BATTERY
-                })
+            when (setValue) {
+                context.getString(R.string.pref_night_mode_off) -> AppCompatDelegate.MODE_NIGHT_NO
+                context.getString(R.string.pref_night_mode_on) -> AppCompatDelegate.MODE_NIGHT_YES
+                else -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+                    AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM else AppCompatDelegate.MODE_NIGHT_AUTO_BATTERY
+            }
+        )
     }
 
-    open var hideUnavailable: Boolean
-        get() = preferences.getBoolean(context.getString(R.string.pref_hide_unavailable_key), false)
-        set(value) = preferences.edit {
-            putBoolean(context.getString(R.string
-                    .pref_hide_unavailable_key), value)
-        }
+    open val hideUnavailable: Flow<Boolean>
+        get() = preferences.map { it[PreferencesKeys.HIDE_UNAVAILABLE] ?: false }
+
+    open suspend fun hideUnavailable(value: Boolean) {
+        dataStore.edit { it[PreferencesKeys.HIDE_UNAVAILABLE] = value }
+    }
+
+    private val _forceRefresh = MutableStateFlow(false)
+    open val forceRefresh
+        get() = _forceRefresh.asStateFlow()
+
+    open fun forceRefresh() {
+        _forceRefresh.value = !_forceRefresh.value
+    }
+
+    open val autoRefreshRate: Flow<Int>
+        get() = preferences.map { it[PreferencesKeys.AUTO_REFRESH_RATE] ?: 0 }
 
     @ExperimentalCoroutinesApi
-    open fun observeHideUnavailable() =
-            preferences.observeKey(context.getString(R.string.pref_hide_unavailable_key),
-                    default = false, onlyChanges = true)
-
-    open var autoRefreshRate: Int
-        get() = preferences.getInt(context.getString(R.string.pref_auto_refresh_rate_key), 0)
-        set(value) = preferences.edit {
-            putInt(context.getString(R.string
-                    .pref_auto_refresh_rate_key), value)
+    open val autoRefreshRateMillis: Flow<Long>
+        get() = autoRefreshRate.mapLatest {
+            TimeUnit.MILLISECONDS.convert(
+                it.toLong(),
+                TimeUnit.SECONDS
+            )
         }
 
-    @ExperimentalCoroutinesApi
-    open fun observerAutoRefreshRate() =
-            preferences.observeKey(context.getString(R.string.pref_auto_refresh_rate_key),
-                    default = 0, onlyChanges = true)
+    open suspend fun autoRefreshRate(value: Int) {
+        dataStore.edit { it[PreferencesKeys.AUTO_REFRESH_RATE] = value }
+    }
 
-    private var searchHistoryData: String?
-        get() = preferences.getString(context.getString(R.string.pref_search_history_data_key), "[]")
-        set(value) = if (value == null)
-            preferences.edit { remove(context.getString(R.string.pref_search_history_data_key)) }
-        else preferences.edit {
-            putString(context.getString(R.string
-                    .pref_search_history_data_key), value)
-        }
+    private val searchHistoryData: Flow<String?>
+        get() = preferences.map { it[PreferencesKeys.SEARCH_HISTORY_DATA] }
 
-    open fun saveSearchHistoryItem(item: String?) {
-        if (searchHistory && item?.isNotBlank() == true) {
-            searchHistoryData = JSONArray(getSearchHistoryItems().toMutableList().run {
-                // Remove item in the list if already in history
-                removeAll { s -> s == item }
-                // Prepend item to top of list and remove older ones if more than 10 items
-                (listOf(item).plus(this)).take(10)
-            }).toString()
+    private suspend fun searchHistoryData(value: String?) {
+        dataStore.edit {
+            if (value == null) it.remove(PreferencesKeys.SEARCH_HISTORY_DATA)
+            else it[PreferencesKeys.SEARCH_HISTORY_DATA] = value
         }
     }
 
     private fun JSONArray.toList(): List<String> = List(length(), this::getString)
-    open fun getSearchHistoryItems(items: String? = searchHistoryData) =
-            JSONArray(items).toList()
 
     @ExperimentalCoroutinesApi
-    open fun observeSearchHistoryData() =
-            preferences.observeKey(context.getString(R.string.pref_search_history_data_key), "[]").map {
-                getSearchHistoryItems(it)
+    open fun getSearchHistoryItems(filter: String? = null): Flow<List<String>> =
+        searchHistoryData.mapLatest { items ->
+            try {
+                JSONArray(items ?: "[]").toList().filter { item ->
+                    filter?.let { item.contains(it, ignoreCase = true) } ?: true
+                }
+            } catch (e: Throwable) {
+                emptyList()
             }
+        }.flowOn(Dispatchers.IO)
 
-    open var searchHistory: Boolean
-        get() = preferences.getBoolean(context.getString(R.string.pref_search_history_key), false)
-        set(value) {
-            if (!value) searchHistoryData = null
-            preferences.edit { putBoolean(context.getString(R.string.pref_search_history_key), value) }
+    open suspend fun saveSearchHistoryItem(item: String?) {
+        if (searchHistory.first() && item?.isNotBlank() == true) {
+            val data = JSONArray(searchHistoryData.firstOrNull() ?: "[]").toList()
+            searchHistoryData(JSONArray(data.toMutableList().run {
+                // Remove item in the list if already in history
+                removeAll { s -> s == item }
+                // Prepend item to top of list and remove older ones if more than 10 items
+                (listOf(item).plus(this)).take(10)
+            }).toString())
         }
-
-    open var useFakeUpdateManager: Boolean
-        get() = preferences.getBoolean(context.getString(R.string.pref_use_fake_update_manager_key), false)
-        set(value) = preferences.edit(commit = true) {
-            putBoolean(context.getString(R.string
-                    .pref_use_fake_update_manager_key), value)
-        }
-
-    @ExperimentalCoroutinesApi
-    open fun observeUseFakeUpdateManager() =
-            preferences.observeKey(context.getString(R.string.pref_use_fake_update_manager_key),
-                    default = false, onlyChanges = true)
-
-}
-
-@ExperimentalCoroutinesApi
-private inline fun <reified T> SharedPreferences.observeKey(key: String, default: T,
-                                                            onlyChanges: Boolean = false,
-                                                            dispatcher: CoroutineContext = Dispatchers.Default): Flow<T> {
-    val flow: Flow<T> = callbackFlow {
-        if (!onlyChanges) trySend(getItem(key, default))
-
-        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, k ->
-            if (key == k) trySend(getItem(key, default))
-        }
-
-        registerOnSharedPreferenceChangeListener(listener)
-        awaitClose { unregisterOnSharedPreferenceChangeListener(listener) }
     }
-    return flow.flowOn(dispatcher)
-}
 
-private inline fun <reified T> SharedPreferences.getItem(key: String, default: T): T {
-    @Suppress("UNCHECKED_CAST")
-    return when (default) {
-        is String -> getString(key, default) as T
-        is Int -> getInt(key, default) as T
-        is Long -> getLong(key, default) as T
-        is Boolean -> getBoolean(key, default) as T
-        is Float -> getFloat(key, default) as T
-        is Set<*> -> getStringSet(key, default as Set<String>) as T
-        is MutableSet<*> -> getStringSet(key, default as MutableSet<String>) as T
-        else -> throw IllegalArgumentException("generic type not handle ${T::class.java.name}")
+    open val searchHistory: Flow<Boolean>
+        get() = preferences.map { it[PreferencesKeys.SEARCH_HISTORY] ?: false }
+
+    open suspend fun searchHistory(value: Boolean) {
+        if (!value) searchHistoryData(null)
+        dataStore.edit { it[PreferencesKeys.SEARCH_HISTORY] = value }
     }
 }
