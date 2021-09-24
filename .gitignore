@@ -44,6 +44,8 @@ captures/
 .idea/render.experimental.xml
 .idea/jarRepositories.xml
 .idea/kotlinc.xml
+.idea/deploymentTargetDropDown.xml
+.idea/runConfigurations/
 *.iml
 .run/
  
