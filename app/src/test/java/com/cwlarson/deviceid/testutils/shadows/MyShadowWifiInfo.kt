@@ -1,14 +1,9 @@
 package com.cwlarson.deviceid.testutils.shadows
 
 import android.net.wifi.WifiInfo
-import android.os.Build
-import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Implementation
 import org.robolectric.annotation.Implements
-import org.robolectric.annotation.RealObject
-import org.robolectric.shadow.api.Shadow.directlyOn
 import org.robolectric.shadows.ShadowWifiInfo
-import org.robolectric.util.ReflectionHelpers
 
 @Implements(WifiInfo::class)
 class MyShadowWifiInfo: ShadowWifiInfo() {

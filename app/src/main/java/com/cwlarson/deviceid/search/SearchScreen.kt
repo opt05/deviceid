@@ -2,7 +2,6 @@ package com.cwlarson.deviceid.search
 
 import androidx.annotation.VisibleForTesting
 import androidx.compose.animation.Crossfade
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -32,8 +31,6 @@ import com.cwlarson.deviceid.ui.util.click
 import com.cwlarson.deviceid.util.collectAsStateWithLifecycle
 import com.google.accompanist.insets.LocalWindowInsets
 import com.google.accompanist.insets.rememberInsetsPaddingValues
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 @VisibleForTesting
 const val SEARCH_TEST_TAG_LIST = "search_list"
@@ -44,9 +41,6 @@ const val SEARCH_TEST_TAG_PROGRESS = "search_progressbar"
 @VisibleForTesting
 const val SEARCH_TEST_TAG_DIVIDER = "search_divider"
 
-@ExperimentalPermissionsApi
-@ExperimentalFoundationApi
-@ExperimentalCoroutinesApi
 @Composable
 fun SearchScreen(
     appBarSize: Int, query: String, scaffoldState: ScaffoldState,
@@ -68,9 +62,6 @@ fun SearchScreen(
     }
 }
 
-@ExperimentalCoroutinesApi
-@ExperimentalPermissionsApi
-@ExperimentalFoundationApi
 @Composable
 private fun MainContent(
     appBarSize: Int, scaffoldState: ScaffoldState, status: TabDataStatus,

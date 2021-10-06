@@ -25,12 +25,11 @@ class TabsViewModel @Inject constructor(
     private val preferenceManager: PreferenceManager,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
-    @ExperimentalCoroutinesApi
+    @OptIn(ExperimentalCoroutinesApi::class)
     val refreshDisabled =
         preferenceManager.autoRefreshRate.distinctUntilChanged().mapLatest { it > 0 }
             .flowOn(Dispatchers.IO)
 
-    @ExperimentalCoroutinesApi
     val allItems = when (val t = savedStateHandle.get<ItemType>("tab")) {
         ItemType.DEVICE -> deviceRepository.get()
         ItemType.NETWORK -> networkRepository.get()

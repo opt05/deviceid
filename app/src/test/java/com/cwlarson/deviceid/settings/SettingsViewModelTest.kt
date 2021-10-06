@@ -1,7 +1,6 @@
 package com.cwlarson.deviceid.settings
 
 import com.cwlarson.deviceid.testutils.CoroutineTestRule
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runBlockingTest
@@ -10,17 +9,14 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.mockito.Mock
 import org.mockito.junit.MockitoJUnit
-import org.mockito.junit.MockitoJUnitRunner
 import org.mockito.junit.MockitoRule
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 class SettingsViewModelTest {
-    @ExperimentalCoroutinesApi
     @get:Rule
     val coroutineRule = CoroutineTestRule()
 
@@ -37,13 +33,11 @@ class SettingsViewModelTest {
         testObject = SettingsViewModel(preferenceManager)
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun `Verify user preferences is called when method is called`() = runBlockingTest {
         assertEquals(UserPreferences(), testObject.userPreferencesFlow.first())
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun `Sets hide unavailable with value then calls preferences`() = runBlockingTest {
         val captor = argumentCaptor<Boolean>()
@@ -52,7 +46,6 @@ class SettingsViewModelTest {
         assertTrue(captor.lastValue)
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun `Sets refresh rate with value then calls preferences`() = runBlockingTest {
         val captor = argumentCaptor<Int>()
@@ -61,7 +54,6 @@ class SettingsViewModelTest {
         assertEquals(20, captor.lastValue)
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun `Sets dark mode with value then calls preferences`() = runBlockingTest {
         val captor = argumentCaptor<String>()
@@ -70,7 +62,6 @@ class SettingsViewModelTest {
         assertEquals("test", captor.lastValue)
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun `Sets search history with value then calls preferences`() = runBlockingTest {
         val captor = argumentCaptor<Boolean>()

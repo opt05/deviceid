@@ -8,7 +8,6 @@ import androidx.activity.viewModels
 import androidx.annotation.StringRes
 import androidx.annotation.VisibleForTesting
 import androidx.compose.animation.*
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -73,11 +72,9 @@ import com.cwlarson.deviceid.util.collectAsStateWithLifecycle
 import com.google.accompanist.insets.*
 import com.google.accompanist.insets.ui.BottomNavigation
 import com.google.accompanist.insets.ui.TopAppBar
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.android.play.core.install.model.InstallStatus
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -153,12 +150,7 @@ private sealed class Screen(
     object Search : Screen("search", R.string.menu_search, Icons.Outlined.Search)
 }
 
-@ExperimentalPermissionsApi
-@ExperimentalMaterialApi
-@ExperimentalComposeUiApi
-@ExperimentalFoundationApi
-@ExperimentalAnimationApi
-@ExperimentalCoroutinesApi
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalMaterialApi::class)
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     @Inject
@@ -481,9 +473,7 @@ fun DefaultPreview() {
         //Device(navController)
     }
 }*/
-@ExperimentalAnimationApi
-@ExperimentalComposeUiApi
-@ExperimentalCoroutinesApi
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalAnimationApi::class)
 @Composable
 private fun SearchView(
     navController: NavController, modifier: Modifier = Modifier, isSearchOpen: Boolean,
@@ -491,13 +481,6 @@ private fun SearchView(
     keyboardController: SoftwareKeyboardController?,
     onSearchOpen: (Boolean) -> Unit, onSearchQueryChange: (String) -> Unit
 ) {
-    /*val lifecycleOwner = LocalLifecycleOwner.current
-    val titleVisibilityFlowLifecycleAware = remember(viewModel.titleVisibility, lifecycleOwner) {
-        viewModel.titleVisibility.flowWithLifecycle(
-            lifecycleOwner.lifecycle,
-            Lifecycle.State.STARTED
-        )
-    }*/
     val titleVisibility by viewModel.titleVisibility.collectAsStateWithLifecycle(
         initial = TitleVisibility(visible = true, noFade = false)
     )
@@ -611,7 +594,6 @@ private fun SearchView(
     }
 }
 
-@ExperimentalCoroutinesApi
 @Composable
 private fun SearchViewHistory(
     viewModel: MainActivityViewModel, isExpanded: Boolean, query: String,
@@ -725,8 +707,7 @@ private fun BottomAppBar(
         }
 }
 
-@ExperimentalMaterialApi
-@ExperimentalAnimationApi
+@OptIn(ExperimentalAnimationApi::class, ExperimentalMaterialApi::class)
 @Composable
 private fun DualPaneNavigationView(
     items: List<Screen>, navController: NavController,

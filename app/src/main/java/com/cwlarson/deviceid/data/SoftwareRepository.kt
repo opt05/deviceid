@@ -15,7 +15,6 @@ import com.cwlarson.deviceid.tabs.ItemSubtitle
 import com.cwlarson.deviceid.tabs.ItemType
 import com.cwlarson.deviceid.util.gmsPackageInfo
 import com.cwlarson.deviceid.util.systemProperty
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import timber.log.Timber
 import java.text.ParseException
@@ -93,7 +92,6 @@ open class SoftwareRepository @Inject constructor(
 ) : TabData(context, preferenceManager) {
     private val activityManager: ActivityManager? by lazy { context.getSystemService() }
 
-    @ExperimentalCoroutinesApi
     override fun items() = flowOf(
         listOf(
             androidVersion(), patchLevel(),

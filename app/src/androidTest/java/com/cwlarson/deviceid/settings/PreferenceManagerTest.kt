@@ -4,7 +4,6 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import androidx.test.platform.app.InstrumentationRegistry
 import com.cwlarson.deviceid.androidtestutils.CoroutineTestRule
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestCoroutineScope
@@ -16,7 +15,6 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
 class PreferenceManagerTest {
-    @ExperimentalCoroutinesApi
     @get:Rule
     val coroutineRule = CoroutineTestRule()
 
@@ -26,7 +24,6 @@ class PreferenceManagerTest {
     private lateinit var dataStore: DataStore<Preferences>
     private lateinit var testObject: PreferenceManager
 
-    @ExperimentalCoroutinesApi
     @Before
     fun setup() {
         dataStore = PreferenceDataStoreFactory.create(
@@ -36,7 +33,6 @@ class PreferenceManagerTest {
             PreferenceManager(InstrumentationRegistry.getInstrumentation().targetContext, dataStore)
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun getFilters_HasValues_EmitsTrues() = runBlockingTest {
         dataStore.edit {
@@ -49,7 +45,6 @@ class PreferenceManagerTest {
         )
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun getFilters_HasValues_EmitsFalses() = runBlockingTest {
         dataStore.edit {
@@ -63,7 +58,6 @@ class PreferenceManagerTest {
     }
 
     @Suppress("BlockingMethodInNonBlockingContext")
-    @ExperimentalCoroutinesApi
     @Test
     fun userPreferencesFlow_HasInvalidData_EmitsDefaultPreferences() = runBlockingTest {
         tmp.newFile("test_file.preferences_pb").writeBytes(byteArrayOf(0))
@@ -78,7 +72,6 @@ class PreferenceManagerTest {
         )
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun userPreferencesFlow_HasSetValues_EmitsSameValues() = runBlockingTest {
         dataStore.edit {
@@ -98,34 +91,29 @@ class PreferenceManagerTest {
         )
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun darkTheme_ModeOff_EmitsFalse() = runBlockingTest {
         dataStore.edit { it[stringPreferencesKey("daynight_mode")] = "mode_off" }
         assertEquals(false, testObject.darkTheme.first())
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun darkTheme_ModeOn_EmitsTrue() = runBlockingTest {
         dataStore.edit { it[stringPreferencesKey("daynight_mode")] = "mode_on" }
         assertEquals(true, testObject.darkTheme.first())
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun darkTheme_ModeSystem_EmitsNull() = runBlockingTest {
         dataStore.edit { it[stringPreferencesKey("daynight_mode")] = "mode_system" }
         assertNull(testObject.darkTheme.first())
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun darkTheme_Null_EmitsNull() = runBlockingTest {
         assertNull(testObject.darkTheme.first())
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun setDarkTheme_NotNull_SavesValue() = runBlockingTest {
         testObject.setDarkTheme("mode_on")
@@ -135,27 +123,23 @@ class PreferenceManagerTest {
         )
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun setDarkTheme_Null_DoesNotSaveValue() = runBlockingTest {
         testObject.setDarkTheme(null)
         assertNull(dataStore.data.first()[stringPreferencesKey("daynight_mode")])
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun hideUnavailable_NotNull_EmitsValue() = runBlockingTest {
         dataStore.edit { it[booleanPreferencesKey("hide_unables")] = true }
         assertTrue(testObject.hideUnavailable.first())
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun hideUnavailable_Null_EmitsFalse() = runBlockingTest {
         assertFalse(testObject.hideUnavailable.first())
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun hideUnavailable_SetTrue_SavesTrue() = runBlockingTest {
         testObject.hideUnavailable(true)
@@ -165,7 +149,6 @@ class PreferenceManagerTest {
         )
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun hideUnavailable_SetFalse_SavesFalse() = runBlockingTest {
         testObject.hideUnavailable(false)
@@ -175,46 +158,39 @@ class PreferenceManagerTest {
         )
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun forceRefresh_DefaultValue_IsFalse() = runBlockingTest {
         assertFalse(testObject.forceRefresh.value)
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun forceRefresh_SetValue_Toggles() = runBlockingTest {
         testObject.forceRefresh()
         assertTrue(testObject.forceRefresh.value)
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun autoRefreshRate_NotNull_EmitsValue() = runBlockingTest {
         dataStore.edit { it[intPreferencesKey("refresh_rate")] = 200 }
         assertEquals(200, testObject.autoRefreshRate.first())
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun autoRefreshRate_Null_Emits0() = runBlockingTest {
         assertEquals(0, testObject.autoRefreshRate.first())
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun authRefreshRateMillis_NotNull_EmitsValue() = runBlockingTest {
         dataStore.edit { it[intPreferencesKey("refresh_rate")] = 1 }
         assertEquals(1000, testObject.autoRefreshRateMillis.first())
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun authRefreshRateMillis_Null_Emits0() = runBlockingTest {
         assertEquals(0, testObject.autoRefreshRateMillis.first())
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun authRefreshRateMillis_NotNull_AlwaysUsesLatestValue() = runBlockingTest {
         dataStore.edit { it[intPreferencesKey("refresh_rate")] = 1 }
@@ -222,7 +198,6 @@ class PreferenceManagerTest {
         assertEquals(2000, testObject.autoRefreshRateMillis.first())
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun autoRefreshRate_NotNull_SavesValue() = runBlockingTest {
         testObject.autoRefreshRate(300)
@@ -232,7 +207,6 @@ class PreferenceManagerTest {
         )
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun getSearchHistoryItems_WithFilterAndNotNull_EmitsValue() = runBlocking {
         dataStore.edit {
@@ -241,13 +215,11 @@ class PreferenceManagerTest {
         assertEquals(listOf("test"), testObject.getSearchHistoryItems("test").first())
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun getSearchHistoryItems_WithFilterAndNull_EmitsValue() = runBlocking {
         assertEquals(emptyList<String>(), testObject.getSearchHistoryItems("test").first())
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun getSearchHistoryItems_WithoutFilterAndNotNull_EmitsValue() = runBlocking {
         dataStore.edit {
@@ -256,13 +228,11 @@ class PreferenceManagerTest {
         assertEquals(listOf("test", "string"), testObject.getSearchHistoryItems().first())
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun getSearchHistoryItems_WithoutFilterAndNull_EmitsValue() = runBlocking {
         assertEquals(emptyList<String>(), testObject.getSearchHistoryItems().first())
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun getSearchHistoryItems_WithFilterAndNotNull_AlwaysUsesLatestValue() = runBlocking {
         dataStore.edit {
@@ -274,7 +244,6 @@ class PreferenceManagerTest {
         assertEquals(listOf("string"), testObject.getSearchHistoryItems("string").first())
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun getSearchHistoryItems_WithoutFilterAndNotNull_AlwaysUsesLatestValue() = runBlocking {
         dataStore.edit {
@@ -286,7 +255,6 @@ class PreferenceManagerTest {
         assertEquals(listOf("test", "string"), testObject.getSearchHistoryItems().first())
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun saveSearchHistoryItem_NotNullAndSavingEnabled_SavesValue() = runBlocking {
         dataStore.edit { it[booleanPreferencesKey("pref_search_history")] = true }
@@ -299,7 +267,6 @@ class PreferenceManagerTest {
         )
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun saveSearchHistoryItem_NullAndSavingEnabled_DoesNotSaveValue() = runBlocking {
         dataStore.edit { it[booleanPreferencesKey("pref_search_history")] = true }
@@ -310,7 +277,6 @@ class PreferenceManagerTest {
         )
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun saveSearchHistoryItem_BlankAndSavingEnabled_DoesNotSaveValue() = runBlocking {
         dataStore.edit { it[booleanPreferencesKey("pref_search_history")] = true }
@@ -321,7 +287,6 @@ class PreferenceManagerTest {
         )
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun saveSearchHistoryItem_NotNullAndSavingDisabled_DoesNotSaveValue() = runBlocking {
         dataStore.edit { it[booleanPreferencesKey("pref_search_history")] = false }
@@ -333,7 +298,6 @@ class PreferenceManagerTest {
         )
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun saveSearchHistoryItem_NullAndSavingDisabled_DoesNotSaveValue() = runBlocking {
         dataStore.edit { it[booleanPreferencesKey("pref_search_history")] = false }
@@ -345,7 +309,6 @@ class PreferenceManagerTest {
         )
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun saveSearchHistoryItem_BlankAndSavingDisabled_DoesNotSaveValue() = runBlocking {
         dataStore.edit { it[booleanPreferencesKey("pref_search_history")] = false }
@@ -357,7 +320,6 @@ class PreferenceManagerTest {
         )
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun saveSearchHistoryItem_AddSecondItem_PrependsToTopOfList() = runBlocking {
         dataStore.edit {
@@ -374,7 +336,6 @@ class PreferenceManagerTest {
         )
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun saveSearchHistoryItem_Add11thItem_KeepsOnlyLast10() = runBlocking {
         dataStore.edit {
@@ -395,7 +356,6 @@ class PreferenceManagerTest {
         )
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun saveSearchHistoryItem_AddSameItem_MovesToTop() = runBlocking {
         dataStore.edit {
@@ -416,27 +376,23 @@ class PreferenceManagerTest {
         )
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun searchHistory_SetTrue_EmitsTrue() = runBlockingTest {
         dataStore.edit { it[booleanPreferencesKey("pref_search_history")] = true }
         assertTrue(testObject.searchHistory.first())
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun searchHistory_SetFalse_EmitsFalse() = runBlockingTest {
         dataStore.edit { it[booleanPreferencesKey("pref_search_history")] = false }
         assertFalse(testObject.searchHistory.first())
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun searchHistory_NotSet_EmitsFalse() = runBlockingTest {
         assertFalse(testObject.searchHistory.first())
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun searchHistory_SetTrue_SavesValueAndDoesNotClearData() = runBlockingTest {
         dataStore.edit { it[stringPreferencesKey("pref_search_history_data")] = "[\"test\"]" }
@@ -450,7 +406,6 @@ class PreferenceManagerTest {
         )
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun searchHistory_SetFalse_SavesValueAndDoesClearData() = runBlockingTest {
         dataStore.edit { it[stringPreferencesKey("pref_search_history_data")] = "[\"test\"]" }

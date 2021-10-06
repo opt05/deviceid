@@ -35,7 +35,6 @@ import com.cwlarson.deviceid.tabs.ItemSubtitle
 import com.cwlarson.deviceid.util.AppPermission
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberPermissionState
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collect
@@ -132,8 +131,7 @@ fun Item.share(context: Context = LocalContext.current): () -> Unit {
 }
 
 @SuppressLint("ComposableNaming")
-@ExperimentalPermissionsApi
-@ExperimentalCoroutinesApi
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun Item.click(
     snackbarHostState: SnackbarHostState,

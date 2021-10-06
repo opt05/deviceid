@@ -4,8 +4,6 @@ import android.content.Context
 import com.cwlarson.deviceid.settings.PreferenceManager
 import com.cwlarson.deviceid.tabs.Item
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
@@ -16,8 +14,6 @@ open class AllRepository @Inject constructor(
     private val preferenceManager: PreferenceManager
 ) : TabData(context, preferenceManager) {
 
-    @FlowPreview
-    @ExperimentalCoroutinesApi
     override fun items(): Flow<List<Item>> = combine(
         DeviceRepository(context, preferenceManager).items(),
         NetworkRepository(context, preferenceManager).items(),

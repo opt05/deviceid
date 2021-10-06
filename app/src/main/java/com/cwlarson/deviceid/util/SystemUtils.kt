@@ -10,7 +10,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import timber.log.Timber
 
@@ -44,7 +43,6 @@ fun Context.systemProperty(key: String): String? = try {
     null
 }
 
-@ExperimentalCoroutinesApi
 @Composable
 fun <T : R, R> Flow<T>.collectAsStateWithLifecycle(
     initial: R,

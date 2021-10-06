@@ -10,7 +10,6 @@ import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.settings.PreferenceManager
 import com.cwlarson.deviceid.testutils.CoroutineTestRule
 import com.cwlarson.deviceid.testutils.itemFromList
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
@@ -22,10 +21,7 @@ import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.whenever
-import kotlin.time.ExperimentalTime
 
-@ExperimentalCoroutinesApi
-@ExperimentalTime
 @RunWith(AndroidJUnit4::class)
 class AllRepositoryTest {
     @get:Rule

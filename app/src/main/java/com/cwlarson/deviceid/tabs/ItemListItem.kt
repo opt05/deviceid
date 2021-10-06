@@ -16,7 +16,7 @@ import com.cwlarson.deviceid.ui.util.loadPermissionLabel
 @VisibleForTesting
 const val TAB_TEST_TAG_LIST_ITEM = "tab_list_item"
 
-@ExperimentalFoundationApi
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ItemListItem(item: Item, onItemClick: () -> Unit) {
     ListItem(

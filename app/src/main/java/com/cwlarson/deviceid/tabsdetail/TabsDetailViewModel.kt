@@ -19,7 +19,7 @@ class TabsDetailViewModel @Inject constructor(
 ) : ViewModel() {
     private val currentItem = MutableStateFlow<Item?>(null)
 
-    @ExperimentalCoroutinesApi
+    @OptIn(ExperimentalCoroutinesApi::class)
     val item : Flow<TabDetailStatus> = currentItem.flatMapLatest { item ->
         when (item?.itemType) {
             ItemType.DEVICE -> deviceRepository.get()

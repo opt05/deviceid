@@ -21,8 +21,6 @@ import com.cwlarson.deviceid.tabs.Item
 import com.cwlarson.deviceid.tabs.ItemSubtitle
 import com.cwlarson.deviceid.tabs.ItemType
 import com.cwlarson.deviceid.ui.util.*
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -32,8 +30,6 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowToast
 
-@ExperimentalPermissionsApi
-@ExperimentalCoroutinesApi
 @RunWith(AndroidJUnit4::class)
 @Config(
     instrumentedPackages = [

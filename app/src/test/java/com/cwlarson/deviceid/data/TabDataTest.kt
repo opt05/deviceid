@@ -8,7 +8,6 @@ import com.cwlarson.deviceid.tabs.Item
 import com.cwlarson.deviceid.tabs.ItemSubtitle
 import com.cwlarson.deviceid.tabs.ItemType
 import com.cwlarson.deviceid.testutils.CoroutineTestRule
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,10 +21,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import kotlin.time.ExperimentalTime
 
-@ExperimentalCoroutinesApi
-@ExperimentalTime
 class TabDataTest {
     @get:Rule
     val coroutineRule = CoroutineTestRule()

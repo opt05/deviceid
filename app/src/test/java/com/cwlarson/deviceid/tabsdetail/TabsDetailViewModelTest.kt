@@ -5,17 +5,14 @@ import com.cwlarson.deviceid.tabs.Item
 import com.cwlarson.deviceid.tabs.ItemSubtitle
 import com.cwlarson.deviceid.tabs.ItemType
 import com.cwlarson.deviceid.testutils.CoroutineTestRule
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.mockito.Mock
 import org.mockito.junit.MockitoJUnit
-import org.mockito.junit.MockitoJUnitRunner
 import org.mockito.junit.MockitoRule
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
@@ -23,7 +20,6 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 class TabsDetailViewModelTest {
-    @ExperimentalCoroutinesApi
     @get:Rule
     val coroutineRule = CoroutineTestRule()
 
@@ -43,7 +39,6 @@ class TabsDetailViewModelTest {
     lateinit var hardwareRepository: HardwareRepository
     private lateinit var testObject: TabsDetailViewModel
 
-    @ExperimentalCoroutinesApi
     @Test
     fun `Verify item when called with item type device then returns device repo`() =
         runBlockingTest {
@@ -56,7 +51,6 @@ class TabsDetailViewModelTest {
             assertEquals(result, testObject.item.first())
         }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun `Verify item when called with item type network then returns network repo`() =
         runBlockingTest {
@@ -69,7 +63,6 @@ class TabsDetailViewModelTest {
             assertEquals(result, testObject.item.first())
         }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun `Verify item when called with item type software then returns software repo`() =
         runBlockingTest {
@@ -82,7 +75,6 @@ class TabsDetailViewModelTest {
             assertEquals(result, testObject.item.first())
         }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun `Verify item when called with item type hardware then returns hardware repo`() =
         runBlockingTest {
@@ -95,7 +87,6 @@ class TabsDetailViewModelTest {
             assertEquals(result, testObject.item.first())
         }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun `Verify item when called with no item type then returns error`() = runBlockingTest {
         testObject = TabsDetailViewModel({ deviceRepository }, { networkRepository },
@@ -103,7 +94,6 @@ class TabsDetailViewModelTest {
         assertEquals(TabDetailStatus.Error, testObject.item.first())
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun `Verify item when called with null item type then returns error`() = runBlockingTest {
             testObject = TabsDetailViewModel({ deviceRepository }, { networkRepository },
@@ -112,7 +102,6 @@ class TabsDetailViewModelTest {
             assertEquals(TabDetailStatus.Error, testObject.item.first())
         }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun `Sets current item when called and calls details in repository`() = runBlockingTest {
         val item = Item(itemType = ItemType.DEVICE, subtitle = ItemSubtitle.Error)

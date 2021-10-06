@@ -4,11 +4,11 @@ import android.content.Intent
 import app.cash.turbine.test
 import com.cwlarson.deviceid.settings.PreferenceManager
 import com.cwlarson.deviceid.testutils.CoroutineTestRule
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -17,12 +17,8 @@ import org.mockito.junit.MockitoJUnit
 import org.mockito.junit.MockitoRule
 import org.mockito.kotlin.*
 import java.util.concurrent.TimeUnit
-import kotlin.time.ExperimentalTime
 
-@ExperimentalCoroutinesApi
-@ExperimentalTime
 class MainActivityViewModelTest {
-    @ExperimentalCoroutinesApi
     @get:Rule
     val coroutineRule = CoroutineTestRule()
 

@@ -25,7 +25,7 @@ abstract class TabData(
 ) {
     internal abstract fun items(): Flow<List<Item>>
 
-    @ExperimentalCoroutinesApi
+    @OptIn(ExperimentalCoroutinesApi::class)
     open fun list(): Flow<TabDataStatus> = channelFlow {
         trySend(TabDataStatus.Loading)
         preferenceManager.getFilters().collectLatest { filters ->
@@ -45,7 +45,7 @@ abstract class TabData(
         }
     }.flowOn(Dispatchers.IO)
 
-    @ExperimentalCoroutinesApi
+    @OptIn(ExperimentalCoroutinesApi::class)
     open fun details(item: Item): Flow<TabDetailStatus> = channelFlow {
         trySend(TabDetailStatus.Loading)
         items().collectLatest { items ->
@@ -63,7 +63,7 @@ abstract class TabData(
         }
     }.flowOn(Dispatchers.IO)
 
-    @ExperimentalCoroutinesApi
+    @OptIn(ExperimentalCoroutinesApi::class)
     open fun search(searchText: StateFlow<String>): Flow<TabDataStatus> = channelFlow {
         trySend(TabDataStatus.Loading)
         preferenceManager.getFilters().collectLatest { filters ->

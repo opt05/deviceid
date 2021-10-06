@@ -2,10 +2,6 @@ package com.cwlarson.deviceid
 
 import android.content.Intent
 import android.util.DisplayMetrics
-import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.unit.height
@@ -22,12 +18,10 @@ import com.cwlarson.deviceid.tabs.ItemType
 import com.cwlarson.deviceid.util.AppUpdateUtils
 import com.cwlarson.deviceid.util.InstallState
 import com.cwlarson.deviceid.util.UpdateState
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.android.play.core.install.model.InstallStatus
 import com.google.android.play.core.install.model.UpdateAvailability
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
@@ -42,12 +36,6 @@ import org.mockito.kotlin.*
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
-@ExperimentalPermissionsApi
-@ExperimentalMaterialApi
-@ExperimentalComposeUiApi
-@ExperimentalFoundationApi
-@ExperimentalAnimationApi
-@ExperimentalCoroutinesApi
 @HiltAndroidTest
 class MainActivityTest {
     @get:Rule(order = 0)

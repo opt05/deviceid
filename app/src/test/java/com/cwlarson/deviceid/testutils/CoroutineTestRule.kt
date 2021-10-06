@@ -1,7 +1,6 @@
 package com.cwlarson.deviceid.testutils
 
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestCoroutineDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
@@ -32,7 +31,6 @@ import org.junit.runner.Description
  * runBlockingTest { }
  * ```
  */
-@ExperimentalCoroutinesApi
 class CoroutineTestRule(
     private val testDispatcher: TestCoroutineDispatcher = TestCoroutineDispatcher()
 ) : TestWatcher() {

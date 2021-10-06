@@ -35,7 +35,6 @@ import com.cwlarson.deviceid.util.InstallState
 import com.cwlarson.deviceid.util.UpdateState
 import com.cwlarson.deviceid.util.collectAsStateWithLifecycle
 import com.google.android.play.core.install.model.InstallStatus
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -67,7 +66,6 @@ const val SETTINGS_TEST_TAG_DIALOG_LIST = "settings_dialog_list"
 @VisibleForTesting
 const val SETTINGS_TEST_TAG_DIALOG_BUTTON_CANCEL = "settings_dialog_button_cancel"
 
-@ExperimentalCoroutinesApi
 @Composable
 fun SettingsScreen(appUpdateUtils: AppUpdateUtils, viewModel: SettingsViewModel = hiltViewModel()) {
     val scope = rememberCoroutineScope()

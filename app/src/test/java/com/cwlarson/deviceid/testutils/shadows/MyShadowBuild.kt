@@ -3,7 +3,6 @@ package com.cwlarson.deviceid.testutils.shadows
 import android.os.Build
 import org.robolectric.annotation.Implements
 import org.robolectric.shadows.ShadowBuild
-import org.robolectric.shadows.ShadowSystemProperties
 import org.robolectric.util.ReflectionHelpers
 
 @Implements(value = Build::class)

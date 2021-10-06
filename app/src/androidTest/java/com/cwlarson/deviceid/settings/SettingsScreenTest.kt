@@ -1,6 +1,5 @@
 package com.cwlarson.deviceid.settings
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.*
@@ -9,11 +8,9 @@ import com.cwlarson.deviceid.HiltTestActivity
 import com.cwlarson.deviceid.util.AppUpdateUtils
 import com.cwlarson.deviceid.util.InstallState
 import com.cwlarson.deviceid.util.UpdateState
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.android.play.core.install.model.InstallStatus
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Before
@@ -22,7 +19,6 @@ import org.junit.Test
 import org.mockito.kotlin.*
 import javax.inject.Inject
 
-@ExperimentalCoroutinesApi
 @HiltAndroidTest
 class SettingsScreenTest {
     @get:Rule(order = 0)
@@ -41,8 +37,6 @@ class SettingsScreenTest {
     private lateinit var dataUpdateState: MutableStateFlow<UpdateState>
     private lateinit var dataInstallState: MutableStateFlow<InstallState>
 
-    @ExperimentalFoundationApi
-    @ExperimentalPermissionsApi
     @Before
     fun setup() {
         hiltAndroidRule.inject()

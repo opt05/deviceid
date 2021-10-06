@@ -111,7 +111,7 @@ open class PreferenceManager @Inject constructor(
     open val autoRefreshRate: Flow<Int>
         get() = preferences.map { it[PreferencesKeys.AUTO_REFRESH_RATE] ?: 0 }
 
-    @ExperimentalCoroutinesApi
+    @OptIn(ExperimentalCoroutinesApi::class)
     open val autoRefreshRateMillis: Flow<Long>
         get() = autoRefreshRate.mapLatest {
             TimeUnit.MILLISECONDS.convert(
@@ -136,7 +136,7 @@ open class PreferenceManager @Inject constructor(
 
     private fun JSONArray.toList(): List<String> = List(length(), this::getString)
 
-    @ExperimentalCoroutinesApi
+    @OptIn(ExperimentalCoroutinesApi::class)
     open fun getSearchHistoryItems(filter: String? = null): Flow<List<String>> =
         searchHistoryData.mapLatest { items ->
             try {

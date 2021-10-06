@@ -1,6 +1,5 @@
 package com.cwlarson.deviceid.tabs
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.material.rememberScaffoldState
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -14,10 +13,8 @@ import com.cwlarson.deviceid.androidtestutils.assertHasLongClickAction
 import com.cwlarson.deviceid.data.*
 import com.cwlarson.deviceid.settings.PreferenceManager
 import com.cwlarson.deviceid.settings.UserPreferences
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runBlockingTest
@@ -27,7 +24,6 @@ import org.junit.Test
 import org.mockito.kotlin.whenever
 import javax.inject.Inject
 
-@ExperimentalCoroutinesApi
 @HiltAndroidTest
 class TabScreenTest {
     @get:Rule(order = 0)
@@ -55,8 +51,6 @@ class TabScreenTest {
     private lateinit var dataPreferences: MutableStateFlow<UserPreferences>
     private var clickedItem: Item? = null
 
-    @ExperimentalPermissionsApi
-    @ExperimentalFoundationApi
     @Before
     fun setup() {
         hiltAndroidRule.inject()

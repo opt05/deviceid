@@ -33,7 +33,6 @@ import com.cwlarson.deviceid.testutils.itemFromList
 import com.cwlarson.deviceid.testutils.shadows.ExceptionShadowActivityManager
 import com.cwlarson.deviceid.testutils.shadows.ExceptionShadowDisplayManager
 import com.cwlarson.deviceid.testutils.shadows.ExceptionShadowStatFs
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
@@ -51,10 +50,7 @@ import org.robolectric.shadows.ShadowDisplayManager
 import org.robolectric.shadows.ShadowEnvironment
 import org.robolectric.shadows.ShadowStatFs
 import java.io.File
-import kotlin.time.ExperimentalTime
 
-@ExperimentalCoroutinesApi
-@ExperimentalTime
 @RunWith(AndroidJUnit4::class)
 class HardwareRepositoryTest {
     @get:Rule

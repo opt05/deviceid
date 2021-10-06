@@ -13,7 +13,6 @@ import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.InstallErrorCode
 import com.google.android.play.core.install.model.InstallStatus
 import com.google.android.play.core.install.model.UpdateAvailability
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Before
@@ -22,10 +21,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.*
-import kotlin.time.ExperimentalTime
 
-@ExperimentalCoroutinesApi
-@ExperimentalTime
 @RunWith(AndroidJUnit4::class)
 class AppUpdateUtilsTest {
     @get:Rule

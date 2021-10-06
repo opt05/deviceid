@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.cwlarson.deviceid.settings.PreferenceManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -46,6 +45,5 @@ class MainActivityViewModel @Inject constructor(private val preferenceManager: P
         viewModelScope.launch { preferenceManager.saveSearchHistoryItem(query) }
     }
 
-    @ExperimentalCoroutinesApi
     fun getSearchHistoryItems(query: String) = preferenceManager.getSearchHistoryItems(query)
 }

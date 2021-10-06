@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import com.cwlarson.deviceid.data.AllRepository
 import com.cwlarson.deviceid.settings.PreferenceManager
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import javax.inject.Inject
 
@@ -15,7 +14,6 @@ class SearchViewModel @Inject constructor(
 ) : ViewModel() {
     private val searchText = MutableStateFlow("")
 
-    @ExperimentalCoroutinesApi
     val allItems = repository.search(searchText)
 
     fun setSearchText(searchString: String) {

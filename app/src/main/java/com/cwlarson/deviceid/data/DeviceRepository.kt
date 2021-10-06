@@ -15,7 +15,6 @@ import com.cwlarson.deviceid.tabs.ItemType
 import com.cwlarson.deviceid.util.AppPermission
 import com.cwlarson.deviceid.util.isGranted
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import timber.log.Timber
@@ -28,7 +27,6 @@ open class DeviceRepository @Inject constructor(
 ) : TabData(context, preferenceManager) {
     private val telephonyManager: TelephonyManager? by lazy { context.getSystemService() }
 
-    @ExperimentalCoroutinesApi
     override fun items() =
         flowOf(listOf(imei(), deviceModel(), serial(), androidID(), gsfid())).flowOn(Dispatchers.IO)
 

@@ -2,7 +2,6 @@ package com.cwlarson.deviceid.tabsdetail
 
 import android.app.Instrumentation.ActivityResult
 import android.content.Intent
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.test.*
@@ -17,10 +16,8 @@ import com.cwlarson.deviceid.data.*
 import com.cwlarson.deviceid.tabs.Item
 import com.cwlarson.deviceid.tabs.ItemSubtitle
 import com.cwlarson.deviceid.tabs.ItemType
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runBlockingTest
 import org.hamcrest.Matchers.allOf
@@ -31,7 +28,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
 import javax.inject.Inject
 
-@ExperimentalCoroutinesApi
 @HiltAndroidTest
 class TabDetailScreenTest {
     @get:Rule(order = 0)
@@ -54,8 +50,6 @@ class TabDetailScreenTest {
     private lateinit var dataRepository: MutableStateFlow<TabDetailStatus>
     private lateinit var clipboardManager: ClipboardManager
 
-    @ExperimentalPermissionsApi
-    @ExperimentalFoundationApi
     @Before
     fun setup() {
         hiltAndroidRule.inject()

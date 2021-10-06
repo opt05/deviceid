@@ -32,11 +32,9 @@ import com.cwlarson.deviceid.ui.util.click
 import com.cwlarson.deviceid.util.collectAsStateWithLifecycle
 import com.google.accompanist.insets.LocalWindowInsets
 import com.google.accompanist.insets.rememberInsetsPaddingValues
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.SwipeRefreshIndicator
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 @VisibleForTesting
 const val TAB_TEST_TAG_LIST = "tab_list"
@@ -44,9 +42,6 @@ const val TAB_TEST_TAG_LIST = "tab_list"
 @VisibleForTesting
 const val TAB_TEST_TAG_PROGRESS = "tab_progressbar"
 
-@ExperimentalCoroutinesApi
-@ExperimentalFoundationApi
-@ExperimentalPermissionsApi
 @Composable
 fun TabScreen(
     appBarSize: Int, isTwoPane: Boolean, scaffoldState: ScaffoldState,
@@ -69,9 +64,7 @@ fun TabScreen(
     }
 }
 
-@ExperimentalCoroutinesApi
-@ExperimentalPermissionsApi
-@ExperimentalFoundationApi
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun MainContent(
     appBarSize: Int, isTwoPane: Boolean, refreshDisabled: Boolean,

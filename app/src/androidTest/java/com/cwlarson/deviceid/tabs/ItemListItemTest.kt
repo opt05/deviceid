@@ -1,6 +1,5 @@
 package com.cwlarson.deviceid.tabs
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Android
 import androidx.compose.ui.platform.ClipboardManager
@@ -15,13 +14,10 @@ import com.cwlarson.deviceid.androidtestutils.performLongClick
 import com.cwlarson.deviceid.ui.util.LIST_ITEM_TEST_TAG_ICON
 import com.cwlarson.deviceid.ui.util.LIST_ITEM_TEST_TAG_PROGRESS
 import com.cwlarson.deviceid.util.AppPermission
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Rule
 import org.junit.Test
 
-@ExperimentalCoroutinesApi
-@ExperimentalFoundationApi
 class ItemListItemTest {
     @get:Rule
     val composeTestRule = createComposeRule()

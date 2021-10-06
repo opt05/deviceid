@@ -20,7 +20,6 @@ import com.cwlarson.deviceid.testutils.CoroutineTestRule
 import com.cwlarson.deviceid.testutils.awaitItemFromList
 import com.cwlarson.deviceid.testutils.shadows.ExceptionShadowActivityManager
 import com.cwlarson.deviceid.testutils.shadows.MyShadowBuild
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -39,10 +38,7 @@ import org.robolectric.shadows.ShadowSystemProperties
 import org.robolectric.shadows.ShadowWebView
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.time.ExperimentalTime
 
-@ExperimentalCoroutinesApi
-@ExperimentalTime
 @RunWith(AndroidJUnit4::class)
 class SoftwareRepositoryTest {
     @get:Rule

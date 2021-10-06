@@ -40,7 +40,6 @@ open class HardwareRepository @Inject constructor(
     private val activityManager: ActivityManager? by lazy { context.getSystemService() }
     private val displayManager: DisplayManager? by lazy { context.getSystemService() }
 
-    @ExperimentalCoroutinesApi
     override fun items(): Flow<List<Item>> =
         combineTransform(
             ramSize(), formattedInternalMemory(), formattedExternalMemory(),
@@ -49,7 +48,6 @@ open class HardwareRepository @Inject constructor(
             emit(listOf(f1, f2, f3, f4, *f5.toTypedArray()))
         }.flowOn(Dispatchers.IO)
 
-    @ExperimentalCoroutinesApi
     private fun ramSize() = flow {
         while (true) {
             val result = Item(
@@ -85,7 +83,6 @@ open class HardwareRepository @Inject constructor(
         }
     }
 
-    @ExperimentalCoroutinesApi
     private fun formattedInternalMemory() = flow {
         while (true) {
             val result = Item(
@@ -119,7 +116,6 @@ open class HardwareRepository @Inject constructor(
         }
     }
 
-    @ExperimentalCoroutinesApi
     private fun formattedExternalMemory() = flow {
         while (true) {
             val result = Item(
@@ -158,7 +154,7 @@ open class HardwareRepository @Inject constructor(
         }
     }
 
-    @ExperimentalCoroutinesApi
+    @OptIn(ExperimentalCoroutinesApi::class)
     private fun getBattery() = callbackFlow {
         val batteryReceiver = object : BroadcastReceiver() {
             override fun onReceive(c: Context?, intent: Intent?) {
@@ -250,7 +246,7 @@ open class HardwareRepository @Inject constructor(
         awaitClose { context.unregisterReceiver(batteryReceiver) }
     }.conflate()
 
-    @ExperimentalCoroutinesApi
+    @OptIn(ExperimentalCoroutinesApi::class)
     private fun getDisplayInfo() = callbackFlow {
         val map = mutableMapOf<Int, List<Item>>()
         val listener = object : DisplayManager.DisplayListener {

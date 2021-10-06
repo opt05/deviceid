@@ -13,8 +13,8 @@ hilt.enableAggregatingTask = true
 val coroutinesVersion = "1.5.2"
 val hiltVersion: String by rootProject.extra
 val lifecycleVersion = "2.4.0-alpha03" //beta01 is 31+
-val composeVersion = "1.0.2"
-val composeAccompanistVersion = "0.18.0"
+val composeVersion = "1.0.3"
+val composeAccompanistVersion = "0.19.0"
 val datastoreVersion = "1.0.0"
 val mockitoVersion = "3.12.4"
 val mockitoKotlinVersion = "3.2.0"
@@ -62,11 +62,14 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
     kotlinOptions.jvmTarget = JavaVersion.VERSION_11.toString()
+    kotlin.sourceSets.all { languageSettings.optIn("kotlin.RequiresOptIn") }
     composeOptions.kotlinCompilerExtensionVersion = composeVersion
     testOptions {
         animationsDisabled = true
         unitTests.isIncludeAndroidResources = true
         unitTests.all { it.jvmArgs("-Xmx2g") }
+        kotlinOptions.freeCompilerArgs += listOf("-Xopt-in=kotlin.time.ExperimentalTime",
+            "-Xopt-in=kotlinx.coroutines.ExperimentalCoroutinesApi")
     }
     testBuildType = "debug"
     kapt.correctErrorTypes = true

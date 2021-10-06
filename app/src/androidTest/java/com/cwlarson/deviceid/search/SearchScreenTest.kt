@@ -1,6 +1,5 @@
 package com.cwlarson.deviceid.search
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.material.rememberScaffoldState
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -14,10 +13,8 @@ import com.cwlarson.deviceid.tabs.Item
 import com.cwlarson.deviceid.tabs.ItemSubtitle
 import com.cwlarson.deviceid.tabs.ItemType
 import com.cwlarson.deviceid.tabs.TAB_TEST_TAG_LIST_ITEM
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Before
@@ -27,7 +24,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
 import javax.inject.Inject
 
-@ExperimentalCoroutinesApi
 @HiltAndroidTest
 class SearchScreenTest {
     @get:Rule(order = 0)
@@ -44,8 +40,6 @@ class SearchScreenTest {
     private lateinit var data: MutableStateFlow<TabDataStatus>
     private var clickedItem: Item? = null
 
-    @ExperimentalFoundationApi
-    @ExperimentalPermissionsApi
     @Before
     fun setup() {
         hiltAndroidRule.inject()

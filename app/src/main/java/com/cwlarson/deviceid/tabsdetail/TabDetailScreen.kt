@@ -30,7 +30,6 @@ import com.cwlarson.deviceid.ui.util.copyItemToClipboard
 import com.cwlarson.deviceid.ui.util.share
 import com.cwlarson.deviceid.util.collectAsStateWithLifecycle
 import com.google.accompanist.insets.navigationBarsPadding
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 @VisibleForTesting
 const val TAB_DETAIL_TEST_TAG_PROGRESS = "tab_detail_progress"
@@ -38,7 +37,6 @@ const val TAB_DETAIL_TEST_TAG_PROGRESS = "tab_detail_progress"
 @VisibleForTesting
 const val TAB_DETAIL_TEST_TAG_RESULTS = "tab_detail_results"
 
-@ExperimentalCoroutinesApi
 @Composable
 fun TabDetailScreen(item: Item?, viewModel: TabsDetailViewModel = hiltViewModel()) {
     viewModel.updateCurrentItem(item)

@@ -22,7 +22,6 @@ import com.cwlarson.deviceid.testutils.CoroutineTestRule
 import com.cwlarson.deviceid.testutils.awaitItemFromList
 import com.cwlarson.deviceid.testutils.shadows.*
 import com.cwlarson.deviceid.util.AppPermission
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -35,10 +34,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.shadow.api.Shadow.extract
 import org.robolectric.shadows.ShadowWifiInfo
 import java.net.InetAddress
-import kotlin.time.ExperimentalTime
 
-@ExperimentalCoroutinesApi
-@ExperimentalTime
 @RunWith(AndroidJUnit4::class)
 class NetworkRepositoryTest {
     @get:Rule

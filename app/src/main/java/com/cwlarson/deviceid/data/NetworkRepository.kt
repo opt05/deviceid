@@ -16,7 +16,6 @@ import com.cwlarson.deviceid.tabs.ItemSubtitle
 import com.cwlarson.deviceid.tabs.ItemType
 import com.cwlarson.deviceid.util.AppPermission
 import com.cwlarson.deviceid.util.isGranted
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import timber.log.Timber
 import java.net.InetAddress
@@ -32,7 +31,6 @@ open class NetworkRepository @Inject constructor(
     private val bluetoothManager: BluetoothManager? by lazy { context.getSystemService() }
     private val euiccManager: EuiccManager? by lazy { context.getSystemService() }
 
-    @ExperimentalCoroutinesApi
     override fun items() = flowOf(
         listOf(
             deviceSoftwareVersion(), wifiMac(), wifiBSSID(), wifiSSID(),
