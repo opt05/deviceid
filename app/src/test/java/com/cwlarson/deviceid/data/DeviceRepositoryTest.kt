@@ -17,7 +17,8 @@ import com.cwlarson.deviceid.testutils.CoroutineTestRule
 import com.cwlarson.deviceid.testutils.awaitItemFromList
 import com.cwlarson.deviceid.testutils.shadows.*
 import com.cwlarson.deviceid.util.AppPermission
-import kotlinx.coroutines.runBlocking
+import com.cwlarson.deviceid.util.DispatcherProvider
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Ignore
@@ -36,19 +37,21 @@ class DeviceRepositoryTest {
     @get:Rule
     val coroutineRule = CoroutineTestRule()
 
+    private lateinit var dispatcherProvider: DispatcherProvider
     private lateinit var context: Application
     private lateinit var preferencesManager: PreferenceManager
     private lateinit var repository: DeviceRepository
 
     @Before
     fun setup() {
+        dispatcherProvider = DispatcherProvider.provideDispatcher(coroutineRule.dispatcher)
         context = ApplicationProvider.getApplicationContext()
         preferencesManager = mock()
-        repository = DeviceRepository(context, preferencesManager)
+        repository = DeviceRepository(dispatcherProvider ,context, preferencesManager)
     }
 
     @Test
-    fun `Verify item list is returned when items method is called`() = runBlocking {
+    fun `Verify item list is returned when items method is called`() = runTest {
         repository.items().test {
             val item = awaitItem()
             assertEquals(R.string.device_title_imei, item[0].title)
@@ -62,7 +65,7 @@ class DeviceRepositoryTest {
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.N])
-    fun `Returns text when IMEI is below android O with permissions granted`() = runBlocking {
+    fun `Returns text when IMEI is below android O with permissions granted`() = runTest {
         shadowOf(context).grantPermissions(Manifest.permission.READ_PHONE_STATE)
         shadowOf(context.getSystemService(TELEPHONY_SERVICE) as TelephonyManager).setDeviceId("test")
         repository.items().test {
@@ -80,7 +83,7 @@ class DeviceRepositoryTest {
     @Test
     @Config(sdk = [Build.VERSION_CODES.N])
     fun `Returns permission needed when IMEI is below android O with permissions not granted`() =
-        runBlocking {
+        runTest {
             shadowOf(context).denyPermissions(Manifest.permission.READ_PHONE_STATE)
             shadowOf(context.getSystemService(TELEPHONY_SERVICE) as TelephonyManager).setDeviceId("test")
             repository.items().test {
@@ -98,24 +101,7 @@ class DeviceRepositoryTest {
     @Test
     @Config(sdk = [Build.VERSION_CODES.N], shadows = [ExceptionShadowTelephonyManager::class])
     fun `Returns error when IMEI is below android O with an exception and permissions granted`() =
-        runBlocking {
-            shadowOf(context).grantPermissions(Manifest.permission.READ_PHONE_STATE)
-            repository.items().test {
-                assertEquals(
-                    Item(
-                        title = R.string.device_title_imei,
-                        itemType = ItemType.DEVICE,
-                        subtitle = ItemSubtitle.Error
-                    ), awaitItemFromList(R.string.device_title_imei)
-                )
-                awaitComplete()
-            }
-        }
-
-    @Test
-    @Config(sdk = [Build.VERSION_CODES.N], shadows = [ExceptionShadowContextImpl::class])
-    fun `Returns error when IMEI is below android O with an exception with permissions granted`() =
-        runBlocking {
+        runTest {
             shadowOf(context).grantPermissions(Manifest.permission.READ_PHONE_STATE)
             repository.items().test {
                 assertEquals(
@@ -131,7 +117,7 @@ class DeviceRepositoryTest {
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.O])
-    fun `Returns not possible when IMEI is above android N`() = runBlocking {
+    fun `Returns not possible when IMEI is above android N`() = runTest {
         repository.items().test {
             assertEquals(
                 Item(
@@ -146,7 +132,7 @@ class DeviceRepositoryTest {
 
     @Test
     fun `Returns text when device model is available and model starts with manufacturer`() =
-        runBlocking {
+        runTest {
             ShadowBuild.setManufacturer("manufacturer")
             ShadowBuild.setProduct("product")
             ShadowBuild.setModel("manufacturer model")
@@ -164,7 +150,7 @@ class DeviceRepositoryTest {
 
     @Test
     fun `Returns text when device model is available and model does not start with manufacturer`() =
-        runBlocking {
+        runTest {
             ShadowBuild.setManufacturer("manufacturer")
             ShadowBuild.setProduct("product")
             ShadowBuild.setModel("model")
@@ -181,7 +167,7 @@ class DeviceRepositoryTest {
         }
 
     @Test
-    fun `Returns text when device model is completely empty then returns blank`() = runBlocking {
+    fun `Returns text when device model is completely empty then returns blank`() = runTest {
         ShadowBuild.setManufacturer("")
         ShadowBuild.setProduct("")
         ShadowBuild.setModel("")
@@ -198,7 +184,7 @@ class DeviceRepositoryTest {
     }
 
     @Test
-    fun `Returns text when device model is manufacturer empty then returns text`() = runBlocking {
+    fun `Returns text when device model is manufacturer empty then returns text`() = runTest {
         ShadowBuild.setManufacturer("")
         ShadowBuild.setProduct("product")
         ShadowBuild.setModel("model")
@@ -216,7 +202,7 @@ class DeviceRepositoryTest {
 
     @Test
     fun `Returns text when device model is manufacturer and model empty then returns text`() =
-        runBlocking {
+        runTest {
             ShadowBuild.setManufacturer("")
             ShadowBuild.setProduct("product")
             ShadowBuild.setModel("")
@@ -234,11 +220,11 @@ class DeviceRepositoryTest {
 
     @Ignore("Not possible?")
     @Test
-    fun `Returns error when device model with an exception`() = runBlocking { }
+    fun `Returns error when device model with an exception`() = runTest { }
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.N], shadows = [MyShadowBuild::class])
-    fun `Returns text when serial is below android O`() = runBlocking {
+    fun `Returns text when serial is below android O`() = runTest {
         MyShadowBuild.setSerial("RF1DB6K177Y")
         repository.items().test {
             assertEquals(
@@ -254,7 +240,7 @@ class DeviceRepositoryTest {
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.O])
-    fun `Returns not possible when serial is above android N`() = runBlocking {
+    fun `Returns not possible when serial is above android N`() = runTest {
         repository.items().test {
             assertEquals(
                 Item(
@@ -269,11 +255,11 @@ class DeviceRepositoryTest {
 
     @Ignore("Not possible?")
     @Test
-    fun `Returns error when serial with an exception`() = runBlocking { }
+    fun `Returns error when serial with an exception`() = runTest { }
 
     @Test
     @Config(shadows = [MyShadowSecure::class])
-    fun `Returns text when Android ID is available`() = runBlocking {
+    fun `Returns text when Android ID is available`() = runTest {
         MyShadowSecure.setAndroidID("1")
         repository.items().test {
             assertEquals(
@@ -288,10 +274,10 @@ class DeviceRepositoryTest {
     }
 
     @Test
-    fun `Returns error when Android ID with an exception`() = runBlocking {
+    fun `Returns error when Android ID with an exception`() = runTest {
         val context = mock<Application>()
         whenever(context.contentResolver).thenThrow(NullPointerException())
-        val repository = DeviceRepository(context, preferencesManager)
+        val repository = DeviceRepository(dispatcherProvider, context, preferencesManager)
         repository.items().test {
             assertEquals(
                 Item(
@@ -306,10 +292,12 @@ class DeviceRepositoryTest {
 
     @Test
     @Config(shadows = [MyShadowContentResolver::class])
-    fun `Returns text when GSFID is available`() = runBlocking {
-        extract<MyShadowContentResolver>(ApplicationProvider.getApplicationContext<Application>()
-            .contentResolver).setGSFID("1814197643282848243")
-        val repository = DeviceRepository(context, preferencesManager)
+    fun `Returns text when GSFID is available`() = runTest {
+        extract<MyShadowContentResolver>(
+            ApplicationProvider.getApplicationContext<Application>()
+                .contentResolver
+        ).setGSFID("1814197643282848243")
+        val repository = DeviceRepository(dispatcherProvider, context, preferencesManager)
         repository.items().test {
             assertEquals(
                 Item(
@@ -324,9 +312,11 @@ class DeviceRepositoryTest {
 
     @Test
     @Config(shadows = [MyShadowContentResolver::class])
-    fun `Returns error when GSFID with unable to move to first`() = runBlocking {
-        extract<MyShadowContentResolver>(ApplicationProvider.getApplicationContext<Application>()
-            .contentResolver).setGSFID(null)
+    fun `Returns error when GSFID with unable to move to first`() = runTest {
+        extract<MyShadowContentResolver>(
+            ApplicationProvider.getApplicationContext<Application>()
+                .contentResolver
+        ).setGSFID(null)
         repository.items().test {
             assertEquals(
                 Item(
@@ -341,9 +331,11 @@ class DeviceRepositoryTest {
 
     @Test
     @Config(shadows = [MyShadowContentResolver::class])
-    fun `Returns error when GSFID with column count less then two`() = runBlocking {
-        extract<MyShadowContentResolver>(ApplicationProvider.getApplicationContext<Application>()
-            .contentResolver).setGSFID(null)
+    fun `Returns error when GSFID with column count less then two`() = runTest {
+        extract<MyShadowContentResolver>(
+            ApplicationProvider.getApplicationContext<Application>()
+                .contentResolver
+        ).setGSFID(null)
         repository.items().test {
             assertEquals(
                 Item(
@@ -358,9 +350,11 @@ class DeviceRepositoryTest {
 
     @Test
     @Config(shadows = [MyShadowContentResolver::class])
-    fun `Returns error when GSFID with query is null`() = runBlocking {
-        extract<MyShadowContentResolver>(ApplicationProvider.getApplicationContext<Application>()
-            .contentResolver).setGSFID(null)
+    fun `Returns error when GSFID with query is null`() = runTest {
+        extract<MyShadowContentResolver>(
+            ApplicationProvider.getApplicationContext<Application>()
+                .contentResolver
+        ).setGSFID(null)
         repository.items().test {
             assertEquals(
                 Item(
@@ -375,7 +369,7 @@ class DeviceRepositoryTest {
 
     @Test
     @Config(shadows = [ExceptionShadowContextImpl::class])
-    fun `Returns error when GSFID with an exception`() = runBlocking {
+    fun `Returns error when GSFID with an exception`() = runTest {
         repository.items().test {
             assertEquals(
                 Item(

@@ -11,6 +11,8 @@ import android.text.format.Formatter
 import android.util.DisplayMetrics
 import android.view.Display
 import android.view.Surface
+import android.view.WindowManager
+import android.view.WindowManager.LayoutParams.TYPE_APPLICATION
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.BatteryStd
 import androidx.compose.material.icons.outlined.Memory
@@ -24,8 +26,7 @@ import com.cwlarson.deviceid.tabs.ChartItem
 import com.cwlarson.deviceid.tabs.Item
 import com.cwlarson.deviceid.tabs.ItemSubtitle
 import com.cwlarson.deviceid.tabs.ItemType
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import com.cwlarson.deviceid.util.DispatcherProvider
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
@@ -34,19 +35,26 @@ import java.util.*
 import javax.inject.Inject
 
 open class HardwareRepository @Inject constructor(
+    private val dispatcherProvider: DispatcherProvider,
     private val context: Context,
     private val preferenceManager: PreferenceManager
-) : TabData(context, preferenceManager) {
-    private val activityManager: ActivityManager? by lazy { context.getSystemService() }
-    private val displayManager: DisplayManager? by lazy { context.getSystemService() }
+) : TabData(dispatcherProvider, context, preferenceManager) {
+    private val activityManager by lazy { context.getSystemService<ActivityManager>() }
+    private val displayManager by lazy { context.getSystemService<DisplayManager>() }
 
-    override fun items(): Flow<List<Item>> =
-        combineTransform(
-            ramSize(), formattedInternalMemory(), formattedExternalMemory(),
-            getBattery(), getDisplayInfo()
-        ) { f1, f2, f3, f4, f5 ->
-            emit(listOf(f1, f2, f3, f4, *f5.toTypedArray()))
-        }.flowOn(Dispatchers.IO)
+    override fun items(): Flow<List<Item>> = combineTransform<Any, List<Item>>(
+        ramSize(), formattedInternalMemory(), formattedExternalMemory(),
+        getBattery(), getDisplayInfo(), socManufacturer(), socModel()
+    ) { items ->
+        emit(mutableListOf<Item>().apply {
+            items.forEach {
+                when (it) {
+                    is Item -> add(it)
+                    is List<*> -> addAll(it.filterIsInstance<Item>())
+                }
+            }
+        })
+    }.flowOn(dispatcherProvider.IO)
 
     private fun ramSize() = flow {
         while (true) {
@@ -154,7 +162,6 @@ open class HardwareRepository @Inject constructor(
         }
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     private fun getBattery() = callbackFlow {
         val batteryReceiver = object : BroadcastReceiver() {
             override fun onReceive(c: Context?, intent: Intent?) {
@@ -246,7 +253,6 @@ open class HardwareRepository @Inject constructor(
         awaitClose { context.unregisterReceiver(batteryReceiver) }
     }.conflate()
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     private fun getDisplayInfo() = callbackFlow {
         val map = mutableMapOf<Int, List<Item>>()
         val listener = object : DisplayManager.DisplayListener {
@@ -322,45 +328,25 @@ open class HardwareRepository @Inject constructor(
                                 title = R.string.hardware_title_display_density,
                                 itemType = ItemType.HARDWARE,
                                 subtitle = ItemSubtitle.Text(
-                                    DisplayMetrics().apply { display.getRealMetrics(this) }.run {
-                                        when (densityDpi) {
-                                            DisplayMetrics.DENSITY_LOW -> R.string.display_density_ldpi
-                                            DisplayMetrics.DENSITY_MEDIUM -> R.string.display_density_mdpi
-                                            DisplayMetrics.DENSITY_HIGH -> R.string.display_density_hdpi
-                                            DisplayMetrics.DENSITY_XHIGH -> R.string.display_density_xhdpi
-                                            DisplayMetrics.DENSITY_XXHIGH -> R.string.display_density_xxhdpi
-                                            DisplayMetrics.DENSITY_XXXHIGH -> R.string.display_density_xxxhdpi
-                                            DisplayMetrics.DENSITY_TV -> R.string.display_density_tvdpi
-                                            DisplayMetrics.DENSITY_140 -> R.string.display_density_140
-                                            DisplayMetrics.DENSITY_180 -> R.string.display_density_180
-                                            DisplayMetrics.DENSITY_200 -> R.string.display_density_200
-                                            DisplayMetrics.DENSITY_220 -> R.string.display_density_220
-                                            DisplayMetrics.DENSITY_260 -> R.string.display_density_260
-                                            DisplayMetrics.DENSITY_280 -> R.string.display_density_280
-                                            DisplayMetrics.DENSITY_300 -> R.string.display_density_300
-                                            DisplayMetrics.DENSITY_340 -> R.string.display_density_340
-                                            DisplayMetrics.DENSITY_360 -> R.string.display_density_360
-                                            DisplayMetrics.DENSITY_400 -> R.string.display_density_400
-                                            DisplayMetrics.DENSITY_420 -> R.string.display_density_420
-                                            DisplayMetrics.DENSITY_440 -> R.string.display_density_440
-                                            DisplayMetrics.DENSITY_450 -> R.string.display_density_450
-                                            DisplayMetrics.DENSITY_560 -> R.string.display_density_560
-                                            DisplayMetrics.DENSITY_600 -> R.string.display_density_600
-                                            else -> null
-                                        }?.run {
-                                            context.getString(
-                                                R.string.display_density_format_with_name,
-                                                context.getString(this),
-                                                heightPixels,
-                                                widthPixels
-                                            )
-                                        } ?: context.getString(
-                                            R.string.display_density_format_without_name,
-                                            heightPixels,
-                                            widthPixels
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+                                        context.createDisplayContext(display)
+                                            .createWindowContext(TYPE_APPLICATION, null)
+                                            .getSystemService(WindowManager::class.java)
+                                            .maximumWindowMetrics.bounds.run {
+                                                densityDpiToString(
+                                                    context.resources.configuration.densityDpi,
+                                                    height(), width()
+                                                )
+                                            }
+                                    else DisplayMetrics().apply {
+                                        @Suppress("DEPRECATION")
+                                        display.getRealMetrics(this)
+                                    }.run {
+                                        densityDpiToString(
+                                            densityDpi, heightPixels, widthPixels
                                         )
-                                    }),
-                                titleFormatArgs = listOf("$displayId")
+                                    }
+                                ), titleFormatArgs = listOf("$displayId")
                             )
                         )
                     }
@@ -385,4 +371,67 @@ open class HardwareRepository @Inject constructor(
         displayManager?.registerDisplayListener(listener, Handler(Looper.getMainLooper()))
         awaitClose { displayManager?.unregisterDisplayListener(listener) }
     }.conflate()
+
+    /**
+     * To convert screen density, height and width to the [Item] text format
+     * @param densityDpi Dpi int from either [DisplayMetrics] or [WindowManager]
+     * @param height Int value of the current screen height
+     * @param width Int value of the current screen width
+     */
+    private fun densityDpiToString(densityDpi: Int, height: Int, width: Int): String =
+        when (densityDpi) {
+            DisplayMetrics.DENSITY_LOW -> R.string.display_density_ldpi
+            DisplayMetrics.DENSITY_MEDIUM -> R.string.display_density_mdpi
+            DisplayMetrics.DENSITY_HIGH -> R.string.display_density_hdpi
+            DisplayMetrics.DENSITY_XHIGH -> R.string.display_density_xhdpi
+            DisplayMetrics.DENSITY_XXHIGH -> R.string.display_density_xxhdpi
+            DisplayMetrics.DENSITY_XXXHIGH -> R.string.display_density_xxxhdpi
+            DisplayMetrics.DENSITY_TV -> R.string.display_density_tvdpi
+            DisplayMetrics.DENSITY_140 -> R.string.display_density_140
+            DisplayMetrics.DENSITY_180 -> R.string.display_density_180
+            DisplayMetrics.DENSITY_200 -> R.string.display_density_200
+            DisplayMetrics.DENSITY_220 -> R.string.display_density_220
+            DisplayMetrics.DENSITY_260 -> R.string.display_density_260
+            DisplayMetrics.DENSITY_280 -> R.string.display_density_280
+            DisplayMetrics.DENSITY_300 -> R.string.display_density_300
+            DisplayMetrics.DENSITY_340 -> R.string.display_density_340
+            DisplayMetrics.DENSITY_360 -> R.string.display_density_360
+            DisplayMetrics.DENSITY_400 -> R.string.display_density_400
+            DisplayMetrics.DENSITY_420 -> R.string.display_density_420
+            DisplayMetrics.DENSITY_440 -> R.string.display_density_440
+            DisplayMetrics.DENSITY_450 -> R.string.display_density_450
+            DisplayMetrics.DENSITY_560 -> R.string.display_density_560
+            DisplayMetrics.DENSITY_600 -> R.string.display_density_600
+            else -> null
+        }?.run {
+            context.getString(
+                R.string.display_density_format_with_name,
+                context.getString(this), height, width
+            )
+        } ?: context.getString(
+            R.string.display_density_format_with_name,
+            context.getString(R.string.display_density_other, densityDpi), height, width
+        )
+
+    private fun socManufacturer() = flowOf(
+        Item(
+            title = R.string.hardware_title_soc_manufacturer, itemType = ItemType.HARDWARE,
+            subtitle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                ItemSubtitle.Text(Build.SOC_MANUFACTURER)
+            } else {
+                ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.S)
+            }
+        )
+    )
+
+    private fun socModel() = flowOf(
+        Item(
+            title = R.string.hardware_title_soc_model, itemType = ItemType.HARDWARE,
+            subtitle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                ItemSubtitle.Text(Build.SOC_MODEL)
+            } else {
+                ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.S)
+            }
+        )
+    )
 }

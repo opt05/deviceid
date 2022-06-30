@@ -15,6 +15,7 @@ class MyShadowContentResolver {
         gsfid = value
     }
 
+    @Suppress("unused","UNUSED_PARAMETER")
     @Implementation
     fun query(
         uri: Uri?,

@@ -10,16 +10,16 @@ import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.settings.PreferenceManager
 import com.cwlarson.deviceid.testutils.CoroutineTestRule
 import com.cwlarson.deviceid.testutils.itemFromList
-import kotlinx.coroutines.FlowPreview
+import com.cwlarson.deviceid.util.DispatcherProvider
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertNotNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.spy
 import org.mockito.kotlin.whenever
 
 @RunWith(AndroidJUnit4::class)
@@ -27,13 +27,13 @@ class AllRepositoryTest {
     @get:Rule
     val coroutineRule = CoroutineTestRule()
 
-    private lateinit var context: Application
+    private lateinit var dispatcherProvider: DispatcherProvider
     private lateinit var preferencesManager: PreferenceManager
     private lateinit var repository: AllRepository
 
     @Before
     fun setup() {
-        context = spy(ApplicationProvider.getApplicationContext() as Application)
+        val context = ApplicationProvider.getApplicationContext<Application>()
         @Suppress("DEPRECATION")
         context.sendStickyBroadcast(Intent(Intent.ACTION_BATTERY_CHANGED).apply {
             putExtra(BatteryManager.EXTRA_HEALTH, BatteryManager.BATTERY_HEALTH_GOOD)
@@ -41,14 +41,14 @@ class AllRepositoryTest {
             putExtra(BatteryManager.EXTRA_STATUS, BatteryManager.BATTERY_STATUS_FULL)
             putExtra(BatteryManager.EXTRA_PLUGGED, -1)
         })
+        dispatcherProvider = DispatcherProvider.provideDispatcher(coroutineRule.dispatcher)
         preferencesManager = mock()
-        repository = AllRepository(context, preferencesManager)
+        repository = AllRepository(dispatcherProvider, context, preferencesManager)
     }
 
-    @FlowPreview
     @Test
-    fun `Verify item list is from all repositories`() = runBlocking {
-        whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(0))
+    fun `Verify item list is from all repositories`() = runTest {
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
         repository.items().test {
             val item = awaitItem()
             assertNotNull(item.itemFromList(R.string.device_title_android_id))
@@ -57,6 +57,5 @@ class AllRepositoryTest {
             assertNotNull(item.itemFromList(R.string.hardware_title_battery))
             cancelAndConsumeRemainingEvents()
         }
-
     }
 }

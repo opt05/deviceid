@@ -16,15 +16,20 @@ import com.cwlarson.deviceid.data.*
 import com.cwlarson.deviceid.tabs.Item
 import com.cwlarson.deviceid.tabs.ItemSubtitle
 import com.cwlarson.deviceid.tabs.ItemType
+import com.cwlarson.deviceid.ui.theme.AppTheme
+import com.cwlarson.deviceid.util.DispatcherProvider
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.TestCoroutineScheduler
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.hamcrest.Matchers.allOf
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.whenever
 import javax.inject.Inject
 
@@ -37,6 +42,9 @@ class TabDetailScreenTest {
     val composeTestRule = createAndroidComposeRule<HiltTestActivity>()
 
     @Inject
+    lateinit var dispatcherProvider: DispatcherProvider
+
+    @Inject
     lateinit var deviceRepository: DeviceRepository
 
     @Inject
@@ -47,31 +55,35 @@ class TabDetailScreenTest {
 
     @Inject
     lateinit var hardwareRepository: HardwareRepository
+    private val dispatcher = UnconfinedTestDispatcher(TestCoroutineScheduler())
     private lateinit var dataRepository: MutableStateFlow<TabDetailStatus>
     private lateinit var clipboardManager: ClipboardManager
 
     @Before
     fun setup() {
         hiltAndroidRule.inject()
+        dispatcherProvider.provideDispatcher(dispatcher)
         dataRepository = MutableStateFlow(TabDetailStatus.Loading)
-        whenever(deviceRepository.details(any())).thenReturn(dataRepository)
-        whenever(networkRepository.details(any())).thenReturn(dataRepository)
-        whenever(softwareRepository.details(any())).thenReturn(dataRepository)
-        whenever(hardwareRepository.details(any())).thenReturn(dataRepository)
+        whenever(deviceRepository.details(any())).doReturn(dataRepository)
+        whenever(networkRepository.details(any())).doReturn(dataRepository)
+        whenever(softwareRepository.details(any())).doReturn(dataRepository)
+        whenever(hardwareRepository.details(any())).doReturn(dataRepository)
         composeTestRule.setContent {
-            clipboardManager = LocalClipboardManager.current
-            TabDetailScreen(
-                Item(
-                    title = R.string.app_name,
-                    itemType = ItemType.DEVICE,
-                    subtitle = ItemSubtitle.Text("subtitle")
+            AppTheme {
+                clipboardManager = LocalClipboardManager.current
+                TabDetailScreen(
+                    Item(
+                        title = R.string.app_name,
+                        itemType = ItemType.DEVICE,
+                        subtitle = ItemSubtitle.Text("subtitle")
+                    )
                 )
-            )
+            }
         }
     }
 
     @Test
-    fun test_loading() = runBlockingTest {
+    fun test_loading() = runTest(dispatcher) {
         dataRepository.value = TabDetailStatus.Loading
 
         composeTestRule.onNodeWithTag(TAB_DETAIL_TEST_TAG_PROGRESS).assertIsDisplayed()
@@ -83,7 +95,7 @@ class TabDetailScreenTest {
     }
 
     @Test
-    fun test_error() = runBlockingTest {
+    fun test_error() = runTest(dispatcher) {
         dataRepository.value = TabDetailStatus.Error
 
         composeTestRule.onNodeWithTag(TAB_DETAIL_TEST_TAG_PROGRESS).assertDoesNotExist()
@@ -95,7 +107,7 @@ class TabDetailScreenTest {
     }
 
     @Test
-    fun test_mainContent() = runBlockingTest {
+    fun test_mainContent() = runTest(dispatcher) {
         dataRepository.value = TabDetailStatus.Success(
             Item(
                 title = R.string.app_name,
@@ -117,7 +129,7 @@ class TabDetailScreenTest {
     }
 
     @Test
-    fun test_mainContent_share_click() = runBlockingTest {
+    fun test_mainContent_share_click() = runTest(dispatcher) {
         dataRepository.value = TabDetailStatus.Success(
             Item(
                 title = R.string.app_name,
@@ -133,7 +145,7 @@ class TabDetailScreenTest {
     }
 
     @Test
-    fun test_mainContent_copy_click() = runBlockingTest {
+    fun test_mainContent_copy_click() = runTest(dispatcher) {
         dataRepository.value = TabDetailStatus.Success(
             Item(
                 title = R.string.app_name,

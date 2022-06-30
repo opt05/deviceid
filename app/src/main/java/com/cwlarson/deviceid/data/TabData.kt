@@ -3,8 +3,7 @@ package com.cwlarson.deviceid.data
 import android.content.Context
 import com.cwlarson.deviceid.settings.PreferenceManager
 import com.cwlarson.deviceid.tabs.Item
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import com.cwlarson.deviceid.util.DispatcherProvider
 import kotlinx.coroutines.flow.*
 
 sealed class TabDataStatus {
@@ -20,16 +19,15 @@ sealed class TabDetailStatus {
 }
 
 abstract class TabData(
+    private val dispatcherProvider: DispatcherProvider,
     private val context: Context,
     private val preferenceManager: PreferenceManager
 ) {
     internal abstract fun items(): Flow<List<Item>>
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     open fun list(): Flow<TabDataStatus> = channelFlow {
         trySend(TabDataStatus.Loading)
         preferenceManager.getFilters().collectLatest { filters ->
-            if(!filters.swipeRefreshDisabled) trySend(TabDataStatus.Loading)
             items().collectLatest { items ->
                 try {
                     val result = items.filter { item ->
@@ -43,9 +41,8 @@ abstract class TabData(
                 }
             }
         }
-    }.flowOn(Dispatchers.IO)
+    }.flowOn(dispatcherProvider.IO)
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     open fun details(item: Item): Flow<TabDetailStatus> = channelFlow {
         trySend(TabDetailStatus.Loading)
         items().collectLatest { items ->
@@ -61,9 +58,8 @@ abstract class TabData(
                 trySend(TabDetailStatus.Error)
             }
         }
-    }.flowOn(Dispatchers.IO)
+    }.flowOn(dispatcherProvider.IO)
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     open fun search(searchText: StateFlow<String>): Flow<TabDataStatus> = channelFlow {
         trySend(TabDataStatus.Loading)
         preferenceManager.getFilters().collectLatest { filters ->
@@ -88,5 +84,5 @@ abstract class TabData(
                 }
             }
         }
-    }.flowOn(Dispatchers.IO)
+    }.flowOn(dispatcherProvider.IO)
 }

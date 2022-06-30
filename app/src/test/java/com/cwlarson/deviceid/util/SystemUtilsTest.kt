@@ -6,9 +6,9 @@ import android.content.pm.PackageManager
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-
 
 class SystemUtilsTest {
 
@@ -17,9 +17,9 @@ class SystemUtilsTest {
         val context: Context = mock()
         val packageInfo: PackageInfo = mock()
         val packageManager: PackageManager = mock()
-        whenever(context.packageManager).thenReturn(packageManager)
+        whenever(context.packageManager).doReturn(packageManager)
         whenever(packageManager.getPackageInfo("com.google.android.gms", 0))
-            .thenReturn(packageInfo)
+            .doReturn(packageInfo)
         assertEquals(packageInfo, context.gmsPackageInfo)
     }
 
@@ -27,7 +27,7 @@ class SystemUtilsTest {
     fun `Verify gmsPackageInfo returns null when name not found exception`() {
         val context: Context = mock()
         val packageManager: PackageManager = mock()
-        whenever(context.packageManager).thenReturn(packageManager)
+        whenever(context.packageManager).doReturn(packageManager)
         whenever(packageManager.getPackageInfo("com.google.android.gms", 0))
             .thenThrow(PackageManager.NameNotFoundException())
         assertNull(context.gmsPackageInfo)
@@ -37,7 +37,7 @@ class SystemUtilsTest {
     fun `Verify gmsPackageInfo returns null when other exception`() {
         val context: Context = mock()
         val packageManager: PackageManager = mock()
-        whenever(context.packageManager).thenReturn(packageManager)
+        whenever(context.packageManager).doReturn(packageManager)
         whenever(packageManager.getPackageInfo("com.google.android.gms", 0))
             .thenThrow(NullPointerException())
         assertNull(context.gmsPackageInfo)
@@ -47,9 +47,9 @@ class SystemUtilsTest {
     fun `Verify systemProperty returns string when available`() {
         val context: Context = mock()
         val classLoader: ClassLoader = mock()
-        whenever(context.classLoader).thenReturn(classLoader)
+        whenever(context.classLoader).doReturn(classLoader)
         whenever(classLoader.loadClass("android.os.SystemProperties"))
-            .thenReturn(TestClass().javaClass)
+            .doReturn(TestClass().javaClass)
         assertEquals("lorem ipsum", context.systemProperty("something"))
     }
 
@@ -57,9 +57,9 @@ class SystemUtilsTest {
     fun `Verify systemProperty returns null when exception`() {
         val context: Context = mock()
         val classLoader: ClassLoader = mock()
-        whenever(context.classLoader).thenReturn(classLoader)
+        whenever(context.classLoader).doReturn(classLoader)
         whenever(classLoader.loadClass("android.os.SystemProperties"))
-            .thenReturn(this.javaClass)
+            .doReturn(this.javaClass)
         assertNull(context.systemProperty("something"))
     }
 

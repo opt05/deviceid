@@ -29,7 +29,6 @@ import com.cwlarson.deviceid.tabs.Item
 import com.cwlarson.deviceid.ui.util.copyItemToClipboard
 import com.cwlarson.deviceid.ui.util.share
 import com.cwlarson.deviceid.util.collectAsStateWithLifecycle
-import com.google.accompanist.insets.navigationBarsPadding
 
 @VisibleForTesting
 const val TAB_DETAIL_TEST_TAG_PROGRESS = "tab_detail_progress"

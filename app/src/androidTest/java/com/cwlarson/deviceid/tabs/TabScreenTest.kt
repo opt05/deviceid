@@ -3,24 +3,30 @@ package com.cwlarson.deviceid.tabs
 import androidx.compose.material.rememberScaffoldState
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.core.os.bundleOf
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.cwlarson.deviceid.HiltTestActivity
 import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.androidtestutils.assertHasLongClickAction
 import com.cwlarson.deviceid.data.*
 import com.cwlarson.deviceid.settings.PreferenceManager
 import com.cwlarson.deviceid.settings.UserPreferences
+import com.cwlarson.deviceid.ui.theme.AppTheme
+import com.cwlarson.deviceid.util.DispatcherProvider
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.TestCoroutineScheduler
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.whenever
 import javax.inject.Inject
 
@@ -31,6 +37,9 @@ class TabScreenTest {
 
     @get:Rule(order = 1)
     val composeTestRule = createAndroidComposeRule<HiltTestActivity>()
+
+    @Inject
+    lateinit var dispatcherProvider: DispatcherProvider
 
     @Inject
     lateinit var deviceRepository: DeviceRepository
@@ -46,6 +55,7 @@ class TabScreenTest {
 
     @Inject
     lateinit var preferenceManager: PreferenceManager
+    private val dispatcher = UnconfinedTestDispatcher(TestCoroutineScheduler())
 
     private lateinit var dataRepository: MutableStateFlow<TabDataStatus>
     private lateinit var dataPreferences: MutableStateFlow<UserPreferences>
@@ -54,27 +64,32 @@ class TabScreenTest {
     @Before
     fun setup() {
         hiltAndroidRule.inject()
+        dispatcherProvider.provideDispatcher(dispatcher)
         dataPreferences = MutableStateFlow(UserPreferences())
         dataRepository = MutableStateFlow(TabDataStatus.Loading)
-        whenever(preferenceManager.userPreferencesFlow).thenReturn(dataPreferences)
-        whenever(deviceRepository.list()).thenReturn(dataRepository)
-        whenever(networkRepository.list()).thenReturn(dataRepository)
-        whenever(softwareRepository.list()).thenReturn(dataRepository)
-        whenever(hardwareRepository.list()).thenReturn(dataRepository)
-        whenever(preferenceManager.autoRefreshRate).thenReturn(flowOf(0))
+        whenever(preferenceManager.userPreferencesFlow).doReturn(dataPreferences)
+        whenever(deviceRepository.list()).doReturn(dataRepository)
+        whenever(networkRepository.list()).doReturn(dataRepository)
+        whenever(softwareRepository.list()).doReturn(dataRepository)
+        whenever(hardwareRepository.list()).doReturn(dataRepository)
+        whenever(preferenceManager.autoRefreshRate).doReturn(flowOf(0))
         clickedItem = null
         composeTestRule.setContent {
-            NavHost(navController = rememberNavController(), startDestination = "tab") {
-                composable("tab") {
-                    it.arguments = bundleOf("tab" to ItemType.DEVICE)
-                    TabScreen(0, false, rememberScaffoldState()) { item -> clickedItem = item }
+            AppTheme {
+                NavHost(navController = rememberNavController(), startDestination = "tab") {
+                    composable("tab", arguments = listOf(navArgument("tab") {
+                        type = NavType.EnumType(ItemType::class.java)
+                        defaultValue = ItemType.DEVICE
+                    })) {
+                        TabScreen(0, false, rememberScaffoldState()) { item -> clickedItem = item }
+                    }
                 }
             }
         }
     }
 
     @Test
-    fun test_loading() = runBlockingTest {
+    fun test_loading() = runTest(dispatcher) {
         dataRepository.value = TabDataStatus.Loading
 
         composeTestRule.onNodeWithText("Loading…").assertIsDisplayed()
@@ -90,7 +105,7 @@ class TabScreenTest {
     }
 
     @Test
-    fun test_error() = runBlockingTest {
+    fun test_error() = runTest(dispatcher) {
         dataRepository.value = TabDataStatus.Error
 
         composeTestRule.onNodeWithText("Loading…").assertDoesNotExist()
@@ -107,7 +122,7 @@ class TabScreenTest {
     }
 
     @Test
-    fun test_noResults() = runBlockingTest {
+    fun test_noResults() = runTest(dispatcher) {
         dataRepository.value = TabDataStatus.Success(emptyList())
 
         composeTestRule.onNodeWithText("Loading…").assertDoesNotExist()
@@ -123,7 +138,7 @@ class TabScreenTest {
     }
 
     @Test
-    fun test_mainContent() = runBlockingTest {
+    fun test_mainContent() = runTest(dispatcher) {
         dataRepository.value = TabDataStatus.Success(
             listOf(
                 Item(
@@ -151,19 +166,19 @@ class TabScreenTest {
     }
 
     @Test
-    fun test_mainContent_onItemClick() = runBlockingTest {
+    fun test_mainContent_onItemClick() = runTest(dispatcher) {
         val item = Item(
             title = R.string.app_name,
             itemType = ItemType.DEVICE, subtitle = ItemSubtitle.Text("subtitle")
         )
         dataRepository.value = TabDataStatus.Success(listOf(item))
         composeTestRule.onNodeWithTag(TAB_TEST_TAG_LIST_ITEM).assertHasClickAction()
-            .performGesture { click(topRight) }
+            .performTouchInput { click(topRight) }
         composeTestRule.runOnIdle { assert(clickedItem == item) }
     }
 
     @Test
-    fun test_mainContent_onItemLongClick() = runBlockingTest {
+    fun test_mainContent_onItemLongClick() = runTest(dispatcher) {
         val item = Item(
             title = R.string.app_name,
             itemType = ItemType.DEVICE, subtitle = ItemSubtitle.Text("subtitle")

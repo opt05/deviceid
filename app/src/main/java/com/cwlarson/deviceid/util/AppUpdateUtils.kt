@@ -4,7 +4,8 @@ import android.app.Activity
 import android.content.Context
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.*
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import com.cwlarson.deviceid.R
 import com.google.android.play.core.appupdate.AppUpdateInfo
 import com.google.android.play.core.appupdate.AppUpdateManager
@@ -17,7 +18,6 @@ import com.google.android.play.core.install.model.UpdateAvailability
 import com.google.android.play.core.ktx.installErrorCode
 import com.google.android.play.core.ktx.installStatus
 import com.google.android.play.core.ktx.requestAppUpdateInfo
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
@@ -42,55 +42,58 @@ sealed class InstallState {
 }
 
 open class AppUpdateUtils @Inject constructor(
+    private val dispatcherProvider: DispatcherProvider,
     private val appUpdateManager: AppUpdateManager,
     private val activity: Context
-) : InstallStateUpdatedListener, LifecycleObserver {
+) : InstallStateUpdatedListener, DefaultLifecycleObserver {
     private val _updateState = MutableStateFlow<UpdateState>(UpdateState.Initial)
     open val updateState = _updateState.asStateFlow()
     private val _installState = MutableStateFlow<InstallState>(InstallState.Initial)
     open val installState = _installState.asStateFlow()
 
     init {
+        @Suppress("LeakingThis")
         if (activity is LifecycleOwner) activity.lifecycle.addObserver(this)
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
-    fun onDestroy() {
+    override fun onDestroy(owner: LifecycleOwner) {
+        super.onDestroy(owner)
         unregisterListener()
         if (activity is LifecycleOwner) activity.lifecycle.removeObserver(this)
     }
 
-    open suspend fun checkForFlexibleUpdate(manual: Boolean = false) = withContext(Dispatchers.IO) {
-        try {
-            if (_updateState.value is UpdateState.Checking) return@withContext
-            _updateState.value = UpdateState.Checking
-            val result = appUpdateManager.requestAppUpdateInfo()
-            _updateState.value = when (val avail = result.updateAvailability()) {
-                UpdateAvailability.UPDATE_AVAILABLE -> {
-                    if (result.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE))
-                        UpdateState.Yes(result, manual) else UpdateState.YesButNotAllowed
-                }
-                UpdateAvailability.UPDATE_NOT_AVAILABLE ->
-                    if (!manual) UpdateState.Initial else
+    open suspend fun checkForFlexibleUpdate(manual: Boolean = false) =
+        withContext(dispatcherProvider.IO) {
+            try {
+                if (_updateState.value is UpdateState.Checking) return@withContext
+                _updateState.value = UpdateState.Checking
+                val result = appUpdateManager.requestAppUpdateInfo()
+                _updateState.value = when (val avail = result.updateAvailability()) {
+                    UpdateAvailability.UPDATE_AVAILABLE -> {
+                        if (result.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE))
+                            UpdateState.Yes(result, manual) else UpdateState.YesButNotAllowed
+                    }
+                    UpdateAvailability.UPDATE_NOT_AVAILABLE ->
+                        if (!manual) UpdateState.Initial else
+                            UpdateState.No(
+                                avail, R.string.update_notavailable_title, R.string
+                                    .update_notavailable_message, R.string.update_notavailable_ok
+                            )
+                    else -> { // UpdateAvailability.UNKNOWN
+                        Timber.e("Unknown update availability type: $avail")
+                        _installState.value = InstallState.Initial
                         UpdateState.No(
-                            avail, R.string.update_notavailable_title, R.string
-                                .update_notavailable_message, R.string.update_notavailable_ok
+                            avail, R.string.update_unknown_title, R.string.update_unknown_message,
+                            R.string.update_unknown_ok
                         )
-                else -> { // UpdateAvailability.UNKNOWN
-                    Timber.e("Unknown update availability type: $avail")
-                    _installState.value = InstallState.Initial
-                    UpdateState.No(
-                        avail, R.string.update_unknown_title, R.string.update_unknown_message,
-                        R.string.update_unknown_ok
-                    )
+                    }
                 }
+                if (activity is AppCompatActivity) startFlexibleUpdate(activity)
+            } catch (e: Throwable) {
+                Timber.e(e)
+                _updateState.value = UpdateState.Initial
             }
-            if (activity is AppCompatActivity) startFlexibleUpdate(activity)
-        } catch (e: Throwable) {
-            Timber.e(e)
-            _updateState.value = UpdateState.Initial
         }
-    }
 
     private fun startFlexibleUpdate(activity: AppCompatActivity) {
         with(_updateState.value) {

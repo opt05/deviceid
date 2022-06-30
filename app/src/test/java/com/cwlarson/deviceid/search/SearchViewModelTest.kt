@@ -5,7 +5,7 @@ import com.cwlarson.deviceid.settings.PreferenceManager
 import com.cwlarson.deviceid.testutils.CoroutineTestRule
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -34,14 +34,14 @@ class SearchViewModelTest {
     lateinit var testObject: SearchViewModel
 
     @Test
-    fun `Verify calls search when creating allItems with internal search flow`() = runBlockingTest {
+    fun `Verify calls search when creating allItems with internal search flow`() = runTest {
         val captor = argumentCaptor<StateFlow<String>>()
         verify(repository).search(captor.capture())
         assertEquals("", captor.lastValue.first())
     }
 
     @Test
-    fun `Sets search text when called and calls search in repository`() = runBlockingTest {
+    fun `Sets search text when called and calls search in repository`() = runTest {
         val captor = argumentCaptor<StateFlow<String>>()
         verify(repository).search(captor.capture())
         testObject.setSearchText("test")
@@ -49,7 +49,7 @@ class SearchViewModelTest {
     }
 
     @Test
-    fun `Verify force refresh is called when method is called`() = runBlockingTest {
+    fun `Verify force refresh is called when method is called`() = runTest {
         testObject.forceRefresh()
         verify(preferenceManager, times(1)).forceRefresh()
     }

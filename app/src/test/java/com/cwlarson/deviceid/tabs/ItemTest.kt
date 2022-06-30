@@ -12,6 +12,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
@@ -37,7 +38,7 @@ class ItemTest {
 
     @Test
     fun `Verify item title formatted string returns when args available and not composable`() {
-        whenever(context.getString(0, "test")).thenReturn("test test")
+        whenever(context.getString(0, "test")).doReturn("test test")
         assertEquals(
             "test test", Item(
                 0, ItemType.DEVICE, ItemSubtitle.Text(null), listOf("test")
@@ -59,7 +60,7 @@ class ItemTest {
 
     @Test
     fun `Verify item title formatted string returns when args not available and not composable`() {
-        whenever(context.getString(0)).thenReturn("test")
+        whenever(context.getString(0)).doReturn("test")
         assertEquals(
             "test", Item(
                 0, ItemType.DEVICE, ItemSubtitle.Text(null)

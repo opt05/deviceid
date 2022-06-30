@@ -7,5 +7,4 @@
     <dimen name="navigation_title_height">64dp</dimen>
     <dimen name="grid_view_item_width">300dp</dimen>
     <dimen name="two_pane_min">900dp</dimen>
-    <dimen name="top_searchbar_height">56dp</dimen>
 </resources>

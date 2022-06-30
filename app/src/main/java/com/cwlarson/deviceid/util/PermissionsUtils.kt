@@ -2,7 +2,9 @@ package com.cwlarson.deviceid.util
 
 import android.Manifest
 import android.content.Context
+import android.os.Build
 import android.os.Parcelable
+import androidx.annotation.RequiresApi
 import androidx.core.content.PermissionChecker
 import kotlinx.parcelize.Parcelize
 
@@ -12,6 +14,10 @@ sealed class AppPermission(val permissionName: String) : Parcelable {
 
     @Parcelize
     object AccessFineLocation : AppPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+
+    @RequiresApi(Build.VERSION_CODES.S)
+    @Parcelize
+    object AccessBluetoothConnect : AppPermission(Manifest.permission.BLUETOOTH_CONNECT)
 }
 
 /**

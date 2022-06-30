@@ -1,48 +1,58 @@
 package com.cwlarson.deviceid.testutils
 
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.test.TestCoroutineDispatcher
-import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.test.*
 import org.junit.rules.TestWatcher
 import org.junit.runner.Description
 
 /**
- * Sets the main coroutines dispatcher to a [TestCoroutineDispatcher] for unit testing. A
- * [TestCoroutineDispatcher] provides control over the execution of coroutines.
+ * CoroutineTestRule installs a [UnconfinedTestDispatcher] for [Dispatchers.Main].
  *
- * Declare it as a JUnit Rule:
- *
- * ```
- * @get:Rule
- * var coroutineRule = CoroutineTestRule()
- * ```
- *
- * Use the test dispatcher variable to modify the execution of coroutines
+ * Since it is run under TestScope, you can directly launch coroutines on the CoroutineTestRule
+ * as a [CoroutineScope]:
  *
  * ```
- * // This pauses the execution of coroutines
- * coroutineRule.testDispatcher.pauseDispatcher()
- * ...
- * // This resumes the execution of coroutines
- * coroutineRule.testDispatcher.resumeDispatcher()
- * ...
- * // This executes the coroutines running on testDispatcher synchronously
- * runBlockingTest { }
+ * testScope.launch { aTestCoroutine() }
  * ```
+ *
+ * All coroutines started on CoroutineTestRule must complete (including timeouts) before the test
+ * finishes, or it will throw an exception.
+ *
+ * When using CoroutineTestRule you should always invoke [runTest] on it to avoid creating two
+ * instances of [TestCoroutineScheduler] or [TestScope] in your test:
+ *
+ * ```
+ * @Test
+ * fun usingRunTest() = runTest {
+ *     aTestCoroutine()
+ * }
+ * ```
+ *
+ * You may call [StandardTestDispatcher] methods on CoroutineTestRule and they will control the
+ * virtual-clock.
+ *
+ * ```
+ * withContext(StandardTestDispatcher(testScheduler)) { // do some coroutines }
+ * advanceUntilIdle() // run all pending coroutines until the dispatcher is idle
+ * ```
+ *
+ * By default, CoroutineTestRule will be in a *unpaused* state.
+ *
+ * @param dispatcher if provided, or else [UnconfinedTestDispatcher] will be used.
  */
 class CoroutineTestRule(
-    private val testDispatcher: TestCoroutineDispatcher = TestCoroutineDispatcher()
+    val dispatcher: TestDispatcher = UnconfinedTestDispatcher(TestCoroutineScheduler())
 ) : TestWatcher() {
 
-    override fun starting(description: Description?) {
+    override fun starting(description: Description) {
         super.starting(description)
-        Dispatchers.setMain(testDispatcher)
+        Dispatchers.setMain(dispatcher)
     }
 
-    override fun finished(description: Description?) {
+    override fun finished(description: Description) {
         super.finished(description)
+        dispatcher.scheduler.advanceUntilIdle()
         Dispatchers.resetMain()
-        testDispatcher.cleanupTestCoroutines()
     }
 }

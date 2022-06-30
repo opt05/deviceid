@@ -4,22 +4,20 @@ import androidx.lifecycle.SavedStateHandle
 import com.cwlarson.deviceid.data.*
 import com.cwlarson.deviceid.settings.PreferenceManager
 import com.cwlarson.deviceid.testutils.CoroutineTestRule
+import com.cwlarson.deviceid.util.DispatcherProvider
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.last
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mock
 import org.mockito.junit.MockitoJUnit
 import org.mockito.junit.MockitoRule
-import org.mockito.kotlin.eq
-import org.mockito.kotlin.times
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
+import org.mockito.kotlin.*
 
 class TabsViewModelTest {
     @get:Rule
@@ -46,45 +44,51 @@ class TabsViewModelTest {
     @Mock
     lateinit var savedStateHandle: SavedStateHandle
     private lateinit var testObject: TabsViewModel
+    private lateinit var dispatcherProvider: DispatcherProvider
+
+    @Before
+    fun setup() {
+        dispatcherProvider = DispatcherProvider.provideDispatcher(coroutineRule.dispatcher)
+    }
 
     @Test
-    fun `Verify refresh disabled is called when class is created`() = runBlockingTest {
-        whenever(savedStateHandle.get<ItemType>(eq("tab"))).thenReturn(ItemType.DEVICE)
-        whenever(preferenceManager.autoRefreshRate).thenReturn(flowOf(0))
-        testObject = TabsViewModel({ deviceRepository }, { networkRepository },
+    fun `Verify refresh disabled is called when class is created`() = runTest {
+        whenever(savedStateHandle.get<ItemType>(eq("tab"))).doReturn(ItemType.DEVICE)
+        whenever(preferenceManager.autoRefreshRate).doReturn(flowOf(0))
+        testObject = TabsViewModel(dispatcherProvider, { deviceRepository }, { networkRepository },
             { softwareRepository }, { hardwareRepository }, preferenceManager, savedStateHandle
         )
         verify(preferenceManager).autoRefreshRate
     }
 
     @Test
-    fun `Verify refresh disabled is true when set to above 0`() = runBlocking {
-        whenever(savedStateHandle.get<ItemType>(eq("tab"))).thenReturn(ItemType.DEVICE)
-        whenever(preferenceManager.autoRefreshRate).thenReturn(flowOf(1))
-        testObject = TabsViewModel({ deviceRepository }, { networkRepository },
+    fun `Verify refresh disabled is true when set to above 0`() = runTest {
+        whenever(savedStateHandle.get<ItemType>(eq("tab"))).doReturn(ItemType.DEVICE)
+        whenever(preferenceManager.autoRefreshRate).doReturn(flowOf(1))
+        testObject = TabsViewModel(dispatcherProvider, { deviceRepository }, { networkRepository },
             { softwareRepository }, { hardwareRepository }, preferenceManager, savedStateHandle
         )
         assertTrue(testObject.refreshDisabled.first())
     }
 
     @Test
-    fun `Verify refresh disabled is false when set to 0`() = runBlocking {
-        whenever(savedStateHandle.get<ItemType>(eq("tab"))).thenReturn(ItemType.DEVICE)
-        whenever(preferenceManager.autoRefreshRate).thenReturn(flowOf(0))
-        testObject = TabsViewModel({ deviceRepository }, { networkRepository },
+    fun `Verify refresh disabled is false when set to 0`() = runTest {
+        whenever(savedStateHandle.get<ItemType>(eq("tab"))).doReturn(ItemType.DEVICE)
+        whenever(preferenceManager.autoRefreshRate).doReturn(flowOf(0))
+        testObject = TabsViewModel(dispatcherProvider, { deviceRepository }, { networkRepository },
             { softwareRepository }, { hardwareRepository }, preferenceManager, savedStateHandle
         )
         assertFalse(testObject.refreshDisabled.first())
     }
 
     @Test
-    fun `Verify refresh return latest value when called`() = runBlocking {
-        whenever(savedStateHandle.get<ItemType>(eq("tab"))).thenReturn(ItemType.DEVICE)
-        whenever(preferenceManager.autoRefreshRate).thenReturn(flow {
+    fun `Verify refresh return latest value when called`() = runTest {
+        whenever(savedStateHandle.get<ItemType>(eq("tab"))).doReturn(ItemType.DEVICE)
+        whenever(preferenceManager.autoRefreshRate).doReturn(flow {
             emit(0)
             emit(1)
         })
-        testObject = TabsViewModel({ deviceRepository }, { networkRepository },
+        testObject = TabsViewModel(dispatcherProvider, { deviceRepository }, { networkRepository },
             { softwareRepository }, { hardwareRepository }, preferenceManager, savedStateHandle
         )
         assertTrue(testObject.refreshDisabled.last())
@@ -92,12 +96,12 @@ class TabsViewModelTest {
 
     @Test
     fun `Verify all items when called with item type device then returns device repo`() =
-        runBlockingTest {
-            whenever(savedStateHandle.get<ItemType>(eq("tab"))).thenReturn(ItemType.DEVICE)
-            whenever(preferenceManager.autoRefreshRate).thenReturn(flowOf(0))
+        runTest {
+            whenever(savedStateHandle.get<ItemType>(eq("tab"))).doReturn(ItemType.DEVICE)
+            whenever(preferenceManager.autoRefreshRate).doReturn(flowOf(0))
             val result = TabDataStatus.Success(emptyList())
-            whenever(deviceRepository.list()).thenReturn(flowOf(result))
-            testObject = TabsViewModel({ deviceRepository }, { networkRepository },
+            whenever(deviceRepository.list()).doReturn(flowOf(result))
+            testObject = TabsViewModel(dispatcherProvider, { deviceRepository }, { networkRepository },
                 { softwareRepository }, { hardwareRepository }, preferenceManager, savedStateHandle
             )
             assertEquals(result, testObject.allItems.first())
@@ -105,12 +109,12 @@ class TabsViewModelTest {
 
     @Test
     fun `Verify all items when called with item type network then returns network repo`() =
-        runBlockingTest {
-            whenever(savedStateHandle.get<ItemType>(eq("tab"))).thenReturn(ItemType.NETWORK)
-            whenever(preferenceManager.autoRefreshRate).thenReturn(flowOf(0))
+        runTest {
+            whenever(savedStateHandle.get<ItemType>(eq("tab"))).doReturn(ItemType.NETWORK)
+            whenever(preferenceManager.autoRefreshRate).doReturn(flowOf(0))
             val result = TabDataStatus.Success(emptyList())
-            whenever(networkRepository.list()).thenReturn(flowOf(result))
-            testObject = TabsViewModel({ deviceRepository }, { networkRepository },
+            whenever(networkRepository.list()).doReturn(flowOf(result))
+            testObject = TabsViewModel(dispatcherProvider, { deviceRepository }, { networkRepository },
                 { softwareRepository }, { hardwareRepository }, preferenceManager, savedStateHandle
             )
             assertEquals(result, testObject.allItems.first())
@@ -118,12 +122,12 @@ class TabsViewModelTest {
 
     @Test
     fun `Verify all items when called with item type software then returns software repo`() =
-        runBlockingTest {
-            whenever(savedStateHandle.get<ItemType>(eq("tab"))).thenReturn(ItemType.SOFTWARE)
-            whenever(preferenceManager.autoRefreshRate).thenReturn(flowOf(0))
+        runTest {
+            whenever(savedStateHandle.get<ItemType>(eq("tab"))).doReturn(ItemType.SOFTWARE)
+            whenever(preferenceManager.autoRefreshRate).doReturn(flowOf(0))
             val result = TabDataStatus.Success(emptyList())
-            whenever(softwareRepository.list()).thenReturn(flowOf(result))
-            testObject = TabsViewModel({ deviceRepository }, { networkRepository },
+            whenever(softwareRepository.list()).doReturn(flowOf(result))
+            testObject = TabsViewModel(dispatcherProvider, { deviceRepository }, { networkRepository },
                 { softwareRepository }, { hardwareRepository }, preferenceManager, savedStateHandle
             )
             assertEquals(result, testObject.allItems.first())
@@ -131,12 +135,12 @@ class TabsViewModelTest {
 
     @Test
     fun `Verify all items when called with item type hardware then returns hardware repo`() =
-        runBlockingTest {
-            whenever(savedStateHandle.get<ItemType>(eq("tab"))).thenReturn(ItemType.HARDWARE)
-            whenever(preferenceManager.autoRefreshRate).thenReturn(flowOf(0))
+        runTest {
+            whenever(savedStateHandle.get<ItemType>(eq("tab"))).doReturn(ItemType.HARDWARE)
+            whenever(preferenceManager.autoRefreshRate).doReturn(flowOf(0))
             val result = TabDataStatus.Success(emptyList())
-            whenever(hardwareRepository.list()).thenReturn(flowOf(result))
-            testObject = TabsViewModel({ deviceRepository }, { networkRepository },
+            whenever(hardwareRepository.list()).doReturn(flowOf(result))
+            testObject = TabsViewModel(dispatcherProvider, { deviceRepository }, { networkRepository },
                 { softwareRepository }, { hardwareRepository }, preferenceManager, savedStateHandle
             )
             assertEquals(result, testObject.allItems.first())
@@ -144,23 +148,23 @@ class TabsViewModelTest {
 
     @Test
     fun `Verify all items when called with invalid item type then returns exception`() =
-        runBlockingTest {
-            whenever(savedStateHandle.get<ItemType>(eq("tab"))).thenReturn(null)
-            whenever(preferenceManager.autoRefreshRate).thenReturn(flowOf(0))
+        runTest {
+            whenever(savedStateHandle.get<ItemType>(eq("tab"))).doReturn(null)
+            whenever(preferenceManager.autoRefreshRate).doReturn(flowOf(0))
             val exception = assertThrows(IllegalArgumentException::class.java) {
-                testObject = TabsViewModel({ deviceRepository }, { networkRepository },
+                testObject = TabsViewModel(dispatcherProvider, { deviceRepository }, { networkRepository },
                     { softwareRepository }, { hardwareRepository }, preferenceManager, savedStateHandle
                 )
-                runBlocking { testObject.allItems.first() }
+                runTest { testObject.allItems.first() }
             }
             assertEquals("Item type is undefined null", exception.message)
         }
 
     @Test
-    fun `Verify force refresh is called when method is called`() = runBlockingTest {
-        whenever(savedStateHandle.get<ItemType>(eq("tab"))).thenReturn(ItemType.DEVICE)
-        whenever(preferenceManager.autoRefreshRate).thenReturn(flowOf(0))
-        testObject = TabsViewModel({ deviceRepository }, { networkRepository },
+    fun `Verify force refresh is called when method is called`() = runTest {
+        whenever(savedStateHandle.get<ItemType>(eq("tab"))).doReturn(ItemType.DEVICE)
+        whenever(preferenceManager.autoRefreshRate).doReturn(flowOf(0))
+        testObject = TabsViewModel(dispatcherProvider, { deviceRepository }, { networkRepository },
             { softwareRepository }, { hardwareRepository }, preferenceManager, savedStateHandle
         )
         testObject.forceRefresh()

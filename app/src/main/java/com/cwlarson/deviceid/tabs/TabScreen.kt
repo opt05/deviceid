@@ -2,16 +2,13 @@ package com.cwlarson.deviceid.tabs
 
 import androidx.annotation.VisibleForTesting
 import androidx.compose.animation.Crossfade
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.GridCells
-import androidx.compose.foundation.lazy.LazyVerticalGrid
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material.LinearProgressIndicator
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.ScaffoldState
-import androidx.compose.material.Text
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.runtime.*
@@ -22,16 +19,16 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.data.TabDataStatus
+import com.cwlarson.deviceid.ui.icons.noItemsIcon
+import com.cwlarson.deviceid.ui.theme.AppTheme
 import com.cwlarson.deviceid.ui.util.click
 import com.cwlarson.deviceid.util.collectAsStateWithLifecycle
-import com.google.accompanist.insets.LocalWindowInsets
-import com.google.accompanist.insets.rememberInsetsPaddingValues
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.SwipeRefreshIndicator
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
@@ -64,7 +61,34 @@ fun TabScreen(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+@Preview(showBackground = true)
+@Composable
+fun TabScreenMainPreview() {
+    AppTheme {
+        MainContent(
+            appBarSize = 0,
+            isTwoPane = false,
+            refreshDisabled = true,
+            scaffoldState = rememberScaffoldState(),
+            status = TabDataStatus.Success(
+                listOf(
+                    Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("subtitle 1")),
+                    Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("subtitle 2")),
+                    Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("subtitle 3")),
+                    Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("subtitle 4")),
+                    Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("subtitle 5")),
+                    Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("subtitle 6")),
+                    Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("subtitle 7")),
+                    Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("subtitle 8")),
+                    Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("subtitle 9")),
+                    Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("subtitle 10"))
+                )
+            ),
+            onForceRefresh = { }
+        ) { }
+    }
+}
+
 @Composable
 private fun MainContent(
     appBarSize: Int, isTwoPane: Boolean, refreshDisabled: Boolean,
@@ -83,14 +107,22 @@ private fun MainContent(
                 contentColor = MaterialTheme.colors.secondary, scale = true
             )
         }) {
-        LazyVerticalGrid(modifier = Modifier.testTag(TAB_TEST_TAG_LIST),
-            contentPadding = rememberInsetsPaddingValues(
-                if (isTwoPane) LocalWindowInsets.current.systemBars
-                else LocalWindowInsets.current.statusBars,
-                applyTop = false,
-                additionalTop = with(LocalDensity.current) { appBarSize.toDp() }
-            ), cells = GridCells.Adaptive(dimensionResource(R.dimen.grid_view_item_width))
+        LazyVerticalGrid(
+            modifier = Modifier
+                .fillMaxHeight()
+                .testTag(TAB_TEST_TAG_LIST),
+            contentPadding = if (isTwoPane) WindowInsets.navigationBars.only(WindowInsetsSides.Bottom)
+                .asPaddingValues() else PaddingValues(),
+            //PaddingValues(top = with(LocalDensity.current) { appBarSize.toDp() }),
+            columns = GridCells.Adaptive(dimensionResource(R.dimen.grid_view_item_width))
         ) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Spacer(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(with(LocalDensity.current) { appBarSize.toDp() })
+                )
+            }
             when (status) {
                 is TabDataStatus.Success -> items(status.list) { item ->
                     ItemListItem(item = item) { clickedItem = item }
@@ -99,6 +131,12 @@ private fun MainContent(
             }
         }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun TabScreenEmptyPreview() {
+    EmptyTabScreen(isVisible = true) { }
 }
 
 @Composable
@@ -113,7 +151,7 @@ private fun EmptyTabScreen(isVisible: Boolean, content: @Composable () -> Unit) 
                 Image(
                     modifier = Modifier.padding(bottom = 8.dp),
                     contentScale = ContentScale.FillHeight,
-                    painter = painterResource(R.drawable.ic_no_items),
+                    imageVector = noItemsIcon(),
                     contentDescription = stringResource(R.string.textview_recyclerview_no_items)
                 )
                 Text(
@@ -123,6 +161,12 @@ private fun EmptyTabScreen(isVisible: Boolean, content: @Composable () -> Unit) 
             }
         else content()
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun TabScreenLoadingPreview() {
+    LoadingScreen(isVisible = true) { }
 }
 
 @Composable
@@ -148,6 +192,12 @@ private fun LoadingScreen(isVisible: Boolean, content: @Composable () -> Unit) {
             }
         else content()
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun TabScreenErrorPreview() {
+    ErrorScreen(isVisible = true) { }
 }
 
 @Composable

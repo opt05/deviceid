@@ -3,6 +3,7 @@ package com.cwlarson.deviceid.di
 import com.cwlarson.deviceid.data.*
 import com.cwlarson.deviceid.settings.PreferenceManager
 import com.cwlarson.deviceid.util.AppUpdateUtils
+import com.cwlarson.deviceid.util.DispatcherProvider
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.components.SingletonComponent
@@ -16,6 +17,10 @@ import javax.inject.Singleton
     replaces = [AppModule::class, DatabaseModule::class, ActivityModule::class]
 )
 object TestAppModule {
+    @Provides
+    @Singleton
+    fun providesDispatcherProvider(): DispatcherProvider = DispatcherProvider
+
     @Provides
     @Singleton
     fun providesPreferences(): PreferenceManager = mock()

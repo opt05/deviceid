@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
 import com.cwlarson.deviceid.settings.PreferenceManager
+import com.cwlarson.deviceid.util.DispatcherProvider
 import com.google.android.play.core.appupdate.AppUpdateManager
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import dagger.Module
@@ -18,6 +19,9 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
+    @Singleton
+    @Provides
+    fun providesDispatcherProvider(): DispatcherProvider = DispatcherProvider
 
     @Provides
     @Singleton
@@ -26,9 +30,11 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun providesPreferences(@ApplicationContext context: Context,
-                            dataStore: DataStore<Preferences>): PreferenceManager =
-        PreferenceManager(context, dataStore)
+    fun providesPreferences(
+        dispatcherProvider: DispatcherProvider, @ApplicationContext context: Context,
+        dataStore: DataStore<Preferences>
+    ): PreferenceManager =
+        PreferenceManager(dispatcherProvider, context, dataStore)
 
     @Provides
     @Singleton

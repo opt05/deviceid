@@ -7,7 +7,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.annotation.StringRes
 import androidx.annotation.VisibleForTesting
-import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -32,28 +36,36 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.*
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.PopupProperties
-import androidx.core.os.bundleOf
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavController
+import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.cwlarson.deviceid.search.SearchScreen
 import com.cwlarson.deviceid.settings.SettingsScreen
 import com.cwlarson.deviceid.tabs.Item
@@ -65,13 +77,7 @@ import com.cwlarson.deviceid.ui.theme.Ubuntu
 import com.cwlarson.deviceid.ui.theme.navigationBackgroundSelected
 import com.cwlarson.deviceid.ui.theme.statusBarColor
 import com.cwlarson.deviceid.ui.util.IntentHandler
-import com.cwlarson.deviceid.util.AppUpdateUtils
-import com.cwlarson.deviceid.util.InstallState
-import com.cwlarson.deviceid.util.UpdateState
-import com.cwlarson.deviceid.util.collectAsStateWithLifecycle
-import com.google.accompanist.insets.*
-import com.google.accompanist.insets.ui.BottomNavigation
-import com.google.accompanist.insets.ui.TopAppBar
+import com.cwlarson.deviceid.util.*
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.android.play.core.install.model.InstallStatus
 import dagger.hilt.android.AndroidEntryPoint
@@ -154,6 +160,9 @@ private sealed class Screen(
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     @Inject
+    lateinit var dispatcherProvider: DispatcherProvider
+
+    @Inject
     lateinit var appUpdateUtils: AppUpdateUtils
 
     private val viewModel by viewModels<MainActivityViewModel>()
@@ -162,12 +171,12 @@ class MainActivity : ComponentActivity() {
         listOf(Screen.Device, Screen.Network, Screen.Software, Screen.Hardware)
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        setTheme(R.style.AppTheme) //Removes splash screen
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         if (savedInstanceState == null) {
             onNewIntent(intent)
-            lifecycleScope.launch { appUpdateUtils.checkForFlexibleUpdate() }
+            lifecycleScope.launch(dispatcherProvider.Main) { appUpdateUtils.checkForFlexibleUpdate() }
         }
         setContent {
             val isTwoPane =
@@ -198,208 +207,213 @@ class MainActivity : ComponentActivity() {
                 val keyboardController = LocalSoftwareKeyboardController.current
                 SideEffect {
                     systemUiController.setNavigationBarColor(
-                        Color.Transparent,
-                        darkIcons = useDarkIcons
+                        Color.Transparent, darkIcons = useDarkIcons
                     )
                     systemUiController.setStatusBarColor(statusBarColor, darkIcons = useDarkIcons)
                 }
-                ProvideWindowInsets {
-                    val scope = rememberCoroutineScope()
-                    var bottomSheetItem by rememberSaveable { mutableStateOf<Item?>(null) }
-                    val bottomSheetState =
-                        rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden) {
-                            if (it == ModalBottomSheetValue.Hidden) bottomSheetItem = null
-                            keyboardController?.hide()
-                            true
-                        }
+                var bottomSheetItem by rememberSaveable { mutableStateOf<Item?>(null) }
+                val bottomSheetState =
+                    rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden) {
+                        if (it == ModalBottomSheetValue.Hidden) bottomSheetItem = null
+                        keyboardController?.hide()
+                        true
+                    }
 
-                    if (bottomSheetItem != null) scope.launch { bottomSheetState.show() }
-                    val scaffoldState = rememberScaffoldState()
-                    var isSideNavVisible by rememberSaveable { mutableStateOf(true) }
-                    var searchBarQuery by rememberSaveable { mutableStateOf("") }
-                    var isSearchOpen by rememberSaveable { mutableStateOf(false) }
-                    var topSearchBarSize by remember { mutableStateOf(0) }
-                    val navController = rememberNavController()
-                    ModalBottomSheetLayout(sheetState = bottomSheetState,
-                        sheetContent = { TabDetailScreen(item = bottomSheetItem) }) {
-                        Scaffold(
-                            scaffoldState = scaffoldState,
-                            topBar = {
-                                if (appBarVisible)
-                                    TopAppBar(
-                                        modifier = Modifier.testTag(MAIN_ACTIVITY_TEST_TAG_TOOLBAR),
-                                        title = {
-                                            Text(
-                                                stringResource(
-                                                    when (navController.currentDestination?.route) {
-                                                        Screen.Settings.route -> Screen.Settings.stringRes
-                                                        else -> R.string.app_name
-                                                    }
-                                                ), fontFamily = Ubuntu
-                                            )
-                                        },
-                                        contentPadding = rememberInsetsPaddingValues(
-                                            LocalWindowInsets.current.statusBars,
-                                            applyBottom = false,
-                                        ),
-                                        navigationIcon = {
-                                            if (navController.backQueue.size > 1)
-                                                IconButton(
-                                                    modifier = Modifier.testTag(
-                                                        MAIN_ACTIVITY_TEST_TAG_TOOLBAR_BACK
-                                                    ),
-                                                    onClick = { navController.navigateUp() }) {
-                                                    Icon(
-                                                        imageVector = Icons.Outlined.ArrowBack,
-                                                        contentDescription = stringResource(R.string.menu_back)
-                                                    )
+                if (bottomSheetItem != null)
+                    LaunchedEffect(bottomSheetState) { bottomSheetState.show() }
+                val scaffoldState = rememberScaffoldState()
+                var isSideNavVisible by rememberSaveable { mutableStateOf(true) }
+                var searchBarQuery by rememberSaveable { mutableStateOf("") }
+                var isSearchOpen by rememberSaveable { mutableStateOf(false) }
+                var topSearchBarSize by remember { mutableStateOf(0) }
+                val navController = rememberNavController()
+                ModalBottomSheetLayout(sheetState = bottomSheetState,
+                    sheetContent = { TabDetailScreen(item = bottomSheetItem) }) {
+                    Scaffold(
+                        scaffoldState = scaffoldState,
+                        topBar = {
+                            if (appBarVisible)
+                                TopAppBar(
+                                    modifier = Modifier
+                                        .statusBarsPadding()
+                                        .testTag(MAIN_ACTIVITY_TEST_TAG_TOOLBAR),
+                                    title = {
+                                        Text(
+                                            stringResource(
+                                                when (navController.currentDestination?.route) {
+                                                    Screen.Settings.route -> Screen.Settings.stringRes
+                                                    else -> R.string.app_name
                                                 }
-                                        }
-                                    )
-                            },
-                            bottomBar = {
-                                BottomAppBar(
-                                    appBarVisible = appBarVisible,
-                                    isSearchOpen = isSearchOpen,
-                                    isTwoPane = isTwoPane,
-                                    navController = navController,
-                                    items = navigationItems
+                                            ), fontFamily = Ubuntu
+                                        )
+                                    }, navigationIcon = {
+                                        if (navController.backQueue.size > 1)
+                                            IconButton(
+                                                modifier = Modifier.testTag(
+                                                    MAIN_ACTIVITY_TEST_TAG_TOOLBAR_BACK
+                                                ),
+                                                onClick = { navController.navigateUp() }) {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.ArrowBack,
+                                                    contentDescription = stringResource(R.string.menu_back)
+                                                )
+                                            }
+                                    }
                                 )
-                            }
-                        ) { innerPadding ->
-                            Row(modifier = Modifier.fillMaxSize()) {
-                                DualPaneNavigationView(
-                                    items = navigationItems,
-                                    navController = navController,
-                                    isVisible = isSideNavVisible && isTwoPane
+                        }, bottomBar = {
+                            BottomAppBar(
+                                appBarVisible = appBarVisible,
+                                isSearchOpen = isSearchOpen,
+                                isTwoPane = isTwoPane,
+                                navController = navController,
+                                items = navigationItems
+                            )
+                        }
+                    ) { innerPadding ->
+                        Row(modifier = Modifier.fillMaxSize()) {
+                            DualPaneNavigationView(
+                                items = navigationItems,
+                                navController = navController,
+                                isVisible = isSideNavVisible && isTwoPane
+                            ) {
+                                Box(
+                                    modifier =
+                                    if (!isTwoPane) Modifier.padding(innerPadding) else
+                                        Modifier.padding(
+                                            top = innerPadding.calculateTopPadding(),
+                                            start = innerPadding.calculateStartPadding
+                                                (LocalLayoutDirection.current),
+                                            end = innerPadding.calculateEndPadding
+                                                (LocalLayoutDirection.current)
+                                        )
                                 ) {
-                                    Box(
-                                        modifier =
-                                        if (!isTwoPane) Modifier.padding(innerPadding) else
-                                            Modifier.padding(
-                                                top = innerPadding.calculateTopPadding(),
-                                                start = innerPadding.calculateStartPadding
-                                                    (LocalLayoutDirection.current),
-                                                end = innerPadding.calculateEndPadding
-                                                    (LocalLayoutDirection.current)
-                                            )
+                                    NavHost(
+                                        navController, startDestination = Screen.Device.route,
+                                        modifier = Modifier.fillMaxSize()
                                     ) {
-                                        NavHost(
-                                            navController, startDestination = Screen.Device.route,
-                                            modifier = Modifier.fillMaxSize()
+                                        composable(
+                                            Screen.Device.route,
+                                            arguments = listOf(navArgument("tab") {
+                                                type = NavType.EnumType(ItemType::class.java)
+                                                defaultValue = ItemType.DEVICE
+                                            })
                                         ) {
-                                            composable(Screen.Device.route) {
-                                                appBarVisible = false
-                                                isSideNavVisible = true
-                                                it.arguments = bundleOf("tab" to ItemType.DEVICE)
-                                                TabScreen(
-                                                    appBarSize = topSearchBarSize,
-                                                    isTwoPane = isTwoPane,
-                                                    scaffoldState = scaffoldState
-                                                ) { item ->
-                                                    bottomSheetItem = item
-                                                }
-                                            }
-                                            composable(Screen.Network.route) {
-                                                appBarVisible = false
-                                                isSideNavVisible = true
-                                                it.arguments = bundleOf("tab" to ItemType.NETWORK)
-                                                TabScreen(
-                                                    appBarSize = topSearchBarSize,
-                                                    isTwoPane = isTwoPane,
-                                                    scaffoldState = scaffoldState
-                                                ) { item ->
-                                                    bottomSheetItem = item
-                                                }
-                                            }
-                                            composable(Screen.Software.route) {
-                                                appBarVisible = false
-                                                isSideNavVisible = true
-                                                it.arguments = bundleOf("tab" to ItemType.SOFTWARE)
-                                                TabScreen(
-                                                    appBarSize = topSearchBarSize,
-                                                    isTwoPane = isTwoPane,
-                                                    scaffoldState = scaffoldState
-                                                ) { item ->
-                                                    bottomSheetItem = item
-                                                }
-                                            }
-                                            composable(Screen.Hardware.route) {
-                                                appBarVisible = false
-                                                isSideNavVisible = true
-                                                it.arguments = bundleOf("tab" to ItemType.HARDWARE)
-                                                TabScreen(
-                                                    appBarSize = topSearchBarSize,
-                                                    isTwoPane = isTwoPane,
-                                                    scaffoldState = scaffoldState
-                                                ) { item ->
-                                                    bottomSheetItem = item
-                                                }
-                                            }
-                                            composable(Screen.Search.route) {
-                                                appBarVisible = false
-                                                isSideNavVisible = false
-                                                SearchScreen(
-                                                    topSearchBarSize, searchBarQuery,
-                                                    scaffoldState
-                                                ) { item ->
-                                                    bottomSheetItem = item
-                                                }
-                                            }
-                                            composable(Screen.Settings.route) {
-                                                appBarVisible = true
-                                                isSideNavVisible = false
-                                                SettingsScreen(appUpdateUtils)
+                                            appBarVisible = false
+                                            isSideNavVisible = true
+                                            TabScreen(
+                                                appBarSize = topSearchBarSize,
+                                                isTwoPane = isTwoPane,
+                                                scaffoldState = scaffoldState
+                                            ) { item -> bottomSheetItem = item }
+                                        }
+                                        composable(
+                                            Screen.Network.route,
+                                            arguments = listOf(navArgument("tab") {
+                                                type = NavType.EnumType(ItemType::class.java)
+                                                defaultValue = ItemType.NETWORK
+                                            })
+                                        ) {
+                                            appBarVisible = false
+                                            isSideNavVisible = true
+                                            TabScreen(
+                                                appBarSize = topSearchBarSize,
+                                                isTwoPane = isTwoPane,
+                                                scaffoldState = scaffoldState
+                                            ) { item -> bottomSheetItem = item }
+                                        }
+                                        composable(
+                                            Screen.Software.route,
+                                            arguments = listOf(navArgument("tab") {
+                                                type = NavType.EnumType(ItemType::class.java)
+                                                defaultValue = ItemType.SOFTWARE
+                                            })
+                                        ) {
+                                            appBarVisible = false
+                                            isSideNavVisible = true
+                                            TabScreen(
+                                                appBarSize = topSearchBarSize,
+                                                isTwoPane = isTwoPane,
+                                                scaffoldState = scaffoldState
+                                            ) { item -> bottomSheetItem = item }
+                                        }
+                                        composable(
+                                            Screen.Hardware.route,
+                                            arguments = listOf(navArgument("tab") {
+                                                type = NavType.EnumType(ItemType::class.java)
+                                                defaultValue = ItemType.HARDWARE
+                                            })
+                                        ) {
+                                            appBarVisible = false
+                                            isSideNavVisible = true
+                                            TabScreen(
+                                                appBarSize = topSearchBarSize,
+                                                isTwoPane = isTwoPane,
+                                                scaffoldState = scaffoldState
+                                            ) { item -> bottomSheetItem = item }
+                                        }
+                                        composable(Screen.Search.route) {
+                                            appBarVisible = false
+                                            isSideNavVisible = false
+                                            SearchScreen(
+                                                topSearchBarSize, searchBarQuery,
+                                                scaffoldState
+                                            ) { item ->
+                                                bottomSheetItem = item
                                             }
                                         }
+                                        composable(Screen.Settings.route) {
+                                            appBarVisible = true
+                                            isSideNavVisible = false
+                                            SettingsScreen(appUpdateUtils)
+                                        }
+                                    }
 
-                                        if (!appBarVisible)
-                                            SearchView(
-                                                navController = navController,
-                                                modifier = Modifier.onSizeChanged {
-                                                    topSearchBarSize = it.height
-                                                },
-                                                isSearchOpen = isSearchOpen,
-                                                isTwoPane = isTwoPane,
-                                                searchBarQuery = searchBarQuery,
-                                                viewModel = viewModel,
-                                                keyboardController = keyboardController,
-                                                onSearchOpen = {
-                                                    isSearchOpen = it
-                                                    if (it && navController.currentBackStackEntry?.destination?.route != Screen.Search.route)
-                                                        navController.navigate(Screen.Search.route)
-                                                    else if (!it && navController.currentBackStackEntry?.destination?.route == Screen.Search.route)
-                                                        navController.navigateUp()
-                                                }) { searchBarQuery = it }
+                                    if (!appBarVisible)
+                                        SearchView(
+                                            navController = navController,
+                                            modifier = Modifier.onSizeChanged {
+                                                topSearchBarSize = it.height
+                                            },
+                                            isSearchOpen = isSearchOpen,
+                                            isTwoPane = isTwoPane,
+                                            searchBarQuery = searchBarQuery,
+                                            viewModel = viewModel,
+                                            keyboardController = keyboardController,
+                                            onSearchOpen = {
+                                                isSearchOpen = it
+                                                if (it && navController.currentBackStackEntry?.destination?.route != Screen.Search.route)
+                                                    navController.navigate(Screen.Search.route)
+                                                else if (!it && navController.currentBackStackEntry?.destination?.route == Screen.Search.route)
+                                                    navController.navigateUp()
+                                            }) { searchBarQuery = it }
 
-                                        intentHandler.OnIntent { intent ->
-                                            if (intent?.action == Intent.ACTION_SEARCH) {
-                                                isSearchOpen = true
-                                                navController.navigate(Screen.Search.route)
-                                            }
+                                    intentHandler.OnIntent { intent ->
+                                        if (intent?.action == Intent.ACTION_SEARCH) {
+                                            isSearchOpen = true
+                                            navController.navigate(Screen.Search.route)
                                         }
                                     }
                                 }
                             }
                         }
+                    }
 
-                        FlexibleUpdateDialog(
-                            showUpdateDialog, updateDialogTitle,
-                            updateDialogMessage, updateDialogButton
-                        ) { showUpdateDialog = false }
+                    FlexibleUpdateDialog(
+                        showUpdateDialog, updateDialogTitle,
+                        updateDialogMessage, updateDialogButton
+                    ) { showUpdateDialog = false }
 
-                        with(installState) {
-                            if (this is InstallState.NoError) {
-                                when (status) {
-                                    InstallStatus.DOWNLOADED ->
-                                        FlexibleUpdateDownloadedSnackbar(scaffoldState)
-                                    InstallStatus.FAILED ->
-                                        FlexibleInstallFailedSnackbar(scaffoldState)
-                                    else -> { /* Do nothing */
-                                    }
+                    with(installState) {
+                        if (this is InstallState.NoError) {
+                            when (status) {
+                                InstallStatus.DOWNLOADED ->
+                                    FlexibleUpdateDownloadedSnackbar(scaffoldState)
+                                InstallStatus.FAILED ->
+                                    FlexibleInstallFailedSnackbar(scaffoldState)
+                                else -> { /* Do nothing */
                                 }
-                            } else FlexibleUpdateDownloadedSnackbar(scaffoldState)
-                        }
+                            }
+                        } else FlexibleUpdateDownloadedSnackbar(scaffoldState)
                     }
                 }
             }
@@ -465,15 +479,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-
-/*@Preview(showBackground = true)
-@Composable
-fun DefaultPreview() {
-    AppTheme {
-        //Device(navController)
-    }
-}*/
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalAnimationApi::class)
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun SearchView(
     navController: NavController, modifier: Modifier = Modifier, isSearchOpen: Boolean,
@@ -484,19 +490,22 @@ private fun SearchView(
     val titleVisibility by viewModel.titleVisibility.collectAsStateWithLifecycle(
         initial = TitleVisibility(visible = true, noFade = false)
     )
+    val state by viewModel.isSearchHistory.collectAsStateWithLifecycle(initial = false)
+    val items by viewModel.getSearchHistoryItems(searchBarQuery)
+        .collectAsStateWithLifecycle(initial = emptyList())
     val focusRequesterTextField = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     var forceCloseDropdown by rememberSaveable { mutableStateOf(false) }
+    var rowSize by remember { mutableStateOf(Size.Zero) }
     Card(
         modifier = modifier
             .fillMaxWidth()
             .statusBarsPadding()
-            .navigationBarsPadding(bottom = false)
-            .height(dimensionResource(R.dimen.top_searchbar_height))
             .padding(
                 horizontal = if (isTwoPane && !isSearchOpen) 16.dp else dimensionResource(R.dimen.activity_horizontal_margin),
-                vertical = 4.dp
+                vertical = 8.dp
             )
+            .onGloballyPositioned { layoutCoordinates -> rowSize = layoutCoordinates.size.toSize() }
             .testTag(MAIN_ACTIVITY_TEST_TAG_SEARCH), elevation = 4.dp
     ) {
         Box(contentAlignment = Alignment.Center) {
@@ -529,7 +538,8 @@ private fun SearchView(
                             .focusRequester(focusRequesterTextField)
                             .fillMaxWidth(),
                         cursorBrush = SolidColor(MaterialTheme.colors.secondary),
-                        textStyle = MaterialTheme.typography.subtitle1,
+                        textStyle = MaterialTheme.typography.subtitle1
+                            .merge(TextStyle(color = MaterialTheme.colors.onSurface)),
                         value = searchBarQuery, onValueChange = { query ->
                             if (query.isNotBlank() && !isSearchOpen) onSearchOpen(true)
                             forceCloseDropdown = false
@@ -561,7 +571,7 @@ private fun SearchView(
                             }
                         }
                 }
-                SearchbarMenu(navController)
+                SearchbarMenu(navController, rowSize.height)
                 if (!isSearchOpen) {
                     onSearchQueryChange("")
                     focusManager.clearFocus(true)
@@ -572,15 +582,12 @@ private fun SearchView(
                         onDispose { }
                     }
             }
-            SearchViewHistory(
-                viewModel,
-                isSearchOpen && !forceCloseDropdown,
-                searchBarQuery
-            ) { query ->
-                onSearchQueryChange(query)
-                focusManager.clearFocus(force = true)
-                forceCloseDropdown = true
-            }
+            if (state)
+                SearchViewHistory(items, rowSize, isSearchOpen && !forceCloseDropdown) { query ->
+                    onSearchQueryChange(query)
+                    focusManager.clearFocus(force = true)
+                    forceCloseDropdown = true
+                }
             Crossfade(targetState = titleVisibility.visible) {
                 if (it)
                     Text(
@@ -596,18 +603,12 @@ private fun SearchView(
 
 @Composable
 private fun SearchViewHistory(
-    viewModel: MainActivityViewModel, isExpanded: Boolean, query: String,
-    onItemClick: (text: String) -> Unit
+    items: List<String>, rowSize: Size, isExpanded: Boolean, onItemClick: (text: String) -> Unit
 ) {
-    val state by viewModel.isSearchHistory.collectAsStateWithLifecycle(initial = false)
-    if (!state) return
-    val items by viewModel.getSearchHistoryItems(query)
-        .collectAsStateWithLifecycle(initial = emptyList())
     DropdownMenu(
-        modifier = Modifier.fillMaxWidth(),
-        offset = DpOffset(0.dp, -(4).dp),
-        expanded = isExpanded && items.isNotEmpty(), onDismissRequest = { /* Do nothing */ },
-        properties = PopupProperties(focusable = false)
+        modifier = Modifier.width(with(LocalDensity.current) { rowSize.width.toDp() }),
+        offset = DpOffset(0.dp, -(4).dp), expanded = isExpanded && items.isNotEmpty(),
+        onDismissRequest = { /* Do nothing */ }, properties = PopupProperties(focusable = false)
     ) {
         items.forEach { text ->
             DropdownMenuItem(onClick = { onItemClick(text) }) {
@@ -623,9 +624,9 @@ private fun SearchViewHistory(
 }
 
 @Composable
-private fun SearchbarMenu(navController: NavController) {
+private fun SearchbarMenu(navController: NavController, appBarSize: Float) {
     var expanded by remember { mutableStateOf(false) }
-    Box(modifier = Modifier.testTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_MENU)) {
+    Box(modifier = Modifier.wrapContentSize(Alignment.TopStart).testTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_MENU)) {
         IconButton(onClick = { expanded = true }) {
             CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
                 Icon(
@@ -635,9 +636,8 @@ private fun SearchbarMenu(navController: NavController) {
             }
         }
         DropdownMenu(
-            offset = DpOffset(0.dp, -dimensionResource(id = R.dimen.top_searchbar_height)),
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
+            expanded = expanded, onDismissRequest = { expanded = false },
+            offset = DpOffset(0.dp, -with(LocalDensity.current) { appBarSize.toDp() })
         ) {
             DropdownMenuItem(onClick = { navController.navigate(Screen.Settings.route) }) {
                 Text(stringResource(R.string.menu_settings))
@@ -651,27 +651,18 @@ private fun BottomAppBar(
     appBarVisible: Boolean, isSearchOpen: Boolean, isTwoPane: Boolean,
     navController: NavController, items: List<Screen>
 ) {
-    if (isTwoPane)
-        Spacer(
-            modifier = Modifier.padding(
-                rememberInsetsPaddingValues(
-                    LocalWindowInsets.current.navigationBars,
-                    applyTop = false,
-                )
-            )
-        )
+    if (isTwoPane) Spacer(modifier = Modifier.navigationBarsPadding())
     else
-        Crossfade(targetState = !appBarVisible && !isSearchOpen) {
-            if (it)
+        Crossfade(targetState = !appBarVisible && !isSearchOpen) { targetState ->
+            if (targetState)
                 BottomNavigation(
-                    modifier = Modifier.testTag(MAIN_ACTIVITY_TEST_TAG_BOTTOM_NAV),
-                    contentPadding = rememberInsetsPaddingValues(
-                        LocalWindowInsets.current.navigationBars,
-                        applyTop = false,
-                    )
+                    elevation = 0.dp, modifier = Modifier
+                        .background(MaterialTheme.colors.primarySurface)
+                        .navigationBarsPadding()
+                        .testTag(MAIN_ACTIVITY_TEST_TAG_BOTTOM_NAV)
                 ) {
                     val navBackStackEntry by navController.currentBackStackEntryAsState()
-                    val currentRoute = navBackStackEntry?.destination?.route
+                    val currentHierarchy = navBackStackEntry?.destination?.hierarchy
                     items.forEach { screen ->
                         BottomNavigationItem(
                             modifier = Modifier.testTag(
@@ -685,13 +676,13 @@ private fun BottomAppBar(
                             ),
                             icon = { Icon(imageVector = screen.icon, contentDescription = null) },
                             label = { Text(stringResource(screen.stringRes)) },
-                            selected = currentRoute == screen.route,
+                            selected = currentHierarchy?.any { it.route == screen.route } == true,
                             onClick = {
                                 navController.navigate(screen.route) {
                                     // Pop up to the start destination of the graph to
                                     // avoid building up a large stack of destinations
                                     // on the back stack as users select items
-                                    popUpTo(navController.graph.startDestinationRoute!!) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
                                         saveState = true
                                     }
                                     // Avoid multiple copies of the same destination when
@@ -707,7 +698,7 @@ private fun BottomAppBar(
         }
 }
 
-@OptIn(ExperimentalAnimationApi::class, ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 private fun DualPaneNavigationView(
     items: List<Screen>, navController: NavController,
@@ -795,10 +786,7 @@ private fun DualPaneNavigationView(
                                     )
                                 else
                                     CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
-                                        Icon(
-                                            imageVector = item.icon,
-                                            contentDescription = null
-                                        )
+                                        Icon(imageVector = item.icon, contentDescription = null)
                                     }
                             }
                         )

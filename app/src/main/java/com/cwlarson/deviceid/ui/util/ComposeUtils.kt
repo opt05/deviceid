@@ -12,7 +12,6 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Android
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -25,21 +24,21 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleObserver
-import androidx.lifecycle.OnLifecycleEvent
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.tabs.Item
 import com.cwlarson.deviceid.tabs.ItemSubtitle
 import com.cwlarson.deviceid.util.AppPermission
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.PermissionStatus
 import com.google.accompanist.permissions.rememberPermissionState
+import com.google.accompanist.permissions.shouldShowRationale
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onSubscription
-import timber.log.Timber
 
 @Composable
 fun AppPermission.loadPermissionLabel(context: Context = LocalContext.current): CharSequence =
@@ -55,7 +54,7 @@ private const val KEY_STATE_RESTORED = "com.cwlarson.deviceid.STATE_RESTORED"
 /**
  * Helper for delivering deep link intents from your Activity to your compose tree.
  */
-class IntentHandler(private val activity: ComponentActivity) : LifecycleObserver {
+class IntentHandler(private val activity: ComponentActivity) : DefaultLifecycleObserver {
     private val intentFlow = MutableSharedFlow<Intent>()
     private lateinit var intent: Flow<Intent>
 
@@ -63,16 +62,16 @@ class IntentHandler(private val activity: ComponentActivity) : LifecycleObserver
         activity.lifecycle.addObserver(this)
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
-    fun onCreate() {
+    override fun onCreate(owner: LifecycleOwner) {
+        super.onCreate(owner)
         with(activity.savedStateRegistry) {
             initDeepLink(consumeRestoredStateForKey(KEY_STATE_RESTORED) == null)
             registerSavedStateProvider(KEY_STATE_RESTORED) { Bundle() }
         }
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
-    fun onDestroy() {
+    override fun onDestroy(owner: LifecycleOwner) {
+        super.onDestroy(owner)
         activity.savedStateRegistry.unregisterSavedStateProvider(KEY_STATE_RESTORED)
         activity.lifecycle.removeObserver(this)
     }
@@ -95,7 +94,7 @@ class IntentHandler(private val activity: ComponentActivity) : LifecycleObserver
      * Triggers the callback whenever a new deep link is delivered.
      */
     @Composable
-    fun OnIntent(callback: suspend (Intent?) -> Unit) {
+    fun OnIntent(callback: FlowCollector<Intent?>) {
         LaunchedEffect(null) { intent.collect(callback) }
     }
 }
@@ -134,38 +133,34 @@ fun Item.share(context: Context = LocalContext.current): () -> Unit {
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun Item.click(
-    snackbarHostState: SnackbarHostState,
-    forceRefresh: () -> Unit,
+    snackbarHostState: SnackbarHostState, forceRefresh: () -> Unit,
     showItemDetails: (item: Item) -> Unit
 ) {
     when (val sub = subtitle) {
         is ItemSubtitle.Permission -> {
-            var launchPermissionRequest by rememberSaveable { mutableStateOf(false) }
             val permissionState = rememberPermissionState(sub.permission.permissionName)
-            when {
-                permissionState.hasPermission -> forceRefresh()
-                permissionState.shouldShowRationale -> {
-                    val message = stringResource(
-                        id = R.string.permission_snackbar_retry,
-                        sub.permission.loadPermissionLabel(),
-                        getFormattedString()
-                    )
-                    val action = stringResource(id = R.string.permission_snackbar_button)
-                    LaunchedEffect(snackbarHostState, this) {
-                        snackbarHostState.currentSnackbarData?.dismiss()
-                        val result = snackbarHostState.showSnackbar(
-                            message = message, actionLabel = action,
-                            duration = SnackbarDuration.Indefinite
+            when (permissionState.status) {
+                PermissionStatus.Granted -> forceRefresh()
+                is PermissionStatus.Denied -> {
+                    if (permissionState.status.shouldShowRationale) {
+                        val message = stringResource(
+                            id = R.string.permission_snackbar_retry,
+                            sub.permission.loadPermissionLabel(),
+                            getFormattedString()
                         )
-                        if (result == SnackbarResult.ActionPerformed)
-                            permissionState.launchPermissionRequest()
-                    }
+                        val action = stringResource(id = R.string.permission_snackbar_button)
+                        LaunchedEffect(snackbarHostState, this) {
+                            snackbarHostState.currentSnackbarData?.dismiss()
+                            val result = snackbarHostState.showSnackbar(
+                                message = message, actionLabel = action,
+                                duration = SnackbarDuration.Indefinite
+                            )
+                            if (result == SnackbarResult.ActionPerformed)
+                                permissionState.launchPermissionRequest()
+                        }
+                    } else LaunchedEffect(permissionState) { permissionState.launchPermissionRequest() }
                 }
-                !permissionState.permissionRequested -> launchPermissionRequest = true
-                else -> Timber.d("denied permission")
             }
-            if (launchPermissionRequest)
-                LaunchedEffect(permissionState) { permissionState.launchPermissionRequest() }
         }
         else -> {
             if (sub.getSubTitleText().isNullOrBlank()) {

@@ -3,6 +3,7 @@ package com.cwlarson.deviceid.di
 import android.content.Context
 import com.cwlarson.deviceid.data.*
 import com.cwlarson.deviceid.settings.PreferenceManager
+import com.cwlarson.deviceid.util.DispatcherProvider
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -15,31 +16,31 @@ object DatabaseModule {
 
     @Provides
     fun providesDeviceRepository(
-        @ApplicationContext context: Context,
+        dispatcherProvider: DispatcherProvider, @ApplicationContext context: Context,
         preferenceManager: PreferenceManager
-    ): DeviceRepository = DeviceRepository(context, preferenceManager)
+    ): DeviceRepository = DeviceRepository(dispatcherProvider, context, preferenceManager)
 
     @Provides
     fun providesNetworkRepository(
-        @ApplicationContext context: Context,
+        dispatcherProvider: DispatcherProvider, @ApplicationContext context: Context,
         preferenceManager: PreferenceManager
-    ): NetworkRepository = NetworkRepository(context, preferenceManager)
+    ): NetworkRepository = NetworkRepository(dispatcherProvider, context, preferenceManager)
 
     @Provides
     fun providesSoftwareRepository(
-        @ApplicationContext context: Context,
+        dispatcherProvider: DispatcherProvider, @ApplicationContext context: Context,
         preferenceManager: PreferenceManager
-    ): SoftwareRepository = SoftwareRepository(context, preferenceManager)
+    ): SoftwareRepository = SoftwareRepository(dispatcherProvider, context, preferenceManager)
 
     @Provides
     fun providesHardwareRepository(
-        @ApplicationContext context: Context,
+        dispatcherProvider: DispatcherProvider, @ApplicationContext context: Context,
         preferenceManager: PreferenceManager
-    ): HardwareRepository = HardwareRepository(context, preferenceManager)
+    ): HardwareRepository = HardwareRepository(dispatcherProvider, context, preferenceManager)
 
     @Provides
     fun providesAllRepository(
-        @ApplicationContext context: Context,
+        dispatcherProvider: DispatcherProvider, @ApplicationContext context: Context,
         preferenceManager: PreferenceManager
-    ): AllRepository = AllRepository(context, preferenceManager)
+    ): AllRepository = AllRepository(dispatcherProvider, context, preferenceManager)
 }

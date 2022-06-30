@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Device Info</string>
     <string name="nav_app_bar_navigate_up_description">Navigate up</string>
     <string name="search_hint_items">Search all</string>
@@ -87,8 +87,8 @@
     <string name="display_density_450">450 DPI</string>
     <string name="display_density_560">560 DPI</string>
     <string name="display_density_600">600 DPI</string>
-    <string name="display_density_format_with_name">%1$s (%2$dx%3$d pixels)</string>
-    <string name="display_density_format_without_name">%1$dx%2$d pixels</string>
+    <string name="display_density_other">%d DPI</string>
+    <string name="display_density_format_with_name" tools:ignore="PluralsCandidate">%1$s (%2$dx%3$d pixels)</string>
     <!-- Preferences -->
     <string name="pref_title_app_settings">App Settings</string>
     <string name="pref_hide_unavailable_title">Hide not applicable</string>
@@ -217,4 +217,6 @@
     <string name="hardware_title_display_state">Screen %s State</string>
     <string name="hardware_title_display_cutout">Screen %s Cutout</string>
     <string name="hardware_title_display_refresh_rate">Screen %s Refresh Rate</string>
+    <string name="hardware_title_soc_manufacturer">SoC Manufacturer</string>
+    <string name="hardware_title_soc_model">SoC Model</string>
 </resources>

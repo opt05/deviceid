@@ -8,11 +8,6 @@ import org.robolectric.shadows.ShadowContextImpl
 @Implements(className = ShadowContextImpl.CLASS_NAME)
 class ExceptionShadowContextImpl : ShadowContextImpl() {
     @Implementation
-    override fun getSystemService(name: String): Any? {
-        throw NullPointerException()
-    }
-
-    @Implementation
     override fun getContentResolver(): ContentResolver {
         throw NullPointerException()
     }

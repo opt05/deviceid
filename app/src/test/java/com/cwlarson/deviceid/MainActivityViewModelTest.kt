@@ -4,9 +4,10 @@ import android.content.Intent
 import app.cash.turbine.test
 import com.cwlarson.deviceid.settings.PreferenceManager
 import com.cwlarson.deviceid.testutils.CoroutineTestRule
+import com.cwlarson.deviceid.util.DispatcherProvider
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Before
@@ -28,16 +29,18 @@ class MainActivityViewModelTest {
     @Mock
     lateinit var preferenceManager: PreferenceManager
     private lateinit var testObject: MainActivityViewModel
+    private lateinit var dispatcherProvider: DispatcherProvider
 
     @Before
     fun setup() {
-        whenever(preferenceManager.searchHistory).thenReturn(flowOf(false))
-        whenever(preferenceManager.getSearchHistoryItems(any())).thenReturn(flowOf(listOf("item1")))
-        testObject = MainActivityViewModel(preferenceManager)
+        dispatcherProvider = DispatcherProvider.provideDispatcher(coroutineRule.dispatcher)
+        whenever(preferenceManager.searchHistory).doReturn(flowOf(false))
+        whenever(preferenceManager.getSearchHistoryItems(any())).doReturn(flowOf(listOf("item1")))
+        testObject = MainActivityViewModel(dispatcherProvider, preferenceManager)
     }
 
     @Test
-    fun `Verify isSearchHistory returns search history value`() = runBlocking {
+    fun `Verify isSearchHistory returns search history value`() = runTest {
         verify(preferenceManager).searchHistory
         testObject.isSearchHistory.test {
             assertFalse(awaitItem())
@@ -46,7 +49,7 @@ class MainActivityViewModelTest {
     }
 
     @Test
-    fun `Verify startTitleFade when is twoPane and has empty intent`() = runBlocking {
+    fun `Verify startTitleFade when is twoPane and has empty intent`() = runTest {
         testObject.titleVisibility.test {
             assertEquals(TitleVisibility(visible = true, noFade = false), awaitItem())
             testObject.startTitleFade(true, mock())
@@ -55,7 +58,7 @@ class MainActivityViewModelTest {
     }
 
     @Test
-    fun `Verify startTitleFade when is not twoPane and has search intent`() = runBlocking {
+    fun `Verify startTitleFade when is not twoPane and has search intent`() = runTest {
         testObject.titleVisibility.test {
             assertEquals(TitleVisibility(visible = true, noFade = false), awaitItem())
             testObject.startTitleFade(false, mock { on { action } doReturn Intent.ACTION_SEARCH })
@@ -64,7 +67,7 @@ class MainActivityViewModelTest {
     }
 
     @Test
-    fun `Verify startTitleFade when is not twoPane and empty intent`() = runBlocking {
+    fun `Verify startTitleFade when is not twoPane and empty intent`() = runTest {
         testObject.titleVisibility.test {
             assertEquals(TitleVisibility(visible = true, noFade = false), awaitItem())
             testObject.startTitleFade(false, mock())
@@ -75,7 +78,7 @@ class MainActivityViewModelTest {
     }
 
     @Test
-    fun `Verify startTitleFade when multiple calls does not return more`() = runBlocking {
+    fun `Verify startTitleFade when multiple calls does not return more`() = runTest {
         testObject.titleVisibility.test {
             assertEquals(TitleVisibility(visible = true, noFade = false), awaitItem())
             testObject.startTitleFade(false, mock())
@@ -87,13 +90,13 @@ class MainActivityViewModelTest {
     }
 
     @Test
-    fun `Verify saveSearchHistory saves data in preferences`() = runBlocking {
+    fun `Verify saveSearchHistory saves data in preferences`() = runTest {
         testObject.saveSearchHistory("query")
         verify(preferenceManager).saveSearchHistoryItem(eq("query"))
     }
 
     @Test
-    fun `Verify getSearchHistoryItems returns data from preferences`() = runBlocking {
+    fun `Verify getSearchHistoryItems returns data from preferences`() = runTest {
         testObject.getSearchHistoryItems("item1").test {
             assertEquals(listOf("item1"), awaitItem())
             awaitComplete()

@@ -13,9 +13,11 @@ import com.cwlarson.deviceid.settings.PreferenceManager
 import com.cwlarson.deviceid.tabs.Item
 import com.cwlarson.deviceid.tabs.ItemSubtitle
 import com.cwlarson.deviceid.tabs.ItemType
+import com.cwlarson.deviceid.util.DispatcherProvider
 import com.cwlarson.deviceid.util.gmsPackageInfo
 import com.cwlarson.deviceid.util.systemProperty
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
 import timber.log.Timber
 import java.text.ParseException
 import java.text.SimpleDateFormat
@@ -57,6 +59,7 @@ fun Int.sdkToVersion(): String {
         Build.VERSION_CODES.P -> "9.0"
         Build.VERSION_CODES.Q -> "10.0"
         Build.VERSION_CODES.R -> "11.0"
+        Build.VERSION_CODES.S -> "12.0"
         else -> Build.VERSION.CODENAME
     }
 }
@@ -87,10 +90,11 @@ fun Int.getCodename(): String =
     }
 
 open class SoftwareRepository @Inject constructor(
+    private val dispatcherProvider: DispatcherProvider,
     private val context: Context,
     preferenceManager: PreferenceManager
-) : TabData(context, preferenceManager) {
-    private val activityManager: ActivityManager? by lazy { context.getSystemService() }
+) : TabData(dispatcherProvider, context, preferenceManager) {
+    private val activityManager by lazy { context.getSystemService<ActivityManager>() }
 
     override fun items() = flowOf(
         listOf(
@@ -101,7 +105,7 @@ open class SoftwareRepository @Inject constructor(
             buildType(), buildUser(), openGLVersion(), googlePlayServicesVersion(),
             googlePlayServicesInstallDate(), googlePlayServicesUpdatedDate(), webViewVersion()
         )
-    )
+    ).flowOn(dispatcherProvider.IO)
 
     private fun androidVersion() = Item(
         title = R.string.software_title_android_version, itemType = ItemType.SOFTWARE,

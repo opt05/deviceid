@@ -19,6 +19,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringArrayResource
@@ -26,16 +27,16 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.toUpperCase
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.ui.util.ListItem
-import com.cwlarson.deviceid.util.AppUpdateUtils
-import com.cwlarson.deviceid.util.InstallState
-import com.cwlarson.deviceid.util.UpdateState
-import com.cwlarson.deviceid.util.collectAsStateWithLifecycle
+import com.cwlarson.deviceid.util.*
+import com.google.android.play.core.appupdate.testing.FakeAppUpdateManager
 import com.google.android.play.core.install.model.InstallStatus
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -66,36 +67,30 @@ const val SETTINGS_TEST_TAG_DIALOG_LIST = "settings_dialog_list"
 @VisibleForTesting
 const val SETTINGS_TEST_TAG_DIALOG_BUTTON_CANCEL = "settings_dialog_button_cancel"
 
+@Preview(showBackground = true)
+@Composable
+fun SettingsPreview() {
+    Scaffold {
+        val context = LocalContext.current
+        SettingsScreen(
+            appUpdateUtils = AppUpdateUtils(
+                DispatcherProvider, FakeAppUpdateManager(context), context
+            ), viewModel = SettingsViewModel(
+                DispatcherProvider,
+                PreferenceManager(
+                    DispatcherProvider, context,
+                    PreferenceDataStoreFactory.create { context.preferencesDataStoreFile("user_preferences") })
+            )
+        )
+    }
+}
+
 @Composable
 fun SettingsScreen(appUpdateUtils: AppUpdateUtils, viewModel: SettingsViewModel = hiltViewModel()) {
     val scope = rememberCoroutineScope()
     val values by viewModel.userPreferencesFlow.collectAsStateWithLifecycle(initial = UserPreferences())
-    val appUpdateTitle by appUpdateUtils.updateState.map { ua ->
-        when (ua) {
-            is UpdateState.Yes,
-            UpdateState.YesButNotAllowed -> R.string.pref_check_for_update_title_yes
-            else -> R.string.pref_check_for_update_title_no
-        }
-    }.collectAsStateWithLifecycle(initial = R.string.pref_check_for_update_title_no)
-    @Suppress("SameParameterValue") val appUpdateSubtitle by appUpdateUtils.installState.map { state ->
-        when (state) {
-            is InstallState.Failed -> R.string.pref_check_for_update_summary_failed
-            InstallState.Initial -> R.string.pref_check_for_update_summary
-            is InstallState.NoError -> {
-                when (state.status) {
-                    InstallStatus.CANCELED -> R.string.pref_check_for_update_summary_canceled
-                    InstallStatus.DOWNLOADING -> R.string.pref_check_for_update_summary_downloading
-                    InstallStatus.INSTALLED -> R.string.pref_check_for_update_summary_installed
-                    InstallStatus.INSTALLING -> R.string.pref_check_for_update_summary_installing
-                    InstallStatus.PENDING -> R.string.pref_check_for_update_summary_pending
-                    InstallStatus.UNKNOWN -> R.string.pref_check_for_update_summary_unknown
-                    InstallStatus.DOWNLOADED -> R.string.pref_check_for_update_summary_downloaded
-                    InstallStatus.FAILED -> R.string.pref_check_for_update_summary_failed
-                    else -> R.string.pref_check_for_update_summary
-                }
-            }
-        }
-    }.collectAsStateWithLifecycle(initial = R.string.pref_check_for_update_summary)
+    val appUpdateState by appUpdateUtils.updateState.collectAsStateWithLifecycle(initial = UpdateState.Initial)
+    val appInstallState by appUpdateUtils.installState.collectAsStateWithLifecycle(initial = InstallState.Initial)
     LazyColumn(
         modifier = Modifier.padding(horizontal = dimensionResource(id = R.dimen.activity_horizontal_margin_search))
     ) {
@@ -140,8 +135,28 @@ fun SettingsScreen(appUpdateUtils: AppUpdateUtils, viewModel: SettingsViewModel 
             Preference(
                 SETTINGS_TEST_TAG_LIST_ITEM_APP_UPDATE,
                 Icons.Outlined.SystemUpdateAlt,
-                appUpdateTitle,
-                appUpdateSubtitle
+                when (appUpdateState) {
+                    is UpdateState.Yes,
+                    UpdateState.YesButNotAllowed -> R.string.pref_check_for_update_title_yes
+                    else -> R.string.pref_check_for_update_title_no
+                },
+                when (@Suppress("UnnecessaryVariable") val state = appInstallState) {
+                    is InstallState.Failed -> R.string.pref_check_for_update_summary_failed
+                    InstallState.Initial -> R.string.pref_check_for_update_summary
+                    is InstallState.NoError -> {
+                        when (state.status) {
+                            InstallStatus.CANCELED -> R.string.pref_check_for_update_summary_canceled
+                            InstallStatus.DOWNLOADING -> R.string.pref_check_for_update_summary_downloading
+                            InstallStatus.INSTALLED -> R.string.pref_check_for_update_summary_installed
+                            InstallStatus.INSTALLING -> R.string.pref_check_for_update_summary_installing
+                            InstallStatus.PENDING -> R.string.pref_check_for_update_summary_pending
+                            InstallStatus.UNKNOWN -> R.string.pref_check_for_update_summary_unknown
+                            InstallStatus.DOWNLOADED -> R.string.pref_check_for_update_summary_downloaded
+                            InstallStatus.FAILED -> R.string.pref_check_for_update_summary_failed
+                            else -> R.string.pref_check_for_update_summary
+                        }
+                    }
+                }
             ) { scope.launch { appUpdateUtils.checkForFlexibleUpdate(true) } }
         }
     }

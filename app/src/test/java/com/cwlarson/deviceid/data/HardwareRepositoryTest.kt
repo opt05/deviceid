@@ -1,5 +1,6 @@
 package com.cwlarson.deviceid.data
 
+import android.app.Activity
 import android.app.ActivityManager
 import android.app.Application
 import android.content.Context
@@ -10,9 +11,8 @@ import android.os.BatteryManager
 import android.os.Build
 import android.os.Environment
 import android.util.DisplayMetrics
-import android.view.Display
-import android.view.DisplayCutout
-import android.view.Surface
+import android.view.*
+import android.view.WindowManager.LayoutParams.TYPE_APPLICATION
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.BatteryStd
 import androidx.compose.material.icons.outlined.Memory
@@ -33,11 +33,14 @@ import com.cwlarson.deviceid.testutils.itemFromList
 import com.cwlarson.deviceid.testutils.shadows.ExceptionShadowActivityManager
 import com.cwlarson.deviceid.testutils.shadows.ExceptionShadowDisplayManager
 import com.cwlarson.deviceid.testutils.shadows.ExceptionShadowStatFs
+import com.cwlarson.deviceid.testutils.shadows.MyShadowBuild
+import com.cwlarson.deviceid.util.DispatcherProvider
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -56,24 +59,24 @@ class HardwareRepositoryTest {
     @get:Rule
     val coroutineRule = CoroutineTestRule()
 
+    private lateinit var dispatcherProvider: DispatcherProvider
     private lateinit var context: Application
     private lateinit var preferencesManager: PreferenceManager
     private lateinit var repository: HardwareRepository
 
     @Before
     fun setup() {
+        dispatcherProvider = DispatcherProvider.provideDispatcher(coroutineRule.dispatcher)
         context = spy(ApplicationProvider.getApplicationContext() as Application)
         sendBatteryBroadcast()
         preferencesManager = mock()
-        repository = HardwareRepository(context, preferencesManager)
+        repository = HardwareRepository(dispatcherProvider, context, preferencesManager)
     }
 
     @Suppress("DEPRECATION")
     private fun sendBatteryBroadcast(
-        health: Int = BatteryManager.BATTERY_HEALTH_GOOD,
-        level: Int = 100,
-        status: Int = BatteryManager.BATTERY_STATUS_FULL,
-        plugged: Int = -1
+        health: Int = BatteryManager.BATTERY_HEALTH_GOOD, level: Int = 100,
+        status: Int = BatteryManager.BATTERY_STATUS_FULL, plugged: Int = -1
     ) {
         context.sendStickyBroadcast(Intent(Intent.ACTION_BATTERY_CHANGED).apply {
             putExtra(BatteryManager.EXTRA_HEALTH, health)
@@ -84,8 +87,8 @@ class HardwareRepositoryTest {
     }
 
     @Test
-    fun `Verify item list is returned when items method is called`() = runBlocking {
-        whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(0))
+    fun `Verify item list is returned when items method is called`() = runTest {
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
         repository.items().test {
             val item = awaitItem()
             assertEquals(R.string.hardware_title_memory, item[0].title)
@@ -99,13 +102,15 @@ class HardwareRepositoryTest {
             assertEquals(R.string.hardware_title_display_cutout, item[8].title)
             assertEquals(R.string.hardware_title_display_refresh_rate, item[9].title)
             assertEquals(R.string.hardware_title_display_density, item[10].title)
+            assertEquals(R.string.hardware_title_soc_manufacturer, item[11].title)
+            assertEquals(R.string.hardware_title_soc_model, item[12].title)
             cancelAndConsumeRemainingEvents()
         }
     }
 
     @Test
-    fun `Returns text when ram size is total above 0`() = runBlocking {
-        whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(0))
+    fun `Returns text when ram size is total above 0`() = runTest {
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
         shadowOf(context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager)
             .setMemoryInfo(ActivityManager.MemoryInfo().apply {
                 availMem = 1L
@@ -126,8 +131,8 @@ class HardwareRepositoryTest {
     }
 
     @Test
-    fun `Returns text when ram size is total below zero`() = runBlocking {
-        whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(0))
+    fun `Returns text when ram size is total below zero`() = runTest {
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
         shadowOf(context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager)
             .setMemoryInfo(ActivityManager.MemoryInfo().apply {
                 availMem = 1L
@@ -149,8 +154,8 @@ class HardwareRepositoryTest {
 
     @Test
     fun `Returns text when ram size is available and auto refresh is greater than 0`() =
-        runBlocking {
-            whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(1))
+        runTest {
+            whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(1))
             val manager =
                 shadowOf(context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).apply {
                     setMemoryInfo(ActivityManager.MemoryInfo().apply {
@@ -179,9 +184,9 @@ class HardwareRepositoryTest {
         }
 
     @Test
-    fun `Returns error when ram size with a null system service`() = runBlocking {
+    fun `Returns error when ram size with a null system service`() = runTest {
         shadowOf(context).removeSystemService(Context.ACTIVITY_SERVICE)
-        whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(0))
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
         repository.items().test {
             assertEquals(
                 Item(
@@ -196,8 +201,8 @@ class HardwareRepositoryTest {
 
     @Test
     @Config(shadows = [ExceptionShadowActivityManager::class])
-    fun `Returns error when ram size with an exception`() = runBlocking {
-        whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(0))
+    fun `Returns error when ram size with an exception`() = runTest {
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
         repository.items().test {
             assertEquals(
                 Item(
@@ -211,8 +216,8 @@ class HardwareRepositoryTest {
     }
 
     @Test
-    fun `Returns text when internal memory is total above 0`() = runBlocking {
-        whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(0))
+    fun `Returns text when internal memory is total above 0`() = runTest {
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
         ShadowStatFs.registerStats(Environment.getDataDirectory().path, 1000, 2, 1)
         repository.items().test {
             assertEquals(
@@ -234,8 +239,8 @@ class HardwareRepositoryTest {
     }
 
     @Test
-    fun `Returns text when internal memory is total below zero`() = runBlocking {
-        whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(0))
+    fun `Returns text when internal memory is total below zero`() = runTest {
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
         ShadowStatFs.registerStats(Environment.getDataDirectory().path, 0, 0, 0)
         repository.items().test {
             assertEquals(
@@ -253,8 +258,8 @@ class HardwareRepositoryTest {
 
     @Test
     fun `Returns text when internal memory is available and auto refresh is greater than 0`() =
-        runBlocking {
-            whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(1))
+        runTest {
+            whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(1))
             ShadowStatFs.registerStats(Environment.getDataDirectory().path, 1000, 2, 1)
             repository.items().test {
                 delay(500)
@@ -280,8 +285,8 @@ class HardwareRepositoryTest {
 
     @Test
     @Config(shadows = [ExceptionShadowStatFs::class])
-    fun `Returns error when internal memory with an exception`() = runBlocking {
-        whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(0))
+    fun `Returns error when internal memory with an exception`() = runTest {
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
         repository.items().test {
             assertEquals(
                 Item(
@@ -295,8 +300,8 @@ class HardwareRepositoryTest {
     }
 
     @Test
-    fun `Returns text when external memory is total above 0`() = runBlocking {
-        whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(0))
+    fun `Returns text when external memory is total above 0`() = runTest {
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
         val dir = context.getExternalFilesDir(null)
         ShadowEnvironment.setExternalStorageState(dir, Environment.MEDIA_MOUNTED)
         ShadowEnvironment.setIsExternalStorageEmulated(false)
@@ -317,8 +322,8 @@ class HardwareRepositoryTest {
     }
 
     @Test
-    fun `Returns text when external memory is total below 0`() = runBlocking {
-        whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(0))
+    fun `Returns text when external memory is total below zero`() = runTest {
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
         repository.items().test {
             assertEquals(
                 Item(
@@ -335,8 +340,8 @@ class HardwareRepositoryTest {
 
     @Test
     fun `Returns text when external memory is available and auto refresh is greater than 0`() =
-        runBlocking {
-            whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(1))
+        runTest {
+            whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(1))
             val dir = context.getExternalFilesDir(null)
             ShadowEnvironment.setExternalStorageState(dir, Environment.MEDIA_MOUNTED)
             ShadowEnvironment.setIsExternalStorageEmulated(false)
@@ -359,8 +364,8 @@ class HardwareRepositoryTest {
         }
 
     @Test
-    fun `Returns error when external memory with an exception`() = runBlocking {
-        whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(0))
+    fun `Returns error when external memory with an exception`() = runTest {
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
         doThrow(NullPointerException()).whenever(context).getExternalFilesDirs(anyOrNull())
         repository.items().test {
             assertEquals(
@@ -375,8 +380,8 @@ class HardwareRepositoryTest {
     }
 
     @Test
-    fun `Returns text when battery is charging cold over USB`() = runBlocking {
-        whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(0))
+    fun `Returns text when battery is charging cold over USB`() = runTest {
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
         sendBatteryBroadcast(
             BatteryManager.BATTERY_HEALTH_COLD, 100,
             BatteryManager.BATTERY_STATUS_CHARGING, BatteryManager.BATTERY_PLUGGED_USB
@@ -401,8 +406,8 @@ class HardwareRepositoryTest {
     }
 
     @Test
-    fun `Returns text when battery is discharging dead over AC`() = runBlocking {
-        whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(0))
+    fun `Returns text when battery is discharging dead over AC`() = runTest {
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
         sendBatteryBroadcast(
             BatteryManager.BATTERY_HEALTH_DEAD, 0,
             BatteryManager.BATTERY_STATUS_DISCHARGING, BatteryManager.BATTERY_PLUGGED_AC
@@ -427,8 +432,8 @@ class HardwareRepositoryTest {
     }
 
     @Test
-    fun `Returns text when battery is full good wireless`() = runBlocking {
-        whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(0))
+    fun `Returns text when battery is full good wireless`() = runTest {
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
         sendBatteryBroadcast(
             health = BatteryManager.BATTERY_HEALTH_GOOD,
             status = BatteryManager.BATTERY_STATUS_FULL,
@@ -454,8 +459,8 @@ class HardwareRepositoryTest {
     }
 
     @Test
-    fun `Returns text when battery is not charging overheat none`() = runBlocking {
-        whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(0))
+    fun `Returns text when battery is not charging overheat none`() = runTest {
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
         sendBatteryBroadcast(
             health = BatteryManager.BATTERY_HEALTH_OVERHEAT,
             status = BatteryManager.BATTERY_STATUS_NOT_CHARGING
@@ -480,8 +485,8 @@ class HardwareRepositoryTest {
     }
 
     @Test
-    fun `Returns text when battery is unknown over voltage none`() = runBlocking {
-        whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(0))
+    fun `Returns text when battery is unknown over voltage none`() = runTest {
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
         sendBatteryBroadcast(
             health = BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE,
             status = BatteryManager.BATTERY_STATUS_UNKNOWN
@@ -506,8 +511,8 @@ class HardwareRepositoryTest {
     }
 
     @Test
-    fun `Returns text when battery is full health unspecified failure none`() = runBlocking {
-        whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(0))
+    fun `Returns text when battery is full health unspecified failure none`() = runTest {
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
         sendBatteryBroadcast(health = BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE)
         repository.items().test {
             assertEquals(
@@ -529,8 +534,8 @@ class HardwareRepositoryTest {
     }
 
     @Test
-    fun `Returns text when battery is full unknown none`() = runBlocking {
-        whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(0))
+    fun `Returns text when battery is full unknown none`() = runTest {
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
         sendBatteryBroadcast(health = BatteryManager.BATTERY_HEALTH_UNKNOWN)
         repository.items().test {
             assertEquals(
@@ -552,32 +557,8 @@ class HardwareRepositoryTest {
     }
 
     @Test
-    fun `Returns text when battery is available and new intent received`() = runBlocking {
-        whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(0))
-        repository.items().test {
-            sendBatteryBroadcast(health = BatteryManager.BATTERY_HEALTH_UNKNOWN)
-            delay(500)
-            assertEquals(
-                Item(
-                    title = R.string.hardware_title_battery,
-                    itemType = ItemType.HARDWARE,
-                    subtitle = ItemSubtitle.Chart(
-                        ChartItem(
-                            0F,
-                            100F,
-                            Icons.Outlined.BatteryStd,
-                            "100% - Full (unknown)"
-                        )
-                    )
-                ), expectMostRecentItemFromList(R.string.hardware_title_battery)
-            )
-            cancelAndConsumeRemainingEvents()
-        }
-    }
-
-    @Test
-    fun `Returns error when battery with an exception`() = runBlocking {
-        whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(0))
+    fun `Returns error when battery with an exception`() = runTest {
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
         doThrow(NullPointerException()).whenever(context).getString(anyInt(), anyVararg())
         doThrow(NullPointerException()).whenever(context).getString(anyInt())
         repository.items().test {
@@ -593,9 +574,10 @@ class HardwareRepositoryTest {
     }
 
     @Test
+    @Config(sdk = [Build.VERSION_CODES.Q])
     fun `Returns text when display info named, hdr, 0 rotation, on, all cutout, ldpi`() =
-        runBlocking {
-            whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(0))
+        runTest {
+            whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
             shadowOf(ShadowDisplay.getDefaultDisplay()).apply {
                 setName("test")
                 setDisplayHdrCapabilities(0, 100f, 100f, 0f, Display.HdrCapabilities.HDR_TYPE_HDR10)
@@ -676,8 +658,9 @@ class HardwareRepositoryTest {
         }
 
     @Test
-    fun `Returns text when display not hdr, 90 rotation, off, no cutout, mdpi`() = runBlocking {
-        whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(0))
+    @Config(sdk = [Build.VERSION_CODES.Q])
+    fun `Returns text when display not hdr, 90 rotation, off, no cutout, mdpi`() = runTest {
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
         shadowOf(ShadowDisplay.getDefaultDisplay()).apply {
             setDisplayHdrCapabilities(0, 100f, 100f, 0f)
             setRotation(Surface.ROTATION_90)
@@ -733,8 +716,9 @@ class HardwareRepositoryTest {
     }
 
     @Test
-    fun `Returns text when display 180 rotation, doze, top cutout, hdpi`() = runBlocking {
-        whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(0))
+    @Config(sdk = [Build.VERSION_CODES.Q])
+    fun `Returns text when display 180 rotation, doze, top cutout, hdpi`() = runTest {
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
         shadowOf(ShadowDisplay.getDefaultDisplay()).apply {
             setRotation(Surface.ROTATION_180)
             setState(Display.STATE_DOZE)
@@ -782,9 +766,10 @@ class HardwareRepositoryTest {
     }
 
     @Test
+    @Config(sdk = [Build.VERSION_CODES.Q])
     fun `Returns text when display 270 rotation, doze suspend, top bottom cutout, xhdpi`() =
-        runBlocking {
-            whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(0))
+        runTest {
+            whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
             shadowOf(ShadowDisplay.getDefaultDisplay()).apply {
                 setRotation(Surface.ROTATION_270)
                 setState(Display.STATE_DOZE_SUSPEND)
@@ -840,8 +825,9 @@ class HardwareRepositoryTest {
         }
 
     @Test
-    fun `Returns text when display on suspend, top bottom left cutout, xxhdpi`() = runBlocking {
-        whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(0))
+    @Config(sdk = [Build.VERSION_CODES.Q])
+    fun `Returns text when display on suspend, top bottom left cutout, xxhdpi`() = runTest {
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
         shadowOf(ShadowDisplay.getDefaultDisplay()).apply {
             setState(Display.STATE_ON_SUSPEND)
             setDisplayCutout(
@@ -889,8 +875,8 @@ class HardwareRepositoryTest {
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.N])
-    fun `Returns text when display vr, not possible cutout and hdr, xxxhdpi`() = runBlocking {
-        whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(0))
+    fun `Returns text when display vr, not possible cutout and hdr, xxxhdpi`() = runTest {
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
         shadowOf(ShadowDisplay.getDefaultDisplay()).apply {
             setState(Display.STATE_VR)
             setDensityDpi(DisplayMetrics.DENSITY_XXXHIGH)
@@ -936,8 +922,9 @@ class HardwareRepositoryTest {
     }
 
     @Test
-    fun `Returns text when display unknown, tvdpi`() = runBlocking {
-        whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(0))
+    @Config(sdk = [Build.VERSION_CODES.Q])
+    fun `Returns text when display unknown, tvdpi`() = runTest {
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
         shadowOf(ShadowDisplay.getDefaultDisplay()).apply {
             setState(Display.STATE_UNKNOWN)
             setDensityDpi(DisplayMetrics.DENSITY_TV)
@@ -967,8 +954,9 @@ class HardwareRepositoryTest {
     }
 
     @Test
-    fun `Returns text numbered densities are available and return on new values`() = runBlocking {
-        whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(0))
+    @Config(sdk = [Build.VERSION_CODES.Q])
+    fun `Returns text numbered densities are available and return on new values`() = runTest {
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
         val defaultDisplay = ShadowDisplay.getDefaultDisplay()
         shadowOf(defaultDisplay).apply {
             setDensityDpi(DisplayMetrics.DENSITY_140)
@@ -1145,7 +1133,7 @@ class HardwareRepositoryTest {
                 Item(
                     title = R.string.hardware_title_display_density,
                     itemType = ItemType.HARDWARE,
-                    subtitle = ItemSubtitle.Text("2937x2000 pixels"),
+                    subtitle = ItemSubtitle.Text("1000 DPI (2937x2000 pixels)"),
                     titleFormatArgs = listOf("0")
                 ), awaitItemFromList(R.string.hardware_title_display_density)
             )
@@ -1154,8 +1142,37 @@ class HardwareRepositoryTest {
     }
 
     @Test
-    fun `Returns text when multiple displays are available`() = runBlocking {
-        whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(0))
+    @Config(sdk = [Build.VERSION_CODES.R])
+    fun `Returns text numbered densities are available and return on new values on android R+`() =
+        runTest {
+            val displayContext: Activity = mock()
+            val windowManager: WindowManager = mock {
+                on { maximumWindowMetrics } doReturn WindowMetrics(
+                    Rect(0, 0, 100, 200), WindowInsets.CONSUMED
+                )
+            }
+            whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
+            doReturn(displayContext).whenever(context).createDisplayContext(anyOrNull())
+            doReturn(displayContext).whenever(displayContext)
+                .createWindowContext(eq(TYPE_APPLICATION), anyOrNull())
+            doReturn(windowManager).whenever(displayContext)
+                .getSystemService(eq(WindowManager::class.java))
+            repository.items().test {
+                assertEquals(
+                    Item(
+                        title = R.string.hardware_title_display_density,
+                        itemType = ItemType.HARDWARE,
+                        subtitle = ItemSubtitle.Text("MDPI (200x100 pixels)"),
+                        titleFormatArgs = listOf("0")
+                    ), awaitItemFromList(R.string.hardware_title_display_density)
+                )
+            }
+        }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.Q])
+    fun `Returns text when multiple displays are available`() = runTest {
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
         val defaultDisplay = ShadowDisplay.getDefaultDisplay()
         shadowOf(defaultDisplay).apply {
             setDensityDpi(DisplayMetrics.DENSITY_MEDIUM)
@@ -1194,8 +1211,8 @@ class HardwareRepositoryTest {
     }
 
     @Test
-    fun `Returns text when multiple displays are removed`() = runBlocking {
-        whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(0))
+    fun `Returns text when multiple displays are removed`() = runTest {
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
         val secondDisplayId = ShadowDisplayManager.addDisplay("w100dp-h200dp")
         repository.items().test {
             ShadowDisplayManager.removeDisplay(secondDisplayId)
@@ -1210,9 +1227,9 @@ class HardwareRepositoryTest {
     }
 
     @Test
-    fun `Returns error when display info with a null system service`() = runBlocking {
+    fun `Returns error when display info with a null system service`() = runTest {
         shadowOf(context).removeSystemService(Context.DISPLAY_SERVICE)
-        whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(0))
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
         repository.items().test {
             assertNull(awaitItemFromList(R.string.hardware_title_display_density))
             cancelAndConsumeRemainingEvents()
@@ -1221,11 +1238,85 @@ class HardwareRepositoryTest {
 
     @Test
     @Config(shadows = [ExceptionShadowDisplayManager::class])
-    fun `Returns error when display info with an exception`() = runBlocking {
-        whenever(preferencesManager.autoRefreshRateMillis).thenReturn(flowOf(0))
+    fun `Returns error when display info with an exception`() = runTest {
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
         repository.items().test {
             assertNull(awaitItemFromList(R.string.hardware_title_display_density))
             cancelAndConsumeRemainingEvents()
         }
     }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.S], shadows = [MyShadowBuild::class])
+    fun `Returns text when soc manufacturer is above android R`() = runTest {
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
+        MyShadowBuild.setSoCManufacturer("Google")
+        repository.items().test {
+            assertEquals(
+                Item(
+                    title = R.string.hardware_title_soc_manufacturer,
+                    itemType = ItemType.HARDWARE,
+                    subtitle = ItemSubtitle.Text("Google")
+                ), awaitItemFromList(R.string.hardware_title_soc_manufacturer)
+            )
+            cancelAndConsumeRemainingEvents()
+        }
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.R])
+    fun `Returns not possible when soc manufacturer is below android S`() = runTest {
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
+        repository.items().test {
+            assertEquals(
+                Item(
+                    title = R.string.hardware_title_soc_manufacturer,
+                    itemType = ItemType.HARDWARE,
+                    subtitle = ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.S)
+                ), awaitItemFromList(R.string.hardware_title_soc_manufacturer)
+            )
+            cancelAndConsumeRemainingEvents()
+        }
+    }
+
+    @Ignore("Not possible?")
+    @Test
+    fun `Returns error when soc manufacturer with an exception`() = runTest { }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.S], shadows = [MyShadowBuild::class])
+    fun `Returns text when soc model is above android R`() = runTest {
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
+        MyShadowBuild.setSoCModel("ABC123")
+        repository.items().test {
+            assertEquals(
+                Item(
+                    title = R.string.hardware_title_soc_model,
+                    itemType = ItemType.HARDWARE,
+                    subtitle = ItemSubtitle.Text("ABC123")
+                ), awaitItemFromList(R.string.hardware_title_soc_model)
+            )
+            cancelAndConsumeRemainingEvents()
+        }
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.R])
+    fun `Returns not possible when soc model is below android S`() = runTest {
+        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
+        repository.items().test {
+            assertEquals(
+                Item(
+                    title = R.string.hardware_title_soc_model,
+                    itemType = ItemType.HARDWARE,
+                    subtitle = ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.S)
+                ), awaitItemFromList(R.string.hardware_title_soc_model)
+            )
+            cancelAndConsumeRemainingEvents()
+        }
+    }
+
+    @Ignore("Not possible?")
+    @Test
+    fun `Returns error when soc model with an exception`() = runTest { }
 }

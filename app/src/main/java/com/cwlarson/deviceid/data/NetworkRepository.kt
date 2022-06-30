@@ -1,13 +1,16 @@
 package com.cwlarson.deviceid.data
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothManager
 import android.content.Context
+import android.net.*
 import android.net.wifi.WifiInfo
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.telephony.TelephonyManager
 import android.telephony.euicc.EuiccManager
+import androidx.annotation.RequiresPermission
 import androidx.core.content.getSystemService
 import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.settings.PreferenceManager
@@ -15,36 +18,40 @@ import com.cwlarson.deviceid.tabs.Item
 import com.cwlarson.deviceid.tabs.ItemSubtitle
 import com.cwlarson.deviceid.tabs.ItemType
 import com.cwlarson.deviceid.util.AppPermission
+import com.cwlarson.deviceid.util.DispatcherProvider
 import com.cwlarson.deviceid.util.isGranted
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.*
 import timber.log.Timber
 import java.net.InetAddress
-import java.nio.ByteOrder
 import javax.inject.Inject
 
 open class NetworkRepository @Inject constructor(
+    private val dispatcherProvider: DispatcherProvider,
     private val context: Context,
     preferenceManager: PreferenceManager
-) : TabData(context, preferenceManager) {
-    private val wifiManager: WifiManager? by lazy { context.getSystemService() }
-    private val telephonyManager: TelephonyManager? by lazy { context.getSystemService() }
-    private val bluetoothManager: BluetoothManager? by lazy { context.getSystemService() }
-    private val euiccManager: EuiccManager? by lazy { context.getSystemService() }
+) : TabData(dispatcherProvider, context, preferenceManager) {
+    private val connectivityManager by lazy { context.getSystemService<ConnectivityManager>() }
+    private val wifiManager by lazy { context.getSystemService<WifiManager>() }
+    private val telephonyManager by lazy { context.getSystemService<TelephonyManager>() }
+    private val bluetoothManager by lazy { context.getSystemService<BluetoothManager>() }
+    private val euiccManager by lazy { context.getSystemService<EuiccManager>() }
 
-    override fun items() = flowOf(
-        listOf(
-            deviceSoftwareVersion(), wifiMac(), wifiBSSID(), wifiSSID(),
-            wifiFrequency(), wifiHiddenSSID(), wifiIpAddress(), wifiLinkSpeed(), wifiTxLinkSpeed(),
-            wifiNetworkID(), wifiPasspointFqdn(), wifiPasspointProviderFriendlyName(), wifiRSSI(),
-            wifiSignalLevel(), wifiHostname(), wifiCanonicalHostname(), bluetoothMac(),
-            bluetoothHostname(), manufacturerCode(), nai(), phoneCount(), simSerial(),
-            simOperatorName(), simCountry(), simState(), phoneNumber(), voicemailNumber(),
-            cellNetworkName(), cellNetworkType(), cellNetworkClass(), eSimID(), eSimEnabled(),
-            eSimOSVersion(), isConcurrentVoiceAndDataSupported(), isDataRoamingEnabled(),
-            isHearingAidSupported(), isMultiSimSupported(), isRttSupported(),
-            isSmsCapable(), isVoiceCapable()
+    @OptIn(FlowPreview::class)
+    override fun items(): Flow<List<Item>> = flowOf(
+        wifiInfo(), flowOf(
+            listOf(
+                deviceSoftwareVersion(), bluetoothMac(), bluetoothHostname(), manufacturerCode(),
+                nai(), phoneCount(), simSerial(), simOperatorName(), simCountry(), simState(),
+                phoneNumber(), voicemailNumber(), cellNetworkName(), cellNetworkType(),
+                cellNetworkClass(), eSimID(), eSimEnabled(), eSimOSVersion(),
+                isConcurrentVoiceAndDataSupported(), isDataRoamingEnabled(),
+                isHearingAidSupported(), isMultiSimSupported(), isRttSupported(), isSmsCapable(),
+                isVoiceCapable()
+            )
         )
-    )
+    ).flattenMerge().flowOn(dispatcherProvider.IO)
 
     @SuppressLint("MissingPermission")
     private fun deviceSoftwareVersion() = Item(
@@ -64,13 +71,12 @@ open class NetworkRepository @Inject constructor(
      * Marshmallow has started to depreciate this method
      * http://developer.android.com/about/versions/marshmallow/android-6.0-changes.html#behavior-hardware-id
      */
-    @SuppressLint("HardwareIds")
-    private fun wifiMac() = Item(
+    @SuppressLint("HardwareIds", "MissingPermission")
+    private fun wifiMac(wifiInfo: WifiInfo?) = Item(
         title = R.string.network_title_wifi_mac, itemType = ItemType.NETWORK,
         subtitle = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
             try {
-                wifiManager?.let { ItemSubtitle.Text(it.connectionInfo.macAddress) }
-                    ?: ItemSubtitle.Error
+                wifiInfo?.let { ItemSubtitle.Text(it.macAddress) } ?: ItemSubtitle.Error
             } catch (e: Throwable) {
                 Timber.w(e)
                 ItemSubtitle.Error
@@ -78,15 +84,15 @@ open class NetworkRepository @Inject constructor(
         } else ItemSubtitle.NoLongerPossible(Build.VERSION_CODES.M)
     )
 
-    private fun wifiBSSID() = Item(
+    private fun wifiBSSID(wifiInfo: WifiInfo?) = Item(
         title = R.string.network_title_wifi_bssid, itemType = ItemType.NETWORK,
         subtitle = try {
-            wifiManager?.let {
+            wifiInfo?.let {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                     if (context.isGranted(AppPermission.AccessFineLocation))
-                        ItemSubtitle.Text(it.connectionInfo.bssid)
+                        ItemSubtitle.Text(it.bssid)
                     else ItemSubtitle.Permission(AppPermission.AccessFineLocation)
-                } else ItemSubtitle.Text(it.connectionInfo.bssid)
+                } else ItemSubtitle.Text(it.bssid)
             } ?: ItemSubtitle.Error
         } catch (e: Throwable) {
             Timber.w(e)
@@ -94,15 +100,15 @@ open class NetworkRepository @Inject constructor(
         }
     )
 
-    private fun wifiSSID() = Item(
+    private fun wifiSSID(wifiInfo: WifiInfo?) = Item(
         title = R.string.network_title_wifi_ssid, itemType = ItemType.NETWORK,
         subtitle = try {
-            wifiManager?.let {
+            wifiInfo?.let {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                     if (context.isGranted(AppPermission.AccessFineLocation))
-                        ItemSubtitle.Text(it.connectionInfo.ssid)
+                        ItemSubtitle.Text(it.ssid)
                     else ItemSubtitle.Permission(AppPermission.AccessFineLocation)
-                } else ItemSubtitle.Text(it.connectionInfo.ssid)
+                } else ItemSubtitle.Text(it.ssid)
             } ?: ItemSubtitle.Error
         } catch (e: Throwable) {
             Timber.w(e)
@@ -110,11 +116,11 @@ open class NetworkRepository @Inject constructor(
         }
     )
 
-    private fun wifiFrequency() = Item(
+    private fun wifiFrequency(wifiInfo: WifiInfo?) = Item(
         title = R.string.network_title_wifi_frequency, itemType = ItemType.NETWORK,
         subtitle = try {
-            wifiManager?.let {
-                ItemSubtitle.Text("${it.connectionInfo.frequency}${WifiInfo.FREQUENCY_UNITS}")
+            wifiInfo?.let {
+                ItemSubtitle.Text("${it.frequency}${WifiInfo.FREQUENCY_UNITS}")
             } ?: ItemSubtitle.Error
         } catch (e: Throwable) {
             Timber.w(e)
@@ -122,41 +128,41 @@ open class NetworkRepository @Inject constructor(
         }
     )
 
-    private fun wifiHiddenSSID() = Item(
+    private fun wifiHiddenSSID(wifiInfo: WifiInfo?) = Item(
         title = R.string.network_title_wifi_hidden_ssid, itemType = ItemType.NETWORK,
         subtitle = try {
-            wifiManager?.let {
-                ItemSubtitle.Text("${it.connectionInfo.hiddenSSID}")
-            } ?: ItemSubtitle.Error
+            wifiInfo?.let { ItemSubtitle.Text("${it.hiddenSSID}") } ?: ItemSubtitle.Error
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error
         }
     )
 
-    private fun wifiIpAddress() = Item(
+    private fun wifiIpAddress(address: List<InetAddress>) = Item(
         title = R.string.network_title_wifi_ip_address, itemType = ItemType.NETWORK,
         subtitle = try {
-            wifiManager?.let {
-                val ipAddress = it.connectionInfo.ipAddress.run {
+            if(address.isEmpty()) ItemSubtitle.Error
+            else ItemSubtitle.Text(address.mapNotNull { it.hostAddress }.joinToString())
+            /*wifiInfo?.let {
+                val ipAddress = it.ipAddress.run {
                     // Convert little-endian to big-endian if needed
                     if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN)
                         Integer.reverseBytes(this)
                     else this
                 }.toLong().toBigInteger().toByteArray()
                 ItemSubtitle.Text(InetAddress.getByAddress(ipAddress).hostAddress)
-            } ?: ItemSubtitle.Error
+            } ?: ItemSubtitle.Error*/
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error
         }
     )
 
-    private fun wifiLinkSpeed() = Item(
+    private fun wifiLinkSpeed(wifiInfo: WifiInfo?) = Item(
         title = R.string.network_title_wifi_link_speed, itemType = ItemType.NETWORK,
         subtitle = try {
-            wifiManager?.let {
-                ItemSubtitle.Text("${it.connectionInfo.linkSpeed}${WifiInfo.LINK_SPEED_UNITS}")
+            wifiInfo?.let {
+                ItemSubtitle.Text("${it.linkSpeed}${WifiInfo.LINK_SPEED_UNITS}")
             } ?: ItemSubtitle.Error
         } catch (e: Throwable) {
             Timber.w(e)
@@ -164,12 +170,12 @@ open class NetworkRepository @Inject constructor(
         }
     )
 
-    private fun wifiTxLinkSpeed() = Item(
+    private fun wifiTxLinkSpeed(wifiInfo: WifiInfo?) = Item(
         title = R.string.network_title_wifi_tx_link_speed, itemType = ItemType.NETWORK,
         subtitle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             try {
-                wifiManager?.let {
-                    ItemSubtitle.Text("${it.connectionInfo.txLinkSpeedMbps}${WifiInfo.LINK_SPEED_UNITS}")
+                wifiInfo?.let {
+                    ItemSubtitle.Text("${it.txLinkSpeedMbps}${WifiInfo.LINK_SPEED_UNITS}")
                 } ?: ItemSubtitle.Error
             } catch (e: Throwable) {
                 Timber.w(e)
@@ -178,25 +184,21 @@ open class NetworkRepository @Inject constructor(
         } else ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.Q)
     )
 
-    private fun wifiNetworkID() = Item(
+    private fun wifiNetworkID(wifiInfo: WifiInfo?) = Item(
         title = R.string.network_title_wifi_network_id, itemType = ItemType.NETWORK,
         subtitle = try {
-            wifiManager?.let {
-                ItemSubtitle.Text("${it.connectionInfo.networkId}")
-            } ?: ItemSubtitle.Error
+            wifiInfo?.let { ItemSubtitle.Text("${it.networkId}") } ?: ItemSubtitle.Error
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error
         }
     )
 
-    private fun wifiPasspointFqdn() = Item(
+    private fun wifiPasspointFqdn(wifiInfo: WifiInfo?) = Item(
         title = R.string.network_title_wifi_passpoint_fqdn, itemType = ItemType.NETWORK,
         subtitle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             try {
-                wifiManager?.let {
-                    ItemSubtitle.Text(it.connectionInfo.passpointFqdn)
-                } ?: ItemSubtitle.Error
+                wifiInfo?.let { ItemSubtitle.Text(it.passpointFqdn) } ?: ItemSubtitle.Error
             } catch (e: Throwable) {
                 Timber.w(e)
                 ItemSubtitle.Error
@@ -204,12 +206,12 @@ open class NetworkRepository @Inject constructor(
         } else ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.Q)
     )
 
-    private fun wifiPasspointProviderFriendlyName() = Item(
+    private fun wifiPasspointProviderFriendlyName(wifiInfo: WifiInfo?) = Item(
         title = R.string.network_title_wifi_passpoint_friendly_name, itemType = ItemType.NETWORK,
         subtitle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             try {
-                wifiManager?.let {
-                    ItemSubtitle.Text(it.connectionInfo.passpointProviderFriendlyName)
+                wifiInfo?.let {
+                    ItemSubtitle.Text(it.passpointProviderFriendlyName)
                 } ?: ItemSubtitle.Error
             } catch (e: Throwable) {
                 Timber.w(e)
@@ -218,29 +220,29 @@ open class NetworkRepository @Inject constructor(
         } else ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.Q)
     )
 
-    private fun wifiRSSI() = Item(
+    private fun wifiRSSI(wifiInfo: WifiInfo?) = Item(
         title = R.string.network_title_wifi_rssid, itemType = ItemType.NETWORK,
         subtitle = try {
-            wifiManager?.let {
-                ItemSubtitle.Text("${it.connectionInfo.rssi}")
-            } ?: ItemSubtitle.Error
+            wifiInfo?.let { ItemSubtitle.Text("${it.rssi}") } ?: ItemSubtitle.Error
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error
         }
     )
 
-    private fun wifiSignalLevel() = Item(
+    private fun wifiSignalLevel(wifiInfo: WifiInfo?) = Item(
         title = R.string.network_title_wifi_signal_level, itemType = ItemType.NETWORK,
         subtitle = try {
-            wifiManager?.let {
-                ItemSubtitle.Text(
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
-                        "${it.calculateSignalLevel(it.connectionInfo.rssi)}%"
-                    else
-                        @Suppress("DEPRECATION")
-                        "${WifiManager.calculateSignalLevel(it.connectionInfo.rssi, 100)}%"
-                )
+            wifiManager?.let { manager ->
+                wifiInfo?.let { info ->
+                    ItemSubtitle.Text(
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+                            "${manager.calculateSignalLevel(info.rssi)}%" //TODO Fix this
+                        else
+                            @Suppress("DEPRECATION")
+                            "${WifiManager.calculateSignalLevel(info.rssi, 100)}%"
+                    )
+                } ?: ItemSubtitle.Error
             } ?: ItemSubtitle.Error
         } catch (e: Throwable) {
             Timber.w(e)
@@ -248,49 +250,119 @@ open class NetworkRepository @Inject constructor(
         }
     )
 
-    private fun wifiHostname() = Item(
+    private fun wifiHostname(address: List<InetAddress>) = Item(
         title = R.string.network_title_wifi_hostname,
         itemType = ItemType.NETWORK,
         subtitle = try {
-            wifiManager?.let {
-                val ipAddress = it.connectionInfo.ipAddress.run {
+            if(address.isEmpty()) ItemSubtitle.Error
+            else ItemSubtitle.Text(address.joinToString { it.hostName })
+            /*wifiInfo?.let {
+                val ipAddress = it.ipAddress.run {
                     // Convert little-endian to big-endian if needed
                     if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN)
                         Integer.reverseBytes(this)
                     else this
                 }.toLong().toBigInteger().toByteArray()
                 ItemSubtitle.Text(InetAddress.getByAddress(ipAddress).hostName)
-            } ?: ItemSubtitle.Error
+            } ?: ItemSubtitle.Error*/
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error
         }
     )
 
-    private fun wifiCanonicalHostname() = Item(
+    private fun wifiCanonicalHostname(address: List<InetAddress>) = Item(
         title = R.string.network_title_wifi_canonical_hostname,
         itemType = ItemType.NETWORK,
         subtitle = try {
-            wifiManager?.let {
-                val ipAddress = it.connectionInfo.ipAddress.run {
+            if(address.isEmpty()) ItemSubtitle.Error
+            else ItemSubtitle.Text(address.joinToString { it.canonicalHostName })
+            /*wifiInfo?.let {
+                val ipAddress = it.ipAddress.run {
                     // Convert little-endian to big-endian if needed
                     if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN)
                         Integer.reverseBytes(this)
                     else this
                 }.toLong().toBigInteger().toByteArray()
                 ItemSubtitle.Text(InetAddress.getByAddress(ipAddress).canonicalHostName)
-            } ?: ItemSubtitle.Error
+            } ?: ItemSubtitle.Error*/
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error
         }
     )
 
+    @RequiresPermission(Manifest.permission.ACCESS_NETWORK_STATE)
+    private fun wifiInfo() = callbackFlow {
+        val map = mutableMapOf(0 to wifiMac(null))
+        val listener = object : ConnectivityManager.NetworkCallback() {
+            override fun onLost(network: Network) {
+                onUnavailable()
+            }
+
+            override fun onUnavailable() {
+                map[0] = wifiMac(null)
+                map[1] = wifiBSSID(null)
+                map[2] = wifiSSID(null)
+                map[3] = wifiFrequency(null)
+                map[4] = wifiHiddenSSID(null)
+                map[5] = wifiIpAddress(emptyList())
+                map[6] = wifiLinkSpeed(null)
+                map[7] = wifiTxLinkSpeed(null)
+                map[8] = wifiNetworkID(null)
+                map[9] = wifiPasspointFqdn(null)
+                map[10] = wifiPasspointProviderFriendlyName(null)
+                map[11] = wifiRSSI(null)
+                map[12] = wifiSignalLevel(null)
+                map[13] = wifiHostname(emptyList())
+                map[14] = wifiCanonicalHostname(emptyList())
+                trySend(map.values.toList())
+            }
+
+            override fun onLinkPropertiesChanged(
+                network: Network, linkProperties: LinkProperties
+            ) {
+                val ipAddresses = linkProperties.linkAddresses.map { it.address }
+                map[5] = wifiIpAddress(ipAddresses)
+                map[13] = wifiHostname(ipAddresses)
+                map[14] = wifiCanonicalHostname(ipAddresses)
+                trySend(map.values.toList())
+            }
+
+            override fun onCapabilitiesChanged(
+                network: Network, networkCapabilities: NetworkCapabilities
+            ) {
+                val wifiInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+                    networkCapabilities.transportInfo as? WifiInfo
+                else @Suppress("DEPRECATION") wifiManager?.connectionInfo
+                map[0] = wifiMac(wifiInfo)
+                map[1] = wifiBSSID(wifiInfo)
+                map[2] = wifiSSID(wifiInfo)
+                map[3] = wifiFrequency(wifiInfo)
+                map[4] = wifiHiddenSSID(wifiInfo)
+                map[6] = wifiLinkSpeed(wifiInfo)
+                map[7] = wifiTxLinkSpeed(wifiInfo)
+                map[8] = wifiNetworkID(wifiInfo)
+                map[9] = wifiPasspointFqdn(wifiInfo)
+                map[10] = wifiPasspointProviderFriendlyName(wifiInfo)
+                map[11] = wifiRSSI(wifiInfo)
+                map[12] = wifiSignalLevel(wifiInfo)
+                trySend(map.values.toList())
+            }
+        }
+        if (map.isEmpty()) listener.onUnavailable()
+        connectivityManager?.registerNetworkCallback(
+            NetworkRequest.Builder().addTransportType(NetworkCapabilities.TRANSPORT_WIFI).build(),
+            listener
+        )
+        awaitClose { connectivityManager?.unregisterNetworkCallback(listener) }
+    }.conflate()
+
     /**
      * Marshmallow has started to depreciate this method
      * http://developer.android.com/about/versions/marshmallow/android-6.0-changes.html#behavior-hardware-id
      */
-    @SuppressLint("HardwareIds")
+    @SuppressLint("HardwareIds", "MissingPermission")
     private fun bluetoothMac() = Item(
         title = R.string.network_title_bluetooth_mac, itemType = ItemType.NETWORK,
         subtitle = try {
@@ -307,10 +379,20 @@ open class NetworkRepository @Inject constructor(
         }
     )
 
+    @SuppressLint("MissingPermission")
     private fun bluetoothHostname() = Item(
         title = R.string.network_title_bluetooth_hostname, itemType = ItemType.NETWORK,
         subtitle = try {
-            bluetoothManager?.let { ItemSubtitle.Text(it.adapter.name) } ?: ItemSubtitle.Error
+            when {
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+                    if (context.isGranted(AppPermission.AccessBluetoothConnect))
+                        bluetoothManager?.let { ItemSubtitle.Text(it.adapter.name) }
+                            ?: ItemSubtitle.Error
+                    else ItemSubtitle.Permission(AppPermission.AccessBluetoothConnect)
+                }
+                else -> bluetoothManager?.let { ItemSubtitle.Text(it.adapter.name) }
+                    ?: ItemSubtitle.Error
+            }
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error

@@ -11,10 +11,11 @@ import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.androidtestutils.assertHasLongClickAction
 import com.cwlarson.deviceid.androidtestutils.assertHasNoLongClickAction
 import com.cwlarson.deviceid.androidtestutils.performLongClick
+import com.cwlarson.deviceid.ui.theme.AppTheme
 import com.cwlarson.deviceid.ui.util.LIST_ITEM_TEST_TAG_ICON
 import com.cwlarson.deviceid.ui.util.LIST_ITEM_TEST_TAG_PROGRESS
 import com.cwlarson.deviceid.util.AppPermission
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 
@@ -26,13 +27,15 @@ class ItemListItemTest {
 
     private fun Item.setContent(onItemClick: (() -> Unit)? = null) {
         composeTestRule.setContent {
-            clipboardManager = LocalClipboardManager.current
-            ItemListItem(item = this) { onItemClick?.invoke() }
+            AppTheme {
+                clipboardManager = LocalClipboardManager.current
+                ItemListItem(item = this) { onItemClick?.invoke() }
+            }
         }
     }
 
     @Test
-    fun test_ItemSubtitle_Text_null() = runBlockingTest {
+    fun test_ItemSubtitle_Text_null() = runTest {
         Item(
             title = R.string.app_name,
             itemType = ItemType.DEVICE,
@@ -46,7 +49,7 @@ class ItemListItemTest {
     }
 
     @Test
-    fun test_ItemSubtitle_Text_blank() = runBlockingTest {
+    fun test_ItemSubtitle_Text_blank() = runTest {
         Item(
             title = R.string.app_name,
             itemType = ItemType.DEVICE,
@@ -60,7 +63,7 @@ class ItemListItemTest {
     }
 
     @Test
-    fun test_ItemSubtitle_Text_nonnull() = runBlockingTest {
+    fun test_ItemSubtitle_Text_nonnull() = runTest {
         Item(
             title = R.string.app_name,
             itemType = ItemType.DEVICE,
@@ -74,7 +77,7 @@ class ItemListItemTest {
     }
 
     @Test
-    fun test_ItemSubtitle_Text_click() = runBlockingTest {
+    fun test_ItemSubtitle_Text_click() = runTest {
         var clicked = false
         Item(
             title = R.string.app_name,
@@ -87,7 +90,7 @@ class ItemListItemTest {
     }
 
     @Test
-    fun test_ItemSubtitle_Text_longClick() = runBlockingTest {
+    fun test_ItemSubtitle_Text_longClick() = runTest {
         Item(
             title = R.string.app_name,
             itemType = ItemType.DEVICE,
@@ -100,7 +103,7 @@ class ItemListItemTest {
     }
 
     @Test
-    fun test_ItemSubtitle_Chart_null() = runBlockingTest {
+    fun test_ItemSubtitle_Chart_null() = runTest {
         Item(
             title = R.string.app_name,
             itemType = ItemType.DEVICE,
@@ -118,7 +121,7 @@ class ItemListItemTest {
     }
 
     @Test
-    fun test_ItemSubtitle_Chart_blank() = runBlockingTest {
+    fun test_ItemSubtitle_Chart_blank() = runTest {
         Item(
             title = R.string.app_name,
             itemType = ItemType.DEVICE,
@@ -136,7 +139,7 @@ class ItemListItemTest {
     }
 
     @Test
-    fun test_ItemSubtitle_Chart_nonnull() = runBlockingTest {
+    fun test_ItemSubtitle_Chart_nonnull() = runTest {
         Item(
             title = R.string.app_name,
             itemType = ItemType.DEVICE,
@@ -157,7 +160,7 @@ class ItemListItemTest {
     }
 
     @Test
-    fun test_ItemSubtitle_Chart_click() = runBlockingTest {
+    fun test_ItemSubtitle_Chart_click() = runTest {
         var clicked = false
         Item(
             title = R.string.app_name,
@@ -174,7 +177,7 @@ class ItemListItemTest {
     }
 
     @Test
-    fun test_ItemSubtitle_Chart_longClick() = runBlockingTest {
+    fun test_ItemSubtitle_Chart_longClick() = runTest {
         Item(
             title = R.string.app_name,
             itemType = ItemType.DEVICE,
@@ -191,7 +194,7 @@ class ItemListItemTest {
     }
 
     @Test
-    fun test_ItemSubtitle_NoLongerPossible() = runBlockingTest {
+    fun test_ItemSubtitle_NoLongerPossible() = runTest {
         Item(
             title = R.string.app_name,
             itemType = ItemType.DEVICE,
@@ -205,7 +208,7 @@ class ItemListItemTest {
     }
 
     @Test
-    fun test_ItemSubtitle_NoLongerPossible_click() = runBlockingTest {
+    fun test_ItemSubtitle_NoLongerPossible_click() = runTest {
         var clicked = false
         Item(
             title = R.string.app_name,
@@ -218,7 +221,7 @@ class ItemListItemTest {
     }
 
     @Test
-    fun test_ItemSubtitle_NoLongerPossible_longClick() = runBlockingTest {
+    fun test_ItemSubtitle_NoLongerPossible_longClick() = runTest {
         Item(
             title = R.string.app_name,
             itemType = ItemType.DEVICE,
@@ -229,7 +232,7 @@ class ItemListItemTest {
     }
 
     @Test
-    fun test_ItemSubtitle_NotPossibleYet() = runBlockingTest {
+    fun test_ItemSubtitle_NotPossibleYet() = runTest {
         Item(
             title = R.string.app_name,
             itemType = ItemType.DEVICE,
@@ -243,7 +246,7 @@ class ItemListItemTest {
     }
 
     @Test
-    fun test_ItemSubtitle_NotPossibleYet_click() = runBlockingTest {
+    fun test_ItemSubtitle_NotPossibleYet_click() = runTest {
         var clicked = false
         Item(
             title = R.string.app_name,
@@ -256,7 +259,7 @@ class ItemListItemTest {
     }
 
     @Test
-    fun test_ItemSubtitle_NotPossibleYet_longClick() = runBlockingTest {
+    fun test_ItemSubtitle_NotPossibleYet_longClick() = runTest {
         Item(
             title = R.string.app_name,
             itemType = ItemType.DEVICE,
@@ -267,7 +270,7 @@ class ItemListItemTest {
     }
 
     @Test
-    fun test_ItemSubtitle_Permission() = runBlockingTest {
+    fun test_ItemSubtitle_Permission() = runTest {
         Item(
             title = R.string.app_name,
             itemType = ItemType.DEVICE,
@@ -284,7 +287,7 @@ class ItemListItemTest {
     }
 
     @Test
-    fun test_ItemSubtitle_Permission_click() = runBlockingTest {
+    fun test_ItemSubtitle_Permission_click() = runTest {
         var clicked = false
         Item(
             title = R.string.app_name,
@@ -297,7 +300,7 @@ class ItemListItemTest {
     }
 
     @Test
-    fun test_ItemSubtitle_Permission_longClick() = runBlockingTest {
+    fun test_ItemSubtitle_Permission_longClick() = runTest {
         Item(
             title = R.string.app_name,
             itemType = ItemType.DEVICE,
@@ -308,7 +311,7 @@ class ItemListItemTest {
     }
 
     @Test
-    fun test_ItemSubtitle_other() = runBlockingTest {
+    fun test_ItemSubtitle_other() = runTest {
         Item(
             title = R.string.app_name,
             itemType = ItemType.DEVICE,
@@ -322,7 +325,7 @@ class ItemListItemTest {
     }
 
     @Test
-    fun test_ItemSubtitle_other_click() = runBlockingTest {
+    fun test_ItemSubtitle_other_click() = runTest {
         var clicked = false
         Item(
             title = R.string.app_name,
@@ -335,7 +338,7 @@ class ItemListItemTest {
     }
 
     @Test
-    fun test_ItemSubtitle_other_longClick() = runBlockingTest {
+    fun test_ItemSubtitle_other_longClick() = runTest {
         Item(
             title = R.string.app_name,
             itemType = ItemType.DEVICE,

@@ -17,7 +17,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.dimensionResource
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.toUpperCase
@@ -27,10 +26,9 @@ import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.data.TabDataStatus
 import com.cwlarson.deviceid.tabs.Item
 import com.cwlarson.deviceid.tabs.ItemListItem
+import com.cwlarson.deviceid.ui.icons.noItemsSearchIcon
 import com.cwlarson.deviceid.ui.util.click
 import com.cwlarson.deviceid.util.collectAsStateWithLifecycle
-import com.google.accompanist.insets.LocalWindowInsets
-import com.google.accompanist.insets.rememberInsetsPaddingValues
 
 @VisibleForTesting
 const val SEARCH_TEST_TAG_LIST = "search_list"
@@ -71,15 +69,14 @@ private fun MainContent(
     clickedItem?.click(
         snackbarHostState = scaffoldState.snackbarHostState, forceRefresh = onForceRefresh
     ) { onItemClick(it) }
-    LazyColumn(modifier = Modifier
-        .padding(horizontal = dimensionResource(id = R.dimen.activity_horizontal_margin_search))
-        .testTag(SEARCH_TEST_TAG_LIST),
-        contentPadding = rememberInsetsPaddingValues(
-            LocalWindowInsets.current.systemBars,
-            applyTop = false,
-            additionalTop = with(LocalDensity.current) { appBarSize.toDp() }
-        )
+    LazyColumn(
+        modifier = Modifier
+            .padding(horizontal = dimensionResource(id = R.dimen.activity_horizontal_margin_search))
+            .testTag(SEARCH_TEST_TAG_LIST), contentPadding = WindowInsets.statusBars.only(
+            WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom
+        ).asPaddingValues()
     ) {
+        item { Spacer(modifier = Modifier.height(with(LocalDensity.current) { appBarSize.toDp() })) }
         item {
             ResultsRow(
                 when (status) {
@@ -129,7 +126,7 @@ private fun EmptySearchScreen(isVisible: Boolean, content: @Composable () -> Uni
                 Image(
                     modifier = Modifier.padding(bottom = 8.dp),
                     contentScale = ContentScale.FillHeight,
-                    painter = painterResource(R.drawable.ic_no_items_search),
+                    imageVector = noItemsSearchIcon(),
                     contentDescription = stringResource(R.string.textview_recyclerview_no_search_items)
                 )
                 Text(

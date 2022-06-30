@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import com.cwlarson.deviceid.data.*
 import com.cwlarson.deviceid.tabs.Item
 import com.cwlarson.deviceid.tabs.ItemType
+import com.cwlarson.deviceid.util.DispatcherProvider
 import dagger.Lazy
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -12,6 +13,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TabsDetailViewModel @Inject constructor(
+    dispatcherProvider: DispatcherProvider,
     deviceRepository: Lazy<DeviceRepository>,
     networkRepository: Lazy<NetworkRepository>,
     softwareRepository: Lazy<SoftwareRepository>,
@@ -27,7 +29,7 @@ class TabsDetailViewModel @Inject constructor(
             ItemType.SOFTWARE -> softwareRepository.get()
             ItemType.HARDWARE -> hardwareRepository.get()
             else -> return@flatMapLatest flowOf(TabDetailStatus.Error)
-        }.details(item)
+        }.details(item).flowOn(dispatcherProvider.IO)
     }
 
     fun updateCurrentItem(item: Item?) { currentItem.value = item }

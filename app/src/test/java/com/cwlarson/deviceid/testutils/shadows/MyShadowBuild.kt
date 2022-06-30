@@ -39,5 +39,13 @@ class MyShadowBuild : ShadowBuild() {
         fun setBuildUser(value: String) {
             ReflectionHelpers.setStaticField(Build::class.java, "USER", value)
         }
+
+        fun setSoCManufacturer(value: String) {
+            ReflectionHelpers.setStaticField(Build::class.java, "SOC_MANUFACTURER", value)
+        }
+
+        fun setSoCModel(value: String) {
+            ReflectionHelpers.setStaticField(Build::class.java, "SOC_MODEL", value)
+        }
     }
 }

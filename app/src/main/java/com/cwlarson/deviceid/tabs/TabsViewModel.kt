@@ -7,9 +7,9 @@ import com.cwlarson.deviceid.data.HardwareRepository
 import com.cwlarson.deviceid.data.NetworkRepository
 import com.cwlarson.deviceid.data.SoftwareRepository
 import com.cwlarson.deviceid.settings.PreferenceManager
+import com.cwlarson.deviceid.util.DispatcherProvider
 import dagger.Lazy
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
@@ -18,6 +18,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TabsViewModel @Inject constructor(
+    dispatcherProvider: DispatcherProvider,
     deviceRepository: Lazy<DeviceRepository>,
     networkRepository: Lazy<NetworkRepository>,
     softwareRepository: Lazy<SoftwareRepository>,
@@ -28,7 +29,7 @@ class TabsViewModel @Inject constructor(
     @OptIn(ExperimentalCoroutinesApi::class)
     val refreshDisabled =
         preferenceManager.autoRefreshRate.distinctUntilChanged().mapLatest { it > 0 }
-            .flowOn(Dispatchers.IO)
+            .flowOn(dispatcherProvider.IO)
 
     val allItems = when (val t = savedStateHandle.get<ItemType>("tab")) {
         ItemType.DEVICE -> deviceRepository.get()

@@ -9,6 +9,6 @@ import timber.log.Timber
 class MyApplication : Application() {
     override fun onCreate() {
         super.onCreate()
-        if(BuildConfig.DEBUG) Timber.plant(HyperlinkedDebugTree())
+        if (BuildConfig.DEBUG) Timber.plant(HyperlinkedDebugTree())
     }
 }

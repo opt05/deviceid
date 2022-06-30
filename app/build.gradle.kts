@@ -8,31 +8,27 @@ plugins {
     id("dagger.hilt.android.plugin")
 }
 
-hilt.enableAggregatingTask = true
-
-val coroutinesVersion = "1.5.2"
+val coroutinesVersion = "1.6.3"
 val hiltVersion: String by rootProject.extra
-val lifecycleVersion = "2.4.0-alpha03" //beta01 is 31+
-val composeVersion = "1.0.3"
-val composeAccompanistVersion = "0.19.0"
+val lifecycleVersion = "2.5.0"
+val composeVersion = "1.2.0-rc03"
+val composeCompilerVersion = "1.2.0"
+val composeAccompanistVersion = "0.24.12-rc"
 val datastoreVersion = "1.0.0"
-val mockitoVersion = "3.12.4"
-val mockitoKotlinVersion = "3.2.0"
+val mockitoVersion = "4.6.1"
+val mockitoKotlinVersion = "4.0.0"
 android {
-    compileSdk = 30
+    compileSdk = 32
     defaultConfig {
         applicationId = "com.cwlarson.deviceid"
         minSdk = 21
-        targetSdk = 30
+        targetSdk = 32
         versionCode = 15
         versionName = "1.4.2"
         vectorDrawables.useSupportLibrary = true
         testInstrumentationRunner = "com.cwlarson.deviceid.CustomTestRunner"
     }
-    buildFeatures {
-        viewBinding = true
-        compose = true
-    }
+    buildFeatures.compose = true
     signingConfigs {
         create("release") {
             val keystorePropertiesFile = rootProject.file("release.properties")
@@ -51,8 +47,7 @@ android {
             isShrinkResources = true
             isMinifyEnabled = true
             proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
             )
             signingConfig = signingConfigs.getByName("release")
         }
@@ -63,13 +58,13 @@ android {
     }
     kotlinOptions.jvmTarget = JavaVersion.VERSION_11.toString()
     kotlin.sourceSets.all { languageSettings.optIn("kotlin.RequiresOptIn") }
-    composeOptions.kotlinCompilerExtensionVersion = composeVersion
+    composeOptions.kotlinCompilerExtensionVersion = composeCompilerVersion
     testOptions {
         animationsDisabled = true
         unitTests.isIncludeAndroidResources = true
         unitTests.all { it.jvmArgs("-Xmx2g") }
-        kotlinOptions.freeCompilerArgs += listOf("-Xopt-in=kotlin.time.ExperimentalTime",
-            "-Xopt-in=kotlinx.coroutines.ExperimentalCoroutinesApi")
+        kotlinOptions.freeCompilerArgs +=
+            listOf("-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi")
     }
     testBuildType = "debug"
     kapt.correctErrorTypes = true
@@ -86,17 +81,19 @@ android {
 dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutinesVersion")
-    implementation("com.google.android.material:material:1.4.0")
+    implementation("com.google.android.material:material:1.6.1")
     implementation("androidx.webkit:webkit:1.4.0")
     implementation("androidx.datastore:datastore:$datastoreVersion")
     implementation("androidx.datastore:datastore-preferences:$datastoreVersion")
-    implementation("androidx.core:core-ktx:1.6.0")
+    implementation("androidx.core:core-ktx:1.8.0")
+    implementation("androidx.core:core-splashscreen:1.0.0-rc01")
     // Compose
-    implementation("androidx.activity:activity-compose:1.3.1")
-    implementation("androidx.compose.compiler:compiler:$composeVersion")
+    implementation("androidx.activity:activity-compose:1.5.0")
+    implementation("androidx.compose.compiler:compiler:$composeCompilerVersion")
     implementation("androidx.compose.ui:ui:$composeVersion")
     // Tooling support (Previews, etc.)
     debugImplementation("androidx.compose.ui:ui-tooling:$composeVersion")
+    implementation("androidx.compose.ui:ui-tooling-preview:$composeVersion")
     // Foundation (Border, Background, Box, Image, Scroll, shapes, animations, etc.)
     implementation("androidx.compose.foundation:foundation:$composeVersion")
     // Material Design
@@ -104,10 +101,7 @@ dependencies {
     // Material design icons
     implementation("androidx.compose.material:material-icons-core:$composeVersion")
     implementation("androidx.compose.material:material-icons-extended:$composeVersion")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:1.0.0-alpha07")
     // Compose Accompanist
-    implementation("com.google.accompanist:accompanist-insets:$composeAccompanistVersion")
-    implementation("com.google.accompanist:accompanist-insets-ui:$composeAccompanistVersion")
     implementation("com.google.accompanist:accompanist-systemuicontroller:$composeAccompanistVersion")
     implementation("com.google.accompanist:accompanist-swiperefresh:$composeAccompanistVersion")
     implementation("com.google.accompanist:accompanist-permissions:$composeAccompanistVersion")
@@ -117,27 +111,28 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-process:$lifecycleVersion")
     implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:$lifecycleVersion")
     implementation("androidx.lifecycle:lifecycle-common-java8:$lifecycleVersion")
-    kapt("androidx.lifecycle:lifecycle-compiler:$lifecycleVersion")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycleVersion")
     //Navigation
-    implementation("androidx.navigation:navigation-compose:2.4.0-alpha06") //alpha07 is 31+
+    implementation("androidx.navigation:navigation-compose:2.5.0-rc02")
     // Google Play App Updates
-    implementation("com.google.android.play:core:1.10.2")
+    implementation("com.google.android.play:core:1.10.3")
     implementation("com.google.android.play:core-ktx:1.8.1")
     // Timber
     implementation("com.jakewharton.timber:timber:5.0.1")
     // Hilt
     implementation("com.google.dagger:hilt-android:$hiltVersion")
+    implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
     kapt("com.google.dagger:hilt-android-compiler:$hiltVersion")
-    implementation("androidx.hilt:hilt-navigation-compose:1.0.0-alpha03")
-    // Instrumentation Testing
-    androidTestImplementation("androidx.test:runner:1.4.0")
     androidTestImplementation("com.google.dagger:hilt-android-testing:$hiltVersion")
     kaptAndroidTest("com.google.dagger:hilt-android-compiler:$hiltVersion")
+    // Instrumentation Testing
+    androidTestImplementation("androidx.test:runner:1.4.0")
     androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion")
     androidTestImplementation("androidx.compose.ui:ui-test-junit4:$composeVersion")
     debugImplementation("androidx.compose.ui:ui-test-manifest:$composeVersion")
     androidTestImplementation("org.mockito:mockito-android:$mockitoVersion")
     androidTestImplementation("org.mockito.kotlin:mockito-kotlin:$mockitoKotlinVersion")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.4.0")
     androidTestImplementation("androidx.test.espresso:espresso-intents:3.4.0")
     androidTestImplementation("androidx.test.uiautomator:uiautomator:2.2.0")
     // Unit Testing
@@ -145,12 +140,12 @@ dependencies {
     testImplementation("org.mockito.kotlin:mockito-kotlin:$mockitoKotlinVersion")
     testImplementation("org.mockito:mockito-inline:$mockitoVersion")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion")
-    testImplementation("app.cash.turbine:turbine:0.6.1")
+    testImplementation("app.cash.turbine:turbine:0.8.0")
     testImplementation("androidx.compose.ui:ui-test-junit4:$composeVersion")
     // Robolectric Testing
-    testImplementation("org.robolectric:robolectric:4.6.1")
-    testImplementation("androidx.test.ext:junit:1.1.3")
+    testImplementation("org.robolectric:robolectric:4.8.1")
+    testImplementation("androidx.test.ext:junit-ktx:1.1.3")
     testImplementation("androidx.test:rules:1.4.0")
     // LeakCanary
-    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.7")
+    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.9.1")
 }

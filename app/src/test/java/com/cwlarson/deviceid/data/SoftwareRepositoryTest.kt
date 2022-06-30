@@ -20,7 +20,8 @@ import com.cwlarson.deviceid.testutils.CoroutineTestRule
 import com.cwlarson.deviceid.testutils.awaitItemFromList
 import com.cwlarson.deviceid.testutils.shadows.ExceptionShadowActivityManager
 import com.cwlarson.deviceid.testutils.shadows.MyShadowBuild
-import kotlinx.coroutines.runBlocking
+import com.cwlarson.deviceid.util.DispatcherProvider
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Ignore
@@ -29,6 +30,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.ArgumentMatchers.anyString
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.robolectric.Shadows.shadowOf
@@ -44,19 +46,21 @@ class SoftwareRepositoryTest {
     @get:Rule
     val coroutineRule = CoroutineTestRule()
 
+    private lateinit var dispatcherProvider: DispatcherProvider
     private lateinit var context: Application
     private lateinit var preferencesManager: PreferenceManager
     private lateinit var repository: SoftwareRepository
 
     @Before
     fun setup() {
+        dispatcherProvider = DispatcherProvider.provideDispatcher(coroutineRule.dispatcher)
         context = ApplicationProvider.getApplicationContext()
         preferencesManager = mock()
-        repository = SoftwareRepository(context, preferencesManager)
+        repository = SoftwareRepository(dispatcherProvider, context, preferencesManager)
     }
 
     @Test
-    fun `Verify item list is returned when items method is called`() = runBlocking {
+    fun `Verify item list is returned when items method is called`() = runTest {
         repository.items().test {
             val item = awaitItem()
             assertEquals(R.string.software_title_android_version, item[0].title)
@@ -120,6 +124,7 @@ class SoftwareRepositoryTest {
         assertEquals("9.0", 28.sdkToVersion())
         assertEquals("10.0", 29.sdkToVersion())
         assertEquals("11.0", 30.sdkToVersion())
+        assertEquals("12.0", 31.sdkToVersion())
     }
 
     @Test
@@ -155,11 +160,12 @@ class SoftwareRepositoryTest {
         assertEquals("Pie", 28.getCodename())
         assertEquals("", 29.getCodename())
         assertEquals("", 30.getCodename())
+        assertEquals("", 31.getCodename())
     }
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.P])
-    fun `Returns text when android version is available`() = runBlocking {
+    fun `Returns text when android version is available`() = runTest {
         ShadowBuild.setVersionRelease("1.0")
         repository.items().test {
             assertEquals(
@@ -175,11 +181,11 @@ class SoftwareRepositoryTest {
 
     @Ignore("Not possible?")
     @Test
-    fun `Returns error when android version with an exception`() = runBlocking { }
+    fun `Returns error when android version with an exception`() = runTest { }
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.M])
-    fun `Returns text when patch level is android M+`() = runBlocking {
+    fun `Returns text when patch level is android M+`() = runTest {
         ShadowBuild.setVersionSecurityPatch("2000-01-01")
         repository.items().test {
             assertEquals(
@@ -195,7 +201,7 @@ class SoftwareRepositoryTest {
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.M])
-    fun `Returns text when patch level is invalid date and is android M+`() = runBlocking {
+    fun `Returns text when patch level is invalid date and is android M+`() = runTest {
         ShadowBuild.setVersionSecurityPatch("1/1/2000")
         repository.items().test {
             assertEquals(
@@ -211,7 +217,7 @@ class SoftwareRepositoryTest {
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.LOLLIPOP_MR1])
-    fun `Returns not possible when patch level is below android M`() = runBlocking {
+    fun `Returns not possible when patch level is below android M`() = runTest {
         repository.items().test {
             assertEquals(
                 Item(
@@ -226,11 +232,11 @@ class SoftwareRepositoryTest {
 
     @Ignore("Not possible?")
     @Test
-    fun `Returns error when patch level with an exception`() = runBlocking { }
+    fun `Returns error when patch level with an exception`() = runTest { }
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.N], shadows = [MyShadowBuild::class])
-    fun `Returns text when preview sdk int is android N+`() = runBlocking {
+    fun `Returns text when preview sdk int is android N+`() = runTest {
         MyShadowBuild.setPreviewSdkInt(9)
         repository.items().test {
             assertEquals(
@@ -246,7 +252,7 @@ class SoftwareRepositoryTest {
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.LOLLIPOP_MR1])
-    fun `Returns not possible when preview sdk int is below android N`() = runBlocking {
+    fun `Returns not possible when preview sdk int is below android N`() = runTest {
         repository.items().test {
             assertEquals(
                 Item(
@@ -261,10 +267,10 @@ class SoftwareRepositoryTest {
 
     @Ignore("Not possible?")
     @Test
-    fun `Returns error when preview sdk int with an exception`() = runBlocking { }
+    fun `Returns error when preview sdk int with an exception`() = runTest { }
 
     @Test
-    fun `Returns text when build version is Moto available`() = runBlocking {
+    fun `Returns text when build version is Moto available`() = runTest {
         ShadowSystemProperties.override("ro.build.version.full", "test")
         repository.items().test {
             assertEquals(
@@ -280,7 +286,7 @@ class SoftwareRepositoryTest {
 
     @Test
     @Config(shadows = [MyShadowBuild::class])
-    fun `Returns text when build version is available`() = runBlocking {
+    fun `Returns text when build version is available`() = runTest {
         MyShadowBuild.setBuildVersion("test2")
         repository.items().test {
             assertEquals(
@@ -296,10 +302,10 @@ class SoftwareRepositoryTest {
 
     @Ignore("Not possible?")
     @Test
-    fun `Returns error when build version with an exception`() = runBlocking { }
+    fun `Returns error when build version with an exception`() = runTest { }
 
     @Test
-    fun `Returns text when build baseband is available`() = runBlocking {
+    fun `Returns text when build baseband is available`() = runTest {
         ShadowBuild.setRadioVersion("this-is-a-radio-version")
         repository.items().test {
             assertEquals(
@@ -315,10 +321,10 @@ class SoftwareRepositoryTest {
 
     @Ignore("Not possible?")
     @Test
-    fun `Returns error when build baseband with an exception`() = runBlocking { }
+    fun `Returns error when build baseband with an exception`() = runTest { }
 
     @Test
-    fun `Returns text when build kernel is available`() = runBlocking {
+    fun `Returns text when build kernel is available`() = runTest {
         System.setProperty("os.version", "this-is-a-kernel-version")
         repository.items().test {
             assertEquals(
@@ -334,11 +340,11 @@ class SoftwareRepositoryTest {
 
     @Ignore("Not possible?")
     @Test
-    fun `Returns error when build kernel with an exception`() = runBlocking { }
+    fun `Returns error when build kernel with an exception`() = runTest { }
 
     @Test
     @Config(shadows = [MyShadowBuild::class])
-    fun `Returns text when build date is available`() = runBlocking {
+    fun `Returns text when build date is available`() = runTest {
         val date = Calendar.getInstance().apply {
             timeZone = TimeZone.getTimeZone("GMT")
             timeInMillis = 946684800000
@@ -358,10 +364,10 @@ class SoftwareRepositoryTest {
 
     @Ignore("Not possible?")
     @Test
-    fun `Returns error when build date with an exception`() = runBlocking { }
+    fun `Returns error when build date with an exception`() = runTest { }
 
     @Test
-    fun `Returns text when build number is available`() = runBlocking {
+    fun `Returns text when build number is available`() = runTest {
         ShadowBuild.setId("something.12345.010")
         repository.items().test {
             assertEquals(
@@ -377,11 +383,11 @@ class SoftwareRepositoryTest {
 
     @Ignore("Not possible?")
     @Test
-    fun `Returns error when build number with an exception`() = runBlocking { }
+    fun `Returns error when build number with an exception`() = runTest { }
 
     @Test
     @Config(shadows = [MyShadowBuild::class])
-    fun `Returns text when build board is available`() = runBlocking {
+    fun `Returns text when build board is available`() = runTest {
         MyShadowBuild.setBuildBoard("powerline")
         repository.items().test {
             assertEquals(
@@ -397,11 +403,11 @@ class SoftwareRepositoryTest {
 
     @Ignore("Not possible?")
     @Test
-    fun `Returns error when build board with an exception`() = runBlocking { }
+    fun `Returns error when build board with an exception`() = runTest { }
 
     @Test
     @Config(shadows = [MyShadowBuild::class])
-    fun `Returns text when build bootloader is available`() = runBlocking {
+    fun `Returns text when build bootloader is available`() = runTest {
         MyShadowBuild.setBuildBootloader("hd8d-jd9-8303835")
         repository.items().test {
             assertEquals(
@@ -417,10 +423,10 @@ class SoftwareRepositoryTest {
 
     @Ignore("Not possible?")
     @Test
-    fun `Returns error when build bootloader with an exception`() = runBlocking { }
+    fun `Returns error when build bootloader with an exception`() = runTest { }
 
     @Test
-    fun `Returns text when build brand is available`() = runBlocking {
+    fun `Returns text when build brand is available`() = runTest {
         ShadowBuild.setBrand("costco")
         repository.items().test {
             assertEquals(
@@ -436,10 +442,10 @@ class SoftwareRepositoryTest {
 
     @Ignore("Not possible?")
     @Test
-    fun `Returns error when build brand with an exception`() = runBlocking { }
+    fun `Returns error when build brand with an exception`() = runTest { }
 
     @Test
-    fun `Returns text when build device is available`() = runBlocking {
+    fun `Returns text when build device is available`() = runTest {
         ShadowBuild.setDevice("chicago")
         repository.items().test {
             assertEquals(
@@ -455,11 +461,11 @@ class SoftwareRepositoryTest {
 
     @Ignore("Not possible?")
     @Test
-    fun `Returns error when build device with an exception`() = runBlocking { }
+    fun `Returns error when build device with an exception`() = runTest { }
 
     @Test
     @Config(shadows = [MyShadowBuild::class])
-    fun `Returns text when build display is available`() = runBlocking {
+    fun `Returns text when build display is available`() = runTest {
         MyShadowBuild.setBuildVersion("cosmos")
         repository.items().test {
             assertEquals(
@@ -475,10 +481,10 @@ class SoftwareRepositoryTest {
 
     @Ignore("Not possible?")
     @Test
-    fun `Returns error when build display with an exception`() = runBlocking { }
+    fun `Returns error when build display with an exception`() = runTest { }
 
     @Test
-    fun `Returns text when build fingerprint is available`() = runBlocking {
+    fun `Returns text when build fingerprint is available`() = runTest {
         ShadowBuild.setFingerprint("something really long to show here")
         repository.items().test {
             assertEquals(
@@ -494,10 +500,10 @@ class SoftwareRepositoryTest {
 
     @Ignore("Not possible?")
     @Test
-    fun `Returns error when build fingerprint with an exception`() = runBlocking { }
+    fun `Returns error when build fingerprint with an exception`() = runTest { }
 
     @Test
-    fun `Returns text when build hardware is available`() = runBlocking {
+    fun `Returns text when build hardware is available`() = runTest {
         ShadowBuild.setHardware("secure")
         repository.items().test {
             assertEquals(
@@ -513,11 +519,11 @@ class SoftwareRepositoryTest {
 
     @Ignore("Not possible?")
     @Test
-    fun `Returns error when build hardware with an exception`() = runBlocking { }
+    fun `Returns error when build hardware with an exception`() = runTest { }
 
     @Test
     @Config(shadows = [MyShadowBuild::class])
-    fun `Returns text when build host is available`() = runBlocking {
+    fun `Returns text when build host is available`() = runTest {
         MyShadowBuild.setBuildHost("total")
         repository.items().test {
             assertEquals(
@@ -533,10 +539,10 @@ class SoftwareRepositoryTest {
 
     @Ignore("Not possible?")
     @Test
-    fun `Returns error when build host with an exception`() = runBlocking { }
+    fun `Returns error when build host with an exception`() = runTest { }
 
     @Test
-    fun `Returns text when build tags is available`() = runBlocking {
+    fun `Returns text when build tags is available`() = runTest {
         ShadowBuild.setTags("classify")
         repository.items().test {
             assertEquals(
@@ -552,10 +558,10 @@ class SoftwareRepositoryTest {
 
     @Ignore("Not possible?")
     @Test
-    fun `Returns error when build tags with an exception`() = runBlocking { }
+    fun `Returns error when build tags with an exception`() = runTest { }
 
     @Test
-    fun `Returns text when build type is available`() = runBlocking {
+    fun `Returns text when build type is available`() = runTest {
         ShadowBuild.setType("car")
         repository.items().test {
             assertEquals(
@@ -571,11 +577,11 @@ class SoftwareRepositoryTest {
 
     @Ignore("Not possible?")
     @Test
-    fun `Returns error when build type with an exception`() = runBlocking { }
+    fun `Returns error when build type with an exception`() = runTest { }
 
     @Test
     @Config(shadows = [MyShadowBuild::class])
-    fun `Returns text when build user is available`() = runBlocking {
+    fun `Returns text when build user is available`() = runTest {
         MyShadowBuild.setBuildUser("distinct")
         repository.items().test {
             assertEquals(
@@ -591,10 +597,10 @@ class SoftwareRepositoryTest {
 
     @Ignore("Not possible?")
     @Test
-    fun `Returns error when build user with an exception`() = runBlocking { }
+    fun `Returns error when build user with an exception`() = runTest { }
 
     @Test
-    fun `Returns text when open gl version is available`() = runBlocking {
+    fun `Returns text when open gl version is available`() = runTest {
         shadowOf(context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager)
             .setDeviceConfigurationInfo(ConfigurationInfo().apply { reqGlEsVersion = 0x20000 })
         repository.items().test {
@@ -610,7 +616,7 @@ class SoftwareRepositoryTest {
     }
 
     @Test
-    fun `Returns error when open gl version with a null system service`() = runBlocking {
+    fun `Returns error when open gl version with a null system service`() = runTest {
         shadowOf(context).removeSystemService(Context.ACTIVITY_SERVICE)
         repository.items().test {
             assertEquals(
@@ -626,7 +632,7 @@ class SoftwareRepositoryTest {
 
     @Test
     @Config(shadows = [ExceptionShadowActivityManager::class])
-    fun `Returns error when open gl version with an exception`() = runBlocking {
+    fun `Returns error when open gl version with an exception`() = runTest {
         repository.items().test {
             assertEquals(
                 Item(
@@ -640,7 +646,7 @@ class SoftwareRepositoryTest {
     }
 
     @Test
-    fun `Returns text when play services version is available`() = runBlocking {
+    fun `Returns text when play services version is available`() = runTest {
         shadowOf(context.packageManager).installPackage(
             PackageInfo().apply {
                 packageName = "com.google.android.gms"
@@ -661,7 +667,7 @@ class SoftwareRepositoryTest {
     }
 
     @Test
-    fun `Returns error when play services version with a null system service`() = runBlocking {
+    fun `Returns error when play services version with a null system service`() = runTest {
         shadowOf(context.packageManager).deletePackage("com.google.android.gms")
         repository.items().test {
             assertEquals(
@@ -676,14 +682,14 @@ class SoftwareRepositoryTest {
     }
 
     @Test
-    fun `Returns error when play services version with an exception`() = runBlocking {
+    fun `Returns error when play services version with an exception`() = runTest {
         val context: Context = mock()
         val packageManager: PackageManager = mock()
         val packageInfo: PackageInfo = mock()
-        whenever(context.packageManager).thenReturn(packageManager)
-        whenever(packageManager.getPackageInfo(anyString(), anyInt())).thenReturn(packageInfo)
+        whenever(context.packageManager).doReturn(packageManager)
+        whenever(packageManager.getPackageInfo(anyString(), anyInt())).doReturn(packageInfo)
         whenever(packageInfo.longVersionCode).thenThrow(NullPointerException(""))
-        val repository = SoftwareRepository(context, preferencesManager)
+        val repository = SoftwareRepository(dispatcherProvider, context, preferencesManager)
         repository.items().test {
             assertEquals(
                 Item(
@@ -697,7 +703,7 @@ class SoftwareRepositoryTest {
     }
 
     @Test
-    fun `Returns text when play services install date is available`() = runBlocking {
+    fun `Returns text when play services install date is available`() = runTest {
         val date = Calendar.getInstance().apply {
             timeZone = TimeZone.getTimeZone("GMT")
             timeInMillis = 946684800000
@@ -723,7 +729,7 @@ class SoftwareRepositoryTest {
     }
 
     @Test
-    fun `Returns error when play services install date with a null system service`() = runBlocking {
+    fun `Returns error when play services install date with a null system service`() = runTest {
         shadowOf(context.packageManager).deletePackage("com.google.android.gms")
         repository.items().test {
             assertEquals(
@@ -738,13 +744,13 @@ class SoftwareRepositoryTest {
     }
 
     @Test
-    fun `Returns error when play services install date with an exception`() = runBlocking {
+    fun `Returns error when play services install date with an exception`() = runTest {
         val context: Context = mock()
         val packageManager: PackageManager = mock()
         val packageInfo: PackageInfo = mock()
-        whenever(context.packageManager).thenReturn(packageManager)
-        whenever(packageManager.getPackageInfo(anyString(), anyInt())).thenReturn(packageInfo)
-        val repository = SoftwareRepository(context, preferencesManager)
+        whenever(context.packageManager).doReturn(packageManager)
+        whenever(packageManager.getPackageInfo(anyString(), anyInt())).doReturn(packageInfo)
+        val repository = SoftwareRepository(dispatcherProvider, context, preferencesManager)
         repository.items().test {
             assertEquals(
                 Item(
@@ -758,7 +764,7 @@ class SoftwareRepositoryTest {
     }
 
     @Test
-    fun `Returns text when play services update date is available`() = runBlocking {
+    fun `Returns text when play services update date is available`() = runTest {
         val date = Calendar.getInstance().apply {
             timeZone = TimeZone.getTimeZone("GMT")
             timeInMillis = 946684800000
@@ -784,7 +790,7 @@ class SoftwareRepositoryTest {
     }
 
     @Test
-    fun `Returns error when play services update date with a null system service`() = runBlocking {
+    fun `Returns error when play services update date with a null system service`() = runTest {
         shadowOf(context.packageManager).deletePackage("com.google.android.gms")
         repository.items().test {
             assertEquals(
@@ -799,13 +805,13 @@ class SoftwareRepositoryTest {
     }
 
     @Test
-    fun `Returns error when play services update date with an exception`() = runBlocking {
+    fun `Returns error when play services update date with an exception`() = runTest {
         val context: Context = mock()
         val packageManager: PackageManager = mock()
         val packageInfo: PackageInfo = mock()
-        whenever(context.packageManager).thenReturn(packageManager)
-        whenever(packageManager.getPackageInfo(anyString(), anyInt())).thenReturn(packageInfo)
-        val repository = SoftwareRepository(context, preferencesManager)
+        whenever(context.packageManager).doReturn(packageManager)
+        whenever(packageManager.getPackageInfo(anyString(), anyInt())).doReturn(packageInfo)
+        val repository = SoftwareRepository(dispatcherProvider, context, preferencesManager)
         repository.items().test {
             assertEquals(
                 Item(
@@ -819,7 +825,7 @@ class SoftwareRepositoryTest {
     }
 
     @Test
-    fun `Returns text when web view version is available`() = runBlocking {
+    fun `Returns text when web view version is available`() = runTest {
         ShadowWebView.setCurrentWebViewPackage(PackageInfo().apply {
             packageName = "android.webkit.WebViewUpdateService"
             versionName = "88.0.4324.96"
@@ -837,7 +843,7 @@ class SoftwareRepositoryTest {
     }
 
     @Test
-    fun `Returns error when web view version with a null system web view`() = runBlocking {
+    fun `Returns error when web view version with a null system web view`() = runTest {
         ShadowWebView.setCurrentWebViewPackage(null)
         repository.items().test {
             assertEquals(
@@ -853,5 +859,5 @@ class SoftwareRepositoryTest {
 
     @Ignore("Not possible?")
     @Test
-    fun `Returns error when web view version with an exception`() = runBlocking { }
+    fun `Returns error when web view version with an exception`() = runTest { }
 }

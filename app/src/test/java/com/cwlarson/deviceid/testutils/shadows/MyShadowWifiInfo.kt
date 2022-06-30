@@ -5,6 +5,7 @@ import org.robolectric.annotation.Implementation
 import org.robolectric.annotation.Implements
 import org.robolectric.shadows.ShadowWifiInfo
 
+@Suppress("unused")
 @Implements(WifiInfo::class)
 class MyShadowWifiInfo: ShadowWifiInfo() {
     private var txLinkSpeed: Int = 0

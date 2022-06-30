@@ -2,6 +2,7 @@ package com.cwlarson.deviceid.di
 
 import android.content.Context
 import com.cwlarson.deviceid.util.AppUpdateUtils
+import com.cwlarson.deviceid.util.DispatcherProvider
 import com.google.android.play.core.appupdate.AppUpdateManager
 import dagger.Module
 import dagger.Provides
@@ -17,7 +18,8 @@ object ActivityModule {
     @Provides
     @ActivityScoped
     fun providesAppUpdateUtils(
+        dispatcherProvider: DispatcherProvider,
         manager: AppUpdateManager,
         @ActivityContext activity: Context
-    ): AppUpdateUtils = AppUpdateUtils(manager, activity)
+    ): AppUpdateUtils = AppUpdateUtils(dispatcherProvider, manager, activity)
 }

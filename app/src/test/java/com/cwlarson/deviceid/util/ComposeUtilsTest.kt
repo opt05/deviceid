@@ -5,9 +5,12 @@ import android.app.Application
 import android.content.Intent
 import android.content.pm.*
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Scaffold
 import androidx.compose.material.rememberScaffoldState
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -21,6 +24,7 @@ import com.cwlarson.deviceid.tabs.Item
 import com.cwlarson.deviceid.tabs.ItemSubtitle
 import com.cwlarson.deviceid.tabs.ItemType
 import com.cwlarson.deviceid.ui.util.*
+import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -52,11 +56,11 @@ class ComposeUtilsTest {
     fun test_loadPermissionLabel_success() {
         val pi: PermissionInfo = mock()
         val pm: PackageManager = mock()
-        whenever(context.packageManager).thenReturn(pm)
-        whenever(pm.getPermissionInfo(any(), any())).thenReturn(pi)
-        whenever(pi.loadLabel(pm)).thenReturn("test")
+        whenever(context.packageManager).doReturn(pm)
+        whenever(pm.getPermissionInfo(any(), any())).doReturn(pi)
+        whenever(pi.loadLabel(pm)).doReturn("test")
         composeTestRule.setContent {
-            assert(AppPermission.ReadPhoneState.loadPermissionLabel(context) == "test")
+            assertEquals("test", AppPermission.ReadPhoneState.loadPermissionLabel(context))
         }
     }
 
@@ -64,7 +68,10 @@ class ComposeUtilsTest {
     fun test_loadPermissionLabel_fail() {
         whenever(context.packageManager).doThrow(NullPointerException())
         composeTestRule.setContent {
-            assert(AppPermission.ReadPhoneState.loadPermissionLabel(context) == "Something went wrong")
+            assertEquals(
+                "Something went wrong",
+                AppPermission.ReadPhoneState.loadPermissionLabel(context)
+            )
         }
     }
 
@@ -72,7 +79,7 @@ class ComposeUtilsTest {
     fun test_IntentHandler_init() {
         val activity: ComponentActivity = mock()
         val lifecycle: Lifecycle = mock()
-        whenever(activity.lifecycle).thenReturn(lifecycle)
+        whenever(activity.lifecycle).doReturn(lifecycle)
         IntentHandler(activity)
         verify(lifecycle).addObserver(any())
     }
@@ -81,7 +88,7 @@ class ComposeUtilsTest {
     fun test_IntentHandler_onCreate_intent() {
         val intent = composeTestRule.activity.intent
         val handler = composeTestRule.runOnUiThread { IntentHandler(composeTestRule.activity) }
-        composeTestRule.setContent { handler.OnIntent { assert(it == intent) } }
+        composeTestRule.setContent { handler.OnIntent { assertEquals(intent, it) } }
     }
 
     @Test
@@ -90,10 +97,10 @@ class ComposeUtilsTest {
         val handler = composeTestRule.runOnUiThread { IntentHandler(composeTestRule.activity) }
         composeTestRule.activity.intent = intent.apply { putExtra(Intent.EXTRA_TEXT, "test") }
         composeTestRule.runOnUiThread {
-            handler.onDestroy()
-            handler.onCreate()
+            handler.onDestroy(composeTestRule.activity)
+            handler.onCreate(composeTestRule.activity)
         }
-        composeTestRule.setContent { handler.OnIntent { assert(it == intent) } }
+        composeTestRule.setContent { handler.OnIntent { assertEquals(intent, it) } }
     }
 
     @Test
@@ -102,15 +109,15 @@ class ComposeUtilsTest {
             .apply { putExtra(Intent.EXTRA_TEXT, "test") }
         val handler = composeTestRule.runOnUiThread { IntentHandler(composeTestRule.activity) }
         handler.onNewIntent(intent)
-        composeTestRule.setContent { handler.OnIntent { assert(it == intent) } }
+        composeTestRule.setContent { handler.OnIntent { assertEquals(intent, it) } }
     }
 
     @Test
     fun test_copyItemToClipboard_null() {
         composeTestRule.setContent {
-            assert(
+            assertNull(
                 Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text(null))
-                    .copyItemToClipboard() == null
+                    .copyItemToClipboard()
             )
         }
     }
@@ -118,9 +125,9 @@ class ComposeUtilsTest {
     @Test
     fun test_copyItemToClipboard_blank() {
         composeTestRule.setContent {
-            assert(
+            assertNull(
                 Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text(""))
-                    .copyItemToClipboard() == null
+                    .copyItemToClipboard()
             )
         }
     }
@@ -128,9 +135,9 @@ class ComposeUtilsTest {
     @Test
     fun test_copyItemToClipboard_nonnull() {
         composeTestRule.setContent {
-            assert(
+            assertNotNull(
                 Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("Name"))
-                    .copyItemToClipboard() != null
+                    .copyItemToClipboard()
             )
         }
     }
@@ -141,9 +148,9 @@ class ComposeUtilsTest {
             val clipboardManager = LocalClipboardManager.current
             Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Error)
                 .copyItemToClipboard()?.invoke()
-            assert(clipboardManager.getText()?.text == null)
+            assertNull(clipboardManager.getText()?.text)
         }
-        assert(ShadowToast.shownToastCount() == 0)
+        assertTrue(ShadowToast.shownToastCount() == 0)
     }
 
     @Test
@@ -152,9 +159,9 @@ class ComposeUtilsTest {
             val clipboardManager = LocalClipboardManager.current
             Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text(""))
                 .copyItemToClipboard()?.invoke()
-            assert(clipboardManager.getText()?.text == null)
+            assertNull(clipboardManager.getText()?.text)
         }
-        assert(ShadowToast.shownToastCount() == 0)
+        assertTrue(ShadowToast.shownToastCount() == 0)
     }
 
     @Test
@@ -163,9 +170,9 @@ class ComposeUtilsTest {
             val clipboardManager = LocalClipboardManager.current
             Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("Name"))
                 .copyItemToClipboard()?.invoke()
-            assert(clipboardManager.getText()?.text == "Name")
+            assertEquals("Name", clipboardManager.getText()?.text)
         }
-        assert(ShadowToast.showedToast("Copied Device Info to clipboard!"))
+        assertTrue(ShadowToast.showedToast("Copied Device Info to clipboard!"))
     }
 
     @Test
@@ -199,27 +206,30 @@ class ComposeUtilsTest {
                 .share(context).invoke()
         }
         verify(context, times(0)).startActivity(any())
-        assert(ShadowToast.showedToast("No app available"))
+        assertTrue(ShadowToast.showedToast("No app available"))
     }
 
     @Test
     fun test_click_permission_hasPermission() {
-        var clickedType: ClickedType = ClickedType.None
+        val clickedRefresh: () -> Unit = mock()
+        val clickedDetails: (Item) -> Unit = mock()
         shadowOf(context).grantPermissions(Manifest.permission.READ_PHONE_STATE)
         composeTestRule.setContent {
             ComposableUnderTest(
                 Item(
                     R.string.app_name, ItemType.DEVICE,
                     ItemSubtitle.Permission(AppPermission.ReadPhoneState)
-                )
-            ) { clickedType = it }
+                ), clickedRefresh = clickedRefresh, clickedDetails = clickedDetails
+            )
         }
-        assert(clickedType == ClickedType.Refresh)
+        verify(clickedRefresh).invoke()
+        verifyNoInteractions(clickedDetails)
     }
 
     @Test
     fun test_click_permission_shouldShowRationale() {
-        var clickedType: ClickedType = ClickedType.None
+        val clickedRefresh: () -> Unit = mock()
+        val clickedDetails: (Item) -> Unit = mock()
         shadowOf(context).denyPermissions(Manifest.permission.READ_PHONE_STATE)
         shadowOf(context.packageManager)
             .setShouldShowRequestPermissionRationale(Manifest.permission.READ_PHONE_STATE, true)
@@ -228,18 +238,20 @@ class ComposeUtilsTest {
                 Item(
                     R.string.app_name, ItemType.DEVICE,
                     ItemSubtitle.Permission(AppPermission.ReadPhoneState)
-                )
-            ) { clickedType = it }
+                ), clickedRefresh = clickedRefresh, clickedDetails = clickedDetails
+            )
         }
         composeTestRule.onNodeWithText("permission is required to display", substring = true)
             .assertIsDisplayed()
         composeTestRule.onNodeWithText("Retry").assertIsDisplayed()
-        assert(clickedType == ClickedType.None)
+        verifyNoInteractions(clickedRefresh)
+        verifyNoInteractions(clickedDetails)
     }
 
     @Test
     fun test_click_permission_shouldShowRationale_clickRetry() {
-        var clickedType: ClickedType = ClickedType.None
+        val clickedRefresh: () -> Unit = mock()
+        val clickedDetails: (Item) -> Unit = mock()
         shadowOf(context).denyPermissions(Manifest.permission.READ_PHONE_STATE)
         shadowOf(context.packageManager)
             .setShouldShowRequestPermissionRationale(Manifest.permission.READ_PHONE_STATE, true)
@@ -248,81 +260,98 @@ class ComposeUtilsTest {
                 Item(
                     R.string.app_name, ItemType.DEVICE,
                     ItemSubtitle.Permission(AppPermission.ReadPhoneState)
-                )
-            ) { clickedType = it }
+                ), clickedRefresh = clickedRefresh, clickedDetails = clickedDetails
+            )
         }
         composeTestRule.onNodeWithText("Retry").assertIsDisplayed().performClick()
-        assert(Manifest.permission.READ_PHONE_STATE ==
-            shadowOf(composeTestRule.activity).lastRequestedPermission.requestedPermissions[0])
-        assert(clickedType == ClickedType.None)
+        assertEquals(
+            Manifest.permission.READ_PHONE_STATE,
+            shadowOf(composeTestRule.activity).lastRequestedPermission.requestedPermissions[0]
+        )
+        verifyNoInteractions(clickedRefresh)
+        verifyNoInteractions(clickedDetails)
     }
 
     @Test
     fun test_click_permission_permissionRequested() {
-        var clickedType: ClickedType = ClickedType.None
+        val clickedRefresh: () -> Unit = mock()
+        val clickedDetails: (Item) -> Unit = mock()
         shadowOf(context).denyPermissions(Manifest.permission.READ_PHONE_STATE)
         composeTestRule.setContent {
             ComposableUnderTest(
                 Item(
                     R.string.app_name, ItemType.DEVICE,
                     ItemSubtitle.Permission(AppPermission.ReadPhoneState)
-                )
-            ) { clickedType = it }
+                ), clickedRefresh = clickedRefresh, clickedDetails = clickedDetails
+            )
         }
-        assert(Manifest.permission.READ_PHONE_STATE ==
-                shadowOf(composeTestRule.activity).lastRequestedPermission.requestedPermissions[0])
-        assert(clickedType == ClickedType.None)
+        assertEquals(
+            Manifest.permission.READ_PHONE_STATE,
+            shadowOf(composeTestRule.activity).lastRequestedPermission.requestedPermissions[0]
+        )
+        verifyNoInteractions(clickedRefresh)
+        verifyNoInteractions(clickedDetails)
     }
 
     @Test
     fun test_click_else_subtitle_null() {
-        var clickedType: ClickedType = ClickedType.None
+        val clickedRefresh: () -> Unit = mock()
+        val clickedDetails: (Item) -> Unit = mock()
         composeTestRule.setContent {
             ComposableUnderTest(
-                Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text(null))
-            ) { clickedType = it }
+                Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text(null)),
+                clickedRefresh = clickedRefresh, clickedDetails = clickedDetails
+            )
         }
         composeTestRule.onNodeWithText("Unable to retrieve Device Info from this device")
             .assertIsDisplayed()
-        assert(clickedType == ClickedType.None)
+        verifyNoInteractions(clickedRefresh)
+        verifyNoInteractions(clickedDetails)
     }
 
     @Test
     fun test_click_else_subtitle_blank() {
-        var clickedType: ClickedType = ClickedType.None
+        val clickedRefresh: () -> Unit = mock()
+        val clickedDetails: (Item) -> Unit = mock()
         composeTestRule.setContent {
             ComposableUnderTest(
-                Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text(""))
-            ) { clickedType = it }
+                Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("")),
+                clickedRefresh = clickedRefresh, clickedDetails = clickedDetails
+            )
         }
         composeTestRule.onNodeWithText("Unable to retrieve Device Info from this device")
             .assertIsDisplayed()
-        assert(clickedType == ClickedType.None)
+        verifyNoInteractions(clickedRefresh)
+        verifyNoInteractions(clickedDetails)
     }
 
     @Test
     fun test_click_else_subtitle_nonnull() {
-        var clickedType: ClickedType = ClickedType.None
+        val clickedRefresh: () -> Unit = mock()
+        val clickedDetails: (Item) -> Unit = mock()
         val item = Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("Test"))
-        composeTestRule.setContent { ComposableUnderTest(item) { clickedType = it } }
-        assert(clickedType == ClickedType.Details(item))
-    }
-
-    private sealed class ClickedType {
-        object None: ClickedType()
-        object Refresh: ClickedType()
-        data class Details(val item: Item): ClickedType()
+        composeTestRule.setContent {
+            ComposableUnderTest(
+                item, clickedRefresh = clickedRefresh, clickedDetails = clickedDetails
+            )
+        }
+        verifyNoInteractions(clickedRefresh)
+        verify(clickedDetails).invoke(item)
     }
 
     @Suppress("TestFunctionName")
     @Composable
-    private fun ComposableUnderTest(item: Item, clicked: ((type: ClickedType) -> Unit)) {
+    private fun ComposableUnderTest(
+        item: Item, clickedRefresh: (() -> Unit), clickedDetails: ((Item) -> Unit)
+    ) {
         val state = rememberScaffoldState()
-        Scaffold(scaffoldState = state) {
-            item.click(
-                snackbarHostState = state.snackbarHostState,
-                forceRefresh = { clicked(ClickedType.Refresh) },
-                showItemDetails = { clicked(ClickedType.Details(it)) })
+        Scaffold(scaffoldState = state) { innerPadding ->
+            Box(modifier = Modifier.padding(innerPadding)) {
+                item.click(
+                    snackbarHostState = state.snackbarHostState, forceRefresh = clickedRefresh,
+                    showItemDetails = clickedDetails
+                )
+            }
         }
     }
 }

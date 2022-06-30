@@ -6,7 +6,7 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import com.cwlarson.deviceid.R
-import kotlinx.coroutines.Dispatchers
+import com.cwlarson.deviceid.util.DispatcherProvider
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import org.json.JSONArray
@@ -26,6 +26,7 @@ data class UserPreferences(
 )
 
 open class PreferenceManager @Inject constructor(
+    private val dispatcherProvider: DispatcherProvider,
     private val context: Context,
     private val dataStore: DataStore<Preferences>
 ) {
@@ -146,7 +147,7 @@ open class PreferenceManager @Inject constructor(
             } catch (e: Throwable) {
                 emptyList()
             }
-        }.flowOn(Dispatchers.IO)
+        }.flowOn(dispatcherProvider.IO)
 
     open suspend fun saveSearchHistoryItem(item: String?) {
         if (searchHistory.first() && item?.isNotBlank() == true) {

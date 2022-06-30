@@ -3,18 +3,77 @@ package com.cwlarson.deviceid.tabs
 import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Android
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.data.sdkToVersion
 import com.cwlarson.deviceid.ui.util.ListItem
 import com.cwlarson.deviceid.ui.util.copyItemToClipboard
 import com.cwlarson.deviceid.ui.util.loadPermissionLabel
+import com.cwlarson.deviceid.util.AppPermission
 
 @VisibleForTesting
 const val TAB_TEST_TAG_LIST_ITEM = "tab_list_item"
+
+@Preview(showBackground = true)
+@Composable
+fun ItemListItemTextPreview() {
+    ItemListItem(item = Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("subtitle"))) { }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ItemListItemChartPreview() {
+    ItemListItem(
+        item = Item(
+            R.string.app_name, ItemType.DEVICE,
+            ItemSubtitle.Chart(
+                ChartItem(50f, 100f, Icons.Default.Android, "subtitle")
+            )
+        )
+    ) { }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ItemListItemNoLongerPreview() {
+    ItemListItem(
+        item = Item(
+            R.string.app_name,
+            ItemType.DEVICE,
+            ItemSubtitle.NoLongerPossible(15)
+        )
+    ) { }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ItemListItemNotPossiblePreview() {
+    ItemListItem(
+        item = Item(
+            R.string.app_name,
+            ItemType.DEVICE,
+            ItemSubtitle.NotPossibleYet(21)
+        )
+    ) { }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ItemListItemPermissionPreview() {
+    ItemListItem(
+        item = Item(
+            R.string.app_name,
+            ItemType.DEVICE,
+            ItemSubtitle.Permission(AppPermission.ReadPhoneState)
+        )
+    ) { }
+}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable

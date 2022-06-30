@@ -8,28 +8,28 @@ import com.cwlarson.deviceid.tabs.Item
 import com.cwlarson.deviceid.tabs.ItemSubtitle
 import com.cwlarson.deviceid.tabs.ItemType
 import com.cwlarson.deviceid.testutils.CoroutineTestRule
+import com.cwlarson.deviceid.util.DispatcherProvider
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.mockito.kotlin.any
-import org.mockito.kotlin.doThrow
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
+import org.mockito.kotlin.*
 
 class TabDataTest {
     @get:Rule
     val coroutineRule = CoroutineTestRule()
 
+    private lateinit var dispatcherProvider: DispatcherProvider
     private lateinit var context: Application
     private lateinit var preferencesManager: PreferenceManager
 
-    private inner class TestTabData(itemsList: List<Item>) : TabData(context, preferencesManager) {
+    private inner class TestTabData(itemsList: List<Item>) :
+        TabData(dispatcherProvider, context, preferencesManager) {
         private val internalFlow = MutableStateFlow(itemsList)
 
         override fun items(): Flow<List<Item>> = internalFlow
@@ -41,19 +41,19 @@ class TabDataTest {
 
     @Before
     fun setup() {
+        dispatcherProvider = DispatcherProvider.provideDispatcher(coroutineRule.dispatcher)
         context = mock()
         preferencesManager = mock()
     }
 
     @Test
     fun `Verify list returns success when swipeRefreshDisabled and hideUnavailable is false`() =
-        runBlocking {
+        runTest {
             val itemsList = listOf(Item(0, ItemType.DEVICE, ItemSubtitle.Text(null)))
-            whenever(preferencesManager.getFilters()).thenReturn(
+            whenever(preferencesManager.getFilters()).doReturn(
                 flowOf(Filters(hideUnavailable = false, swipeRefreshDisabled = false))
             )
             TestTabData(itemsList).list().test {
-                assertEquals(TabDataStatus.Loading, awaitItem())
                 assertEquals(TabDataStatus.Loading, awaitItem())
                 assertEquals(TabDataStatus.Success(itemsList), awaitItem())
                 cancelAndConsumeRemainingEvents()
@@ -62,9 +62,9 @@ class TabDataTest {
 
     @Test
     fun `Verify list returns success when swipeRefreshDisabled is true and hideUnavailable is false`() =
-        runBlocking {
+        runTest {
             val itemsList = listOf(Item(0, ItemType.DEVICE, ItemSubtitle.Text(null)))
-            whenever(preferencesManager.getFilters()).thenReturn(
+            whenever(preferencesManager.getFilters()).doReturn(
                 flowOf(Filters(hideUnavailable = false, swipeRefreshDisabled = true))
             )
             TestTabData(itemsList).list().test {
@@ -76,9 +76,9 @@ class TabDataTest {
 
     @Test
     fun `Verify list returns success when swipeRefreshDisabled and hideUnavailable is true`() =
-        runBlocking {
+        runTest {
             val itemsList = listOf(Item(0, ItemType.DEVICE, ItemSubtitle.Text(null)))
-            whenever(preferencesManager.getFilters()).thenReturn(
+            whenever(preferencesManager.getFilters()).doReturn(
                 flowOf(Filters(hideUnavailable = true, swipeRefreshDisabled = true))
             )
             TestTabData(itemsList).list().test {
@@ -89,13 +89,13 @@ class TabDataTest {
         }
 
     @Test
-    fun `Verify list returns success statuses in order when having multiple`() = runBlocking {
-        whenever(context.getString(any())).thenReturn("a", "b")
+    fun `Verify list returns success statuses in order when having multiple`() = runTest {
+        whenever(context.getString(any())).doReturn("a", "b")
         val itemsList = listOf(
             Item(0, ItemType.SOFTWARE, ItemSubtitle.Text(null)),
             Item(0, ItemType.DEVICE, ItemSubtitle.Text(null))
         )
-        whenever(preferencesManager.getFilters()).thenReturn(
+        whenever(preferencesManager.getFilters()).doReturn(
             flowOf(Filters(hideUnavailable = false, swipeRefreshDisabled = true))
         )
         TestTabData(itemsList).list().test {
@@ -106,10 +106,10 @@ class TabDataTest {
     }
 
     @Test
-    fun `Verify list updates filters when new provided`() = runBlocking {
+    fun `Verify list updates filters when new provided`() = runTest {
         val filterFlow =
             MutableStateFlow(Filters(hideUnavailable = false, swipeRefreshDisabled = true))
-        whenever(preferencesManager.getFilters()).thenReturn(filterFlow)
+        whenever(preferencesManager.getFilters()).doReturn(filterFlow)
         val itemsList = listOf(Item(0, ItemType.DEVICE, ItemSubtitle.Text(null)))
         TestTabData(itemsList).list().test {
             filterFlow.emit(filterFlow.value.copy(hideUnavailable = true))
@@ -120,8 +120,8 @@ class TabDataTest {
     }
 
     @Test
-    fun `Verify list updates list when new provided`() = runBlocking {
-        whenever(preferencesManager.getFilters()).thenReturn(
+    fun `Verify list updates list when new provided`() = runTest {
+        whenever(preferencesManager.getFilters()).doReturn(
             flowOf(Filters(hideUnavailable = false, swipeRefreshDisabled = true))
         )
         val itemsList1 = listOf(Item(0, ItemType.DEVICE, ItemSubtitle.Text(null)))
@@ -136,13 +136,13 @@ class TabDataTest {
     }
 
     @Test
-    fun `Verify list returns error when exception is thrown`() = runBlocking {
+    fun `Verify list returns error when exception is thrown`() = runTest {
         whenever(context.getString(any())).thenThrow(NullPointerException())
         val itemsList = listOf(
             Item(0, ItemType.DEVICE, ItemSubtitle.Text(null)),
             Item(0, ItemType.DEVICE, ItemSubtitle.Text(null))
         )
-        whenever(preferencesManager.getFilters()).thenReturn(
+        whenever(preferencesManager.getFilters()).doReturn(
             flowOf(Filters(hideUnavailable = false, swipeRefreshDisabled = true))
         )
         TestTabData(itemsList).list().test {
@@ -153,12 +153,12 @@ class TabDataTest {
     }
 
     @Test
-    fun `Verify list returns new status when filter updates`() = runBlocking {
+    fun `Verify list returns new status when filter updates`() = runTest {
         val itemsList = listOf(Item(0, ItemType.DEVICE, ItemSubtitle.Text(null)))
         val filters = MutableStateFlow(
             Filters(hideUnavailable = false, swipeRefreshDisabled = true)
         )
-        whenever(preferencesManager.getFilters()).thenReturn(filters)
+        whenever(preferencesManager.getFilters()).doReturn(filters)
         TestTabData(itemsList).list().test {
             assertEquals(TabDataStatus.Loading, awaitItem())
             assertEquals(TabDataStatus.Success(itemsList), awaitItem())
@@ -169,7 +169,7 @@ class TabDataTest {
     }
 
     @Test
-    fun `Verify details returns success when available`() = runBlocking {
+    fun `Verify details returns success when available`() = runTest {
         val itemsList = listOf(
             Item(0, ItemType.DEVICE, ItemSubtitle.Text(null)),
             Item(1, ItemType.SOFTWARE, ItemSubtitle.Text("lorem"), listOf("ipsum"))
@@ -182,7 +182,7 @@ class TabDataTest {
     }
 
     @Test
-    fun `Verify details updates list when new provided`() = runBlocking {
+    fun `Verify details updates list when new provided`() = runTest {
         val itemsList1 = listOf(Item(0, ItemType.DEVICE, ItemSubtitle.Text(null)))
         val itemsList2 = listOf(Item(0, ItemType.SOFTWARE, ItemSubtitle.Text(null)))
         val data = TestTabData(itemsList1)
@@ -195,9 +195,9 @@ class TabDataTest {
     }
 
     @Test
-    fun `Verify details returns error when exception is thrown`() = runBlocking {
+    fun `Verify details returns error when exception is thrown`() = runTest {
         val item: Item = mock { on { title } doThrow NullPointerException() }
-        whenever(preferencesManager.getFilters()).thenReturn(
+        whenever(preferencesManager.getFilters()).doReturn(
             flowOf(Filters(hideUnavailable = false, swipeRefreshDisabled = true))
         )
         TestTabData(listOf(item)).details(item).test {
@@ -208,10 +208,10 @@ class TabDataTest {
     }
 
     @Test
-    fun `Verify search returns success when hideUnavailable is false`() = runBlocking {
-        whenever(context.getString(any())).thenReturn("a")
+    fun `Verify search returns success when hideUnavailable is false`() = runTest {
+        whenever(context.getString(any())).doReturn("a")
         val itemsList = listOf(Item(0, ItemType.DEVICE, ItemSubtitle.Text(null)))
-        whenever(preferencesManager.getFilters()).thenReturn(
+        whenever(preferencesManager.getFilters()).doReturn(
             flowOf(Filters(hideUnavailable = false, swipeRefreshDisabled = false))
         )
         TestTabData(itemsList).search(MutableStateFlow("a")).test {
@@ -222,10 +222,10 @@ class TabDataTest {
     }
 
     @Test
-    fun `Verify search returns success when hideUnavailable is true`() = runBlocking {
-        whenever(context.getString(any())).thenReturn("a")
+    fun `Verify search returns success when hideUnavailable is true`() = runTest {
+        whenever(context.getString(any())).doReturn("a")
         val itemsList = listOf(Item(0, ItemType.DEVICE, ItemSubtitle.Text(null)))
-        whenever(preferencesManager.getFilters()).thenReturn(
+        whenever(preferencesManager.getFilters()).doReturn(
             flowOf(Filters(hideUnavailable = true, swipeRefreshDisabled = false))
         )
         TestTabData(itemsList).search(MutableStateFlow("a")).test {
@@ -236,14 +236,14 @@ class TabDataTest {
     }
 
     @Test
-    fun `Verify search returns success statuses in order when having multiple`() = runBlocking {
-        whenever(context.getString(0)).thenReturn("a")
-        whenever(context.getString(1)).thenReturn("ab")
+    fun `Verify search returns success statuses in order when having multiple`() = runTest {
+        whenever(context.getString(0)).doReturn("a")
+        whenever(context.getString(1)).doReturn("ab")
         val itemsList = listOf(
             Item(1, ItemType.SOFTWARE, ItemSubtitle.Text(null)),
             Item(0, ItemType.DEVICE, ItemSubtitle.Text(null))
         )
-        whenever(preferencesManager.getFilters()).thenReturn(
+        whenever(preferencesManager.getFilters()).doReturn(
             flowOf(Filters(hideUnavailable = false, swipeRefreshDisabled = false))
         )
         TestTabData(itemsList).search(MutableStateFlow("a")).test {
@@ -254,10 +254,10 @@ class TabDataTest {
     }
 
     @Test
-    fun `Verify search returns success empty list when search text is blank`() = runBlocking {
-        whenever(context.getString(any())).thenReturn("a")
+    fun `Verify search returns success empty list when search text is blank`() = runTest {
+        whenever(context.getString(any())).doReturn("a")
         val itemsList = listOf(Item(0, ItemType.DEVICE, ItemSubtitle.Text(null)))
-        whenever(preferencesManager.getFilters()).thenReturn(
+        whenever(preferencesManager.getFilters()).doReturn(
             flowOf(Filters(hideUnavailable = false, swipeRefreshDisabled = false))
         )
         TestTabData(itemsList).search(MutableStateFlow("")).test {
@@ -268,11 +268,11 @@ class TabDataTest {
     }
 
     @Test
-    fun `Verify search updates filters when new provided`() = runBlocking {
-        whenever(context.getString(any())).thenReturn("a")
+    fun `Verify search updates filters when new provided`() = runTest {
+        whenever(context.getString(any())).doReturn("a")
         val filterFlow =
             MutableStateFlow(Filters(hideUnavailable = false, swipeRefreshDisabled = true))
-        whenever(preferencesManager.getFilters()).thenReturn(filterFlow)
+        whenever(preferencesManager.getFilters()).doReturn(filterFlow)
         val itemsList = listOf(Item(0, ItemType.DEVICE, ItemSubtitle.Text(null)))
         TestTabData(itemsList).search(MutableStateFlow("a")).test {
             filterFlow.emit(filterFlow.value.copy(hideUnavailable = true))
@@ -283,11 +283,11 @@ class TabDataTest {
     }
 
     @Test
-    fun `Verify search updates list when new provided`() = runBlocking {
-        whenever(context.getString(any())).thenReturn("a")
+    fun `Verify search updates list when new provided`() = runTest {
+        whenever(context.getString(any())).doReturn("a")
         val itemsList1 = listOf(Item(0, ItemType.DEVICE, ItemSubtitle.Text(null)))
         val itemsList2 = listOf(Item(0, ItemType.SOFTWARE, ItemSubtitle.Text(null)))
-        whenever(preferencesManager.getFilters()).thenReturn(
+        whenever(preferencesManager.getFilters()).doReturn(
             flowOf(Filters(hideUnavailable = false, swipeRefreshDisabled = false))
         )
         val data = TestTabData(itemsList1)
@@ -300,10 +300,10 @@ class TabDataTest {
     }
 
     @Test
-    fun `Verify search returns error when exception is thrown`() = runBlocking {
+    fun `Verify search returns error when exception is thrown`() = runTest {
         whenever(context.getString(any())).thenThrow(NullPointerException())
         val itemsList = listOf(Item(0, ItemType.DEVICE, ItemSubtitle.Text(null)))
-        whenever(preferencesManager.getFilters()).thenReturn(
+        whenever(preferencesManager.getFilters()).doReturn(
             flowOf(Filters(hideUnavailable = false, swipeRefreshDisabled = false))
         )
         TestTabData(itemsList).search(MutableStateFlow("a")).test {

@@ -13,8 +13,8 @@ import com.cwlarson.deviceid.tabs.Item
 import com.cwlarson.deviceid.tabs.ItemSubtitle
 import com.cwlarson.deviceid.tabs.ItemType
 import com.cwlarson.deviceid.util.AppPermission
+import com.cwlarson.deviceid.util.DispatcherProvider
 import com.cwlarson.deviceid.util.isGranted
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import timber.log.Timber
@@ -22,13 +22,14 @@ import java.util.*
 import javax.inject.Inject
 
 open class DeviceRepository @Inject constructor(
+    private val dispatcherProvider: DispatcherProvider,
     private val context: Context,
     preferenceManager: PreferenceManager
-) : TabData(context, preferenceManager) {
-    private val telephonyManager: TelephonyManager? by lazy { context.getSystemService() }
+) : TabData(dispatcherProvider, context, preferenceManager) {
+    private val telephonyManager by lazy { context.getSystemService<TelephonyManager>() }
 
-    override fun items() =
-        flowOf(listOf(imei(), deviceModel(), serial(), androidID(), gsfid())).flowOn(Dispatchers.IO)
+    override fun items() = flowOf(listOf(imei(), deviceModel(), serial(), androidID(), gsfid()))
+        .flowOn(dispatcherProvider.IO)
 
     // Request permission for IMEI/MEID for Android M+
     @SuppressLint("HardwareIds", "MissingPermission")

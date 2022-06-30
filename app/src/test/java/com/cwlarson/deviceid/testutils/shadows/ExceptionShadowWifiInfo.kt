@@ -5,6 +5,7 @@ import org.robolectric.annotation.Implementation
 import org.robolectric.annotation.Implements
 import org.robolectric.shadows.ShadowWifiInfo
 
+@Suppress("unused")
 @Implements(WifiInfo::class)
 class ExceptionShadowWifiInfo: ShadowWifiInfo() {
     @Implementation

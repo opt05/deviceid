@@ -1,7 +1,7 @@
 package com.cwlarson.deviceid
 
 import android.content.Intent
-import android.util.DisplayMetrics
+import android.util.TypedValue
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.unit.height
@@ -16,6 +16,7 @@ import com.cwlarson.deviceid.tabs.Item
 import com.cwlarson.deviceid.tabs.ItemSubtitle
 import com.cwlarson.deviceid.tabs.ItemType
 import com.cwlarson.deviceid.util.AppUpdateUtils
+import com.cwlarson.deviceid.util.DispatcherProvider
 import com.cwlarson.deviceid.util.InstallState
 import com.cwlarson.deviceid.util.UpdateState
 import com.google.android.play.core.install.model.InstallStatus
@@ -24,8 +25,9 @@ import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.TestCoroutineScheduler
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assume.assumeFalse
 import org.junit.Assume.assumeTrue
@@ -33,7 +35,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.*
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 @HiltAndroidTest
@@ -43,6 +44,9 @@ class MainActivityTest {
 
     @get:Rule(order = 1)
     val composeTestRule = createEmptyComposeRule()
+
+    @Inject
+    lateinit var dispatcherProvider: DispatcherProvider
 
     @Inject
     lateinit var preferenceManager: PreferenceManager
@@ -64,6 +68,7 @@ class MainActivityTest {
 
     @Inject
     lateinit var hardwareRepository: HardwareRepository
+    private val dispatcher = UnconfinedTestDispatcher(TestCoroutineScheduler())
 
     private val installState = MutableStateFlow<InstallState>(InstallState.Initial)
     private val updateState = MutableStateFlow<UpdateState>(UpdateState.Initial)
@@ -75,30 +80,31 @@ class MainActivityTest {
     private lateinit var scenario: ActivityScenario<MainActivity>
 
     @Before
-    fun setup() = runBlockingTest {
+    fun setup() = runTest(dispatcher) {
         hiltAndroidRule.inject()
-        whenever(appUpdateUtils.installState).thenReturn(installState)
-        whenever(appUpdateUtils.updateState).thenReturn(updateState)
-        whenever(appUpdateUtils.awaitIsFlexibleUpdateDownloaded()).thenReturn(false)
-        whenever(preferenceManager.searchHistory).thenReturn(flowOf(false))
+        dispatcherProvider.provideDispatcher(dispatcher)
+        whenever(appUpdateUtils.installState).doReturn(installState)
+        whenever(appUpdateUtils.updateState).doReturn(updateState)
+        whenever(appUpdateUtils.awaitIsFlexibleUpdateDownloaded()).doReturn(false)
+        whenever(preferenceManager.searchHistory).doReturn(flowOf(false))
         whenever(preferenceManager.getSearchHistoryItems(anyOrNull()))
-            .thenReturn(flowOf(listOf("history1", "history2")))
-        whenever(preferenceManager.darkTheme).thenReturn(flowOf(false))
-        whenever(preferenceManager.autoRefreshRate).thenReturn(flowOf(0))
-        whenever(preferenceManager.userPreferencesFlow).thenReturn(flowOf(UserPreferences()))
-        whenever(allRepository.search(any())).thenReturn(
+            .doReturn(flowOf(listOf("history1", "history2")))
+        whenever(preferenceManager.darkTheme).doReturn(flowOf(false))
+        whenever(preferenceManager.autoRefreshRate).doReturn(flowOf(0))
+        whenever(preferenceManager.userPreferencesFlow).doReturn(flowOf(UserPreferences()))
+        whenever(allRepository.search(any())).doReturn(
             flowOf(TabDataStatus.Success(listOf(allItem)))
         )
-        whenever(deviceRepository.list()).thenReturn(
+        whenever(deviceRepository.list()).doReturn(
             flowOf(TabDataStatus.Success(listOf(deviceItem)))
         )
-        whenever(networkRepository.list()).thenReturn(
+        whenever(networkRepository.list()).doReturn(
             flowOf(TabDataStatus.Success(listOf(networkItem)))
         )
-        whenever(softwareRepository.list()).thenReturn(
+        whenever(softwareRepository.list()).doReturn(
             flowOf(TabDataStatus.Success(listOf(softwareItem)))
         )
-        whenever(hardwareRepository.list()).thenReturn(
+        whenever(hardwareRepository.list()).doReturn(
             flowOf(TabDataStatus.Success(listOf(hardwareItem)))
         )
     }
@@ -118,7 +124,7 @@ class MainActivityTest {
     }
 
     @Test
-    fun test_initial_singlePane() {
+    fun test_initial_singlePane() = runTest(dispatcher) {
         launchScenario()
         isScreenSw900dp(false)
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH).assertIsDisplayed()
@@ -141,11 +147,11 @@ class MainActivityTest {
         composeTestRule.onNodeWithText("2").assertDoesNotExist()
         composeTestRule.onNodeWithText("3").assertDoesNotExist()
         composeTestRule.onNodeWithText("4").assertDoesNotExist()
-        runBlocking { verify(appUpdateUtils).checkForFlexibleUpdate(false) }
+        verify(appUpdateUtils).checkForFlexibleUpdate(false)
     }
 
     @Test
-    fun test_initial_dualPane() {
+    fun test_initial_dualPane() = runTest(dispatcher) {
         launchScenario()
         isScreenSw900dp()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH).assertIsDisplayed()
@@ -168,18 +174,18 @@ class MainActivityTest {
         composeTestRule.onNodeWithText("2").assertDoesNotExist()
         composeTestRule.onNodeWithText("3").assertDoesNotExist()
         composeTestRule.onNodeWithText("4").assertDoesNotExist()
-        runBlocking { verify(appUpdateUtils).checkForFlexibleUpdate(false) }
+        verify(appUpdateUtils).checkForFlexibleUpdate(false)
     }
 
     @Test
-    fun test_SearchView_nameFade_singlePane_initial() {
+    fun test_SearchView_nameFade_singlePane_initial() = runTest(dispatcher) {
         launchScenario()
         isScreenSw900dp(false)
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH).onChildren()
             .filterToOne(hasTextExactly("Device Info")).assertIsDisplayed()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH).onChildren()
             .filterToOne(hasTextExactly("Search all")).assertDoesNotExist()
-        TimeUnit.SECONDS.sleep(2)
+        dispatcher.scheduler.advanceUntilIdle()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH).onChildren()
             .filterToOne(hasTextExactly("Device Info")).assertDoesNotExist()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH).onChildren()
@@ -187,14 +193,14 @@ class MainActivityTest {
     }
 
     @Test
-    fun test_SearchView_nameFade_singlePane_recreate() {
+    fun test_SearchView_nameFade_singlePane_recreate() = runTest(dispatcher) {
         launchScenario()
         isScreenSw900dp(false)
-        TimeUnit.SECONDS.sleep(2)
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH).onChildren()
-            .filterToOne(hasTextExactly("Device Info")).assertDoesNotExist()
+            .filterToOne(hasTextExactly("Device Info")).assertIsDisplayed()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH).onChildren()
-            .filterToOne(hasTextExactly("Search all")).assertIsDisplayed()
+            .filterToOne(hasTextExactly("Search all")).assertDoesNotExist()
+        dispatcher.scheduler.advanceUntilIdle()
         scenario.recreate()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH).onChildren()
             .filterToOne(hasTextExactly("Device Info")).assertDoesNotExist()
@@ -203,7 +209,7 @@ class MainActivityTest {
     }
 
     @Test
-    fun test_SearchView_nameFade_dualPane() {
+    fun test_SearchView_nameFade_dualPane() = runTest(dispatcher) {
         launchScenario()
         isScreenSw900dp()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH).onChildren()
@@ -215,7 +221,7 @@ class MainActivityTest {
     }
 
     @Test
-    fun test_navigation_searchIntent() {
+    fun test_navigation_searchIntent() = runTest(dispatcher) {
         launchScenario(true)
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_TOOLBAR).assertDoesNotExist()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_BOTTOM_NAV).assertDoesNotExist()
@@ -225,7 +231,7 @@ class MainActivityTest {
     }
 
     @Test
-    fun test_navigation_network() {
+    fun test_navigation_network() = runTest(dispatcher) {
         launchScenario()
         composeTestRule.onNodeWithText("Network").performClick().assertIsSelected()
         composeTestRule.onNodeWithText("1").assertDoesNotExist()
@@ -235,7 +241,7 @@ class MainActivityTest {
     }
 
     @Test
-    fun test_navigation_software() {
+    fun test_navigation_software() = runTest(dispatcher) {
         launchScenario()
         composeTestRule.onNodeWithText("Software").performClick().assertIsSelected()
         composeTestRule.onNodeWithText("1").assertDoesNotExist()
@@ -245,7 +251,7 @@ class MainActivityTest {
     }
 
     @Test
-    fun test_navigation_hardware() {
+    fun test_navigation_hardware() = runTest(dispatcher) {
         launchScenario()
         composeTestRule.onNodeWithText("Hardware").performClick().assertIsSelected()
         composeTestRule.onNodeWithText("1").assertDoesNotExist()
@@ -255,7 +261,7 @@ class MainActivityTest {
     }
 
     @Test
-    fun test_navigation_settings() {
+    fun test_navigation_settings() = runTest(dispatcher) {
         launchScenario()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_MENU, useUnmergedTree = true)
             .performClick()
@@ -270,8 +276,9 @@ class MainActivityTest {
     }
 
     @Test
-    fun test_navigation_settings_back() {
+    fun test_navigation_settings_back_singlePane() = runTest(dispatcher) {
         launchScenario()
+        isScreenSw900dp(false)
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_MENU, useUnmergedTree = true)
             .performClick()
         composeTestRule.onNodeWithText("Settings").performClick()
@@ -285,8 +292,25 @@ class MainActivityTest {
     }
 
     @Test
-    fun test_navigation_search_initial() {
+    fun test_navigation_settings_back_dualPane() = runTest(dispatcher) {
         launchScenario()
+        isScreenSw900dp()
+        composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_MENU, useUnmergedTree = true)
+            .performClick()
+        composeTestRule.onNodeWithText("Settings").performClick()
+        composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_TOOLBAR_BACK).performClick()
+        composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_TOOLBAR).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_BOTTOM_NAV).assertDoesNotExist()
+        composeTestRule.onNodeWithText("1").assertIsDisplayed()
+        composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_MENU, useUnmergedTree = true)
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun test_navigation_search_initial_singlePane() = runTest(dispatcher) {
+        launchScenario()
+        isScreenSw900dp(false)
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_TEXT).performClick()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_TOOLBAR).assertDoesNotExist()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_BOTTOM_NAV).assertIsDisplayed()
@@ -296,7 +320,19 @@ class MainActivityTest {
     }
 
     @Test
-    fun test_navigation_search_hasText() {
+    fun test_navigation_search_initial_dualPane() = runTest(dispatcher) {
+        launchScenario()
+        isScreenSw900dp()
+        composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_TEXT).performClick()
+        composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_TOOLBAR).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_BOTTOM_NAV).assertDoesNotExist()
+        composeTestRule.onNodeWithText("1").assertIsDisplayed()
+        composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_BACK).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_CLEAR).assertDoesNotExist()
+    }
+
+    @Test
+    fun test_navigation_search_hasText() = runTest(dispatcher) {
         launchScenario()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_TEXT).performTextInput("t")
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_TOOLBAR).assertDoesNotExist()
@@ -307,7 +343,7 @@ class MainActivityTest {
     }
 
     @Test
-    fun test_navigation_search_clearText() {
+    fun test_navigation_search_clearText() = runTest(dispatcher) {
         launchScenario()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_TEXT).performTextInput("t")
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_TEXT).performTextClearance()
@@ -319,8 +355,9 @@ class MainActivityTest {
     }
 
     @Test
-    fun test_navigation_search_back() {
+    fun test_navigation_search_back_singlePane() = runTest(dispatcher) {
         launchScenario()
+        isScreenSw900dp(false)
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_TEXT).performTextInput("t")
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_BACK).performClick()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_TOOLBAR).assertDoesNotExist()
@@ -331,7 +368,20 @@ class MainActivityTest {
     }
 
     @Test
-    fun test_navigation_search_clear() {
+    fun test_navigation_search_back_dualPane() = runTest(dispatcher) {
+        launchScenario()
+        isScreenSw900dp()
+        composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_TEXT).performTextInput("t")
+        composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_BACK).performClick()
+        composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_TOOLBAR).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_BOTTOM_NAV).assertDoesNotExist()
+        composeTestRule.onNodeWithText("1").assertIsDisplayed()
+        composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_BACK).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_CLEAR).assertDoesNotExist()
+    }
+
+    @Test
+    fun test_navigation_search_clear() = runTest(dispatcher) {
         launchScenario()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_TEXT).performTextInput("t")
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_CLEAR).performClick()
@@ -344,25 +394,23 @@ class MainActivityTest {
     }
 
     @Test
-    fun test_search_searchHistory_displays() {
-        whenever(preferenceManager.searchHistory).thenReturn(flowOf(true))
+    fun test_search_searchHistory_displays() = runTest(dispatcher) {
+        whenever(preferenceManager.searchHistory).doReturn(flowOf(true))
         launchScenario()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_TEXT).performTextInput("h")
         composeTestRule.onAllNodesWithText("history", substring = true).assertCountEquals(2)
     }
 
     @Test
-    fun test_search_searchHistory_notDisplays() {
+    fun test_search_searchHistory_notDisplays() = runTest(dispatcher) {
         launchScenario()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_TEXT).performTextInput("h")
         composeTestRule.onAllNodesWithText("history", substring = true).assertCountEquals(0)
     }
 
     @Test
-    fun test_appUpdate_FlexibleUpdateDownloadedSnackbar_onResume() {
-        runBlocking {
-            whenever(appUpdateUtils.awaitIsFlexibleUpdateDownloaded()).thenReturn(true)
-        }
+    fun test_appUpdate_FlexibleUpdateDownloadedSnackbar_onResume() = runTest(dispatcher) {
+        whenever(appUpdateUtils.awaitIsFlexibleUpdateDownloaded()).doReturn(true)
         launchScenario()
         composeTestRule.onNodeWithText("An update has just been downloaded.")
             .assertIsDisplayed()
@@ -370,11 +418,9 @@ class MainActivityTest {
     }
 
     @Test
-    fun test_appUpdate_FlexibleUpdateDownloadedSnackbar_onStateChange() {
+    fun test_appUpdate_FlexibleUpdateDownloadedSnackbar_onStateChange() = runTest(dispatcher) {
         launchScenario()
-        runBlocking {
-            whenever(appUpdateUtils.awaitIsFlexibleUpdateDownloaded()).thenReturn(true)
-        }
+        whenever(appUpdateUtils.awaitIsFlexibleUpdateDownloaded()).doReturn(true)
         installState.value = InstallState.NoError(status = InstallStatus.DOWNLOADED)
         composeTestRule.onNodeWithText("An update has just been downloaded.")
             .assertIsDisplayed()
@@ -382,20 +428,16 @@ class MainActivityTest {
     }
 
     @Test
-    fun test_appUpdate_FlexibleUpdateDownloadedSnackbar_click() {
-        runBlocking {
-            whenever(appUpdateUtils.awaitIsFlexibleUpdateDownloaded()).thenReturn(true)
-        }
+    fun test_appUpdate_FlexibleUpdateDownloadedSnackbar_click() = runTest(dispatcher) {
+        whenever(appUpdateUtils.awaitIsFlexibleUpdateDownloaded()).doReturn(true)
         launchScenario()
         composeTestRule.onNodeWithText("Restart").performClick()
         verify(appUpdateUtils).completeUpdate()
     }
 
     @Test
-    fun test_appUpdate_FlexibleInstallFailedSnackbar() {
-        runBlocking {
-            whenever(appUpdateUtils.awaitIsFlexibleUpdateDownloaded()).thenReturn(true)
-        }
+    fun test_appUpdate_FlexibleInstallFailedSnackbar() = runTest(dispatcher) {
+        whenever(appUpdateUtils.awaitIsFlexibleUpdateDownloaded()).doReturn(true)
         installState.value = InstallState.NoError(status = InstallStatus.FAILED)
         launchScenario()
         composeTestRule.onNodeWithText("Failed to download an update.")
@@ -404,19 +446,17 @@ class MainActivityTest {
     }
 
     @Test
-    fun test_appUpdate_FlexibleInstallFailedSnackbar_click() {
-        runBlocking {
-            whenever(appUpdateUtils.awaitIsFlexibleUpdateDownloaded()).thenReturn(true)
-        }
+    fun test_appUpdate_FlexibleInstallFailedSnackbar_click() = runTest(dispatcher) {
+        whenever(appUpdateUtils.awaitIsFlexibleUpdateDownloaded()).doReturn(true)
         installState.value = InstallState.NoError(status = InstallStatus.FAILED)
         launchScenario()
         clearInvocations(appUpdateUtils)
         composeTestRule.onNodeWithText("Retry").performClick()
-        runBlocking { verify(appUpdateUtils).checkForFlexibleUpdate(false) }
+        verify(appUpdateUtils).checkForFlexibleUpdate(false)
     }
 
     @Test
-    fun test_appUpdate_FlexibleUpdateDialog() {
+    fun test_appUpdate_FlexibleUpdateDialog() = runTest(dispatcher) {
         updateState.value = UpdateState.No(
             UpdateAvailability.UNKNOWN,
             R.string.update_unknown_title, R.string.update_unknown_message,
@@ -430,7 +470,7 @@ class MainActivityTest {
     }
 
     @Test
-    fun test_appUpdate_FlexibleUpdateDialog_clickButton() {
+    fun test_appUpdate_FlexibleUpdateDialog_clickButton() = runTest(dispatcher) {
         updateState.value = UpdateState.No(
             UpdateAvailability.UNKNOWN,
             R.string.update_unknown_title, R.string.update_unknown_message,
@@ -442,7 +482,7 @@ class MainActivityTest {
     }
 
     @Test
-    fun test_appUpdate_FlexibleUpdateDialog_clickOutside() {
+    fun test_appUpdate_FlexibleUpdateDialog_clickOutside() = runTest(dispatcher) {
         updateState.value = UpdateState.No(
             UpdateAvailability.UNKNOWN,
             R.string.update_unknown_title, R.string.update_unknown_message,
@@ -459,11 +499,10 @@ class MainActivityTest {
 
     private fun isScreenSw900dp(assumeTrue: Boolean = true) {
         scenario.onActivity {
-            val displayMetrics = DisplayMetrics()
-            it.display?.getRealMetrics(displayMetrics)
-            val widthDp = displayMetrics.widthPixels / displayMetrics.density
-            val heightDp = displayMetrics.heightPixels / displayMetrics.density
-            with(widthDp.coerceAtMost(heightDp) >= 900) {
+            val twoPane = TypedValue().apply {
+                it.resources.getValue(R.dimen.two_pane_min, this, true)
+            }.run { TypedValue.complexToFloat(data) }
+            with(it.resources.configuration.screenWidthDp >= twoPane) {
                 if (assumeTrue) assumeTrue(this) else assumeFalse(this)
             }
         }

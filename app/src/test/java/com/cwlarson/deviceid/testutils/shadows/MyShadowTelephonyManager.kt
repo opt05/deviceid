@@ -5,6 +5,7 @@ import org.robolectric.annotation.Implementation
 import org.robolectric.annotation.Implements
 import org.robolectric.shadows.ShadowTelephonyManager
 
+@Suppress("unused")
 @Implements(TelephonyManager::class)
 class MyShadowTelephonyManager : ShadowTelephonyManager() {
     private var nai: String = ""
