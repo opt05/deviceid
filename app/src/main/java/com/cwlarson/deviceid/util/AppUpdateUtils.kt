@@ -27,7 +27,7 @@ import javax.inject.Inject
 sealed class UpdateState {
     object Initial : UpdateState()
     object Checking : UpdateState()
-    data class Yes(internal val appUpdateInfo: AppUpdateInfo, val manual: Boolean) : UpdateState()
+    data class Yes(val appUpdateInfo: AppUpdateInfo, val manual: Boolean) : UpdateState()
     object YesButNotAllowed : UpdateState()
     data class No(
         @UpdateAvailability val availability: Int, @StringRes val title: Int,
@@ -41,15 +41,15 @@ sealed class InstallState {
     data class NoError(@InstallStatus val status: Int) : InstallState()
 }
 
-open class AppUpdateUtils @Inject constructor(
+class AppUpdateUtils @Inject constructor(
     private val dispatcherProvider: DispatcherProvider,
     private val appUpdateManager: AppUpdateManager,
     private val activity: Context
 ) : InstallStateUpdatedListener, DefaultLifecycleObserver {
     private val _updateState = MutableStateFlow<UpdateState>(UpdateState.Initial)
-    open val updateState = _updateState.asStateFlow()
+    val updateState = _updateState.asStateFlow()
     private val _installState = MutableStateFlow<InstallState>(InstallState.Initial)
-    open val installState = _installState.asStateFlow()
+    val installState = _installState.asStateFlow()
 
     init {
         @Suppress("LeakingThis")
@@ -62,7 +62,7 @@ open class AppUpdateUtils @Inject constructor(
         if (activity is LifecycleOwner) activity.lifecycle.removeObserver(this)
     }
 
-    open suspend fun checkForFlexibleUpdate(manual: Boolean = false) =
+    suspend fun checkForFlexibleUpdate(manual: Boolean = false) =
         withContext(dispatcherProvider.IO) {
             try {
                 if (_updateState.value is UpdateState.Checking) return@withContext
@@ -119,7 +119,7 @@ open class AppUpdateUtils @Inject constructor(
      * Used in [Activity.onResume] to check if flexible update has downloaded
      * while user was away from the app
      */
-    open suspend fun awaitIsFlexibleUpdateDownloaded(): Boolean =
+    suspend fun awaitIsFlexibleUpdateDownloaded(): Boolean =
         try {
             appUpdateManager.requestAppUpdateInfo().installStatus() == InstallStatus.DOWNLOADED
         } catch (e: Throwable) {
@@ -133,7 +133,7 @@ open class AppUpdateUtils @Inject constructor(
      * You should call this method to complete an update that has already been started and
      * is in the [InstallStatus.DOWNLOADED] state.
      */
-    open fun completeUpdate() {
+    fun completeUpdate() {
         appUpdateManager.completeUpdate()
     }
 

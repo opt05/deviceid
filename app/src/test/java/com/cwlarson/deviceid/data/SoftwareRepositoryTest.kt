@@ -21,6 +21,8 @@ import com.cwlarson.deviceid.testutils.awaitItemFromList
 import com.cwlarson.deviceid.testutils.shadows.ExceptionShadowActivityManager
 import com.cwlarson.deviceid.testutils.shadows.MyShadowBuild
 import com.cwlarson.deviceid.util.DispatcherProvider
+import io.mockk.every
+import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -28,11 +30,6 @@ import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers.anyInt
-import org.mockito.ArgumentMatchers.anyString
-import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowBuild
@@ -55,7 +52,7 @@ class SoftwareRepositoryTest {
     fun setup() {
         dispatcherProvider = DispatcherProvider.provideDispatcher(coroutineRule.dispatcher)
         context = ApplicationProvider.getApplicationContext()
-        preferencesManager = mock()
+        preferencesManager = mockk()
         repository = SoftwareRepository(dispatcherProvider, context, preferencesManager)
     }
 
@@ -683,12 +680,12 @@ class SoftwareRepositoryTest {
 
     @Test
     fun `Returns error when play services version with an exception`() = runTest {
-        val context: Context = mock()
-        val packageManager: PackageManager = mock()
-        val packageInfo: PackageInfo = mock()
-        whenever(context.packageManager).doReturn(packageManager)
-        whenever(packageManager.getPackageInfo(anyString(), anyInt())).doReturn(packageInfo)
-        whenever(packageInfo.longVersionCode).thenThrow(NullPointerException(""))
+        val context: Context = mockk()
+        val packageManager: PackageManager = mockk()
+        val packageInfo: PackageInfo = mockk()
+        every { context.packageManager } returns packageManager
+        every { packageManager.getPackageInfo(any<String>(), any()) } returns packageInfo
+        every { packageInfo.longVersionCode } throws NullPointerException("")
         val repository = SoftwareRepository(dispatcherProvider, context, preferencesManager)
         repository.items().test {
             assertEquals(
@@ -745,11 +742,11 @@ class SoftwareRepositoryTest {
 
     @Test
     fun `Returns error when play services install date with an exception`() = runTest {
-        val context: Context = mock()
-        val packageManager: PackageManager = mock()
-        val packageInfo: PackageInfo = mock()
-        whenever(context.packageManager).doReturn(packageManager)
-        whenever(packageManager.getPackageInfo(anyString(), anyInt())).doReturn(packageInfo)
+        val context: Context = mockk()
+        val packageManager: PackageManager = mockk()
+        val packageInfo: PackageInfo = mockk()
+        every { context.packageManager } returns packageManager
+        every { packageManager.getPackageInfo(any<String>(), any()) } returns packageInfo
         val repository = SoftwareRepository(dispatcherProvider, context, preferencesManager)
         repository.items().test {
             assertEquals(
@@ -806,11 +803,11 @@ class SoftwareRepositoryTest {
 
     @Test
     fun `Returns error when play services update date with an exception`() = runTest {
-        val context: Context = mock()
-        val packageManager: PackageManager = mock()
-        val packageInfo: PackageInfo = mock()
-        whenever(context.packageManager).doReturn(packageManager)
-        whenever(packageManager.getPackageInfo(anyString(), anyInt())).doReturn(packageInfo)
+        val context: Context = mockk()
+        val packageManager: PackageManager = mockk()
+        val packageInfo: PackageInfo = mockk()
+        every { context.packageManager } returns packageManager
+        every { packageManager.getPackageInfo(any<String>(), any()) } returns packageInfo
         val repository = SoftwareRepository(dispatcherProvider, context, preferencesManager)
         repository.items().test {
             assertEquals(

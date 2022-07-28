@@ -8,15 +8,13 @@ plugins {
     id("dagger.hilt.android.plugin")
 }
 
-val coroutinesVersion = "1.6.3"
+val coroutinesVersion = "1.6.4"
 val hiltVersion: String by rootProject.extra
-val lifecycleVersion = "2.5.0"
-val composeVersion = "1.2.0-rc03"
-val composeCompilerVersion = "1.2.0"
-val composeAccompanistVersion = "0.24.12-rc"
+val lifecycleVersion = "2.5.1"
+val composeVersion = "1.2.0"
+val composeAccompanistVersion = "0.25.0"
 val datastoreVersion = "1.0.0"
-val mockitoVersion = "4.6.1"
-val mockitoKotlinVersion = "4.0.0"
+val mockkVersion = "1.12.5"
 android {
     compileSdk = 32
     defaultConfig {
@@ -58,7 +56,7 @@ android {
     }
     kotlinOptions.jvmTarget = JavaVersion.VERSION_11.toString()
     kotlin.sourceSets.all { languageSettings.optIn("kotlin.RequiresOptIn") }
-    composeOptions.kotlinCompilerExtensionVersion = composeCompilerVersion
+    composeOptions.kotlinCompilerExtensionVersion = composeVersion
     testOptions {
         animationsDisabled = true
         unitTests.isIncludeAndroidResources = true
@@ -68,14 +66,6 @@ android {
     }
     testBuildType = "debug"
     kapt.correctErrorTypes = true
-    packagingOptions {
-        // for JNA and JNA-platform
-        resources.excludes += "META-INF/AL2.0"
-        resources.excludes += "META-INF/LGPL2.1"
-        // for byte-buddy
-        resources.excludes += "META-INF/licenses/**"
-        resources.pickFirsts += "**/attach_hotspot_windows.dll"
-    }
 }
 
 dependencies {
@@ -86,10 +76,10 @@ dependencies {
     implementation("androidx.datastore:datastore:$datastoreVersion")
     implementation("androidx.datastore:datastore-preferences:$datastoreVersion")
     implementation("androidx.core:core-ktx:1.8.0")
-    implementation("androidx.core:core-splashscreen:1.0.0-rc01")
+    implementation("androidx.core:core-splashscreen:1.0.0")
     // Compose
-    implementation("androidx.activity:activity-compose:1.5.0")
-    implementation("androidx.compose.compiler:compiler:$composeCompilerVersion")
+    implementation("androidx.activity:activity-compose:1.5.1")
+    implementation("androidx.compose.compiler:compiler:$composeVersion")
     implementation("androidx.compose.ui:ui:$composeVersion")
     // Tooling support (Previews, etc.)
     debugImplementation("androidx.compose.ui:ui-tooling:$composeVersion")
@@ -113,7 +103,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-common-java8:$lifecycleVersion")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycleVersion")
     //Navigation
-    implementation("androidx.navigation:navigation-compose:2.5.0-rc02")
+    implementation("androidx.navigation:navigation-compose:2.5.1")
     // Google Play App Updates
     implementation("com.google.android.play:core:1.10.3")
     implementation("com.google.android.play:core-ktx:1.8.1")
@@ -130,15 +120,15 @@ dependencies {
     androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion")
     androidTestImplementation("androidx.compose.ui:ui-test-junit4:$composeVersion")
     debugImplementation("androidx.compose.ui:ui-test-manifest:$composeVersion")
-    androidTestImplementation("org.mockito:mockito-android:$mockitoVersion")
-    androidTestImplementation("org.mockito.kotlin:mockito-kotlin:$mockitoKotlinVersion")
+    androidTestImplementation("io.mockk:mockk-android:$mockkVersion")
+    //androidTestImplementation("io.mockk:mockk-agent-jvm:$mockkVersion")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.4.0")
     androidTestImplementation("androidx.test.espresso:espresso-intents:3.4.0")
     androidTestImplementation("androidx.test.uiautomator:uiautomator:2.2.0")
     // Unit Testing
     testImplementation("junit:junit:4.13.2")
-    testImplementation("org.mockito.kotlin:mockito-kotlin:$mockitoKotlinVersion")
-    testImplementation("org.mockito:mockito-inline:$mockitoVersion")
+    testImplementation("io.mockk:mockk:$mockkVersion")
+    testImplementation("io.mockk:mockk-agent-jvm:$mockkVersion")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion")
     testImplementation("app.cash.turbine:turbine:0.8.0")
     testImplementation("androidx.compose.ui:ui-test-junit4:$composeVersion")

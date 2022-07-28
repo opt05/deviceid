@@ -13,6 +13,10 @@ import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.InstallErrorCode
 import com.google.android.play.core.install.model.InstallStatus
 import com.google.android.play.core.install.model.UpdateAvailability
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.spyk
+import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Before
@@ -20,7 +24,6 @@ import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.kotlin.*
 
 @RunWith(AndroidJUnit4::class)
 class AppUpdateUtilsTest {
@@ -36,8 +39,8 @@ class AppUpdateUtilsTest {
     @Before
     fun setup() {
         lifecycleOwner = TestLifecycleOwner()
-        activity = mock { on { lifecycle } doReturn lifecycleOwner.lifecycle }
-        appUpdateManager = spy(FakeAppUpdateManager(ApplicationProvider.getApplicationContext()))
+        activity = mockk { every { lifecycle } returns lifecycleOwner.lifecycle }
+        appUpdateManager = spyk(FakeAppUpdateManager(ApplicationProvider.getApplicationContext()))
         dispatcherProvider = DispatcherProvider.provideDispatcher(coroutineRule.dispatcher)
         testObject = AppUpdateUtils(dispatcherProvider, appUpdateManager, activity)
     }
@@ -124,12 +127,12 @@ class AppUpdateUtilsTest {
     @Test
     fun `Verify checkForFlexibleUpdate returns no when update unknown`() = runTest {
         appUpdateManager.setUpdateAvailable(Int.MAX_VALUE, AppUpdateType.FLEXIBLE)
-        val updateInfoTask = spy(appUpdateManager.appUpdateInfo)
-        val updateInfo = spy(updateInfoTask.result) {
-            on { updateAvailability() } doReturn UpdateAvailability.UNKNOWN
+        val updateInfoTask = spyk(appUpdateManager.appUpdateInfo)
+        val updateInfo = spyk(updateInfoTask.result) {
+            every { updateAvailability() } returns UpdateAvailability.UNKNOWN
         }
-        whenever(appUpdateManager.appUpdateInfo).doReturn(updateInfoTask)
-        whenever(updateInfoTask.result).doReturn(updateInfo)
+        every { appUpdateManager.appUpdateInfo } returns updateInfoTask
+        every { updateInfoTask.result } returns updateInfo
         testObject.updateState.test {
             assertEquals(UpdateState.Initial, awaitItem())
             testObject.checkForFlexibleUpdate()
@@ -143,7 +146,7 @@ class AppUpdateUtilsTest {
     @Test
     fun `Verify checkForFlexibleUpdate resets when update exception`() = runTest {
         appUpdateManager.setUpdateAvailable(Int.MAX_VALUE, AppUpdateType.FLEXIBLE)
-        whenever(appUpdateManager.appUpdateInfo).thenThrow(NullPointerException())
+        every { appUpdateManager.appUpdateInfo } throws NullPointerException()
         testObject.updateState.test {
             assertEquals(UpdateState.Initial, awaitItem())
             testObject.checkForFlexibleUpdate()
@@ -157,8 +160,8 @@ class AppUpdateUtilsTest {
     fun `Verify startFlexibleUpdate starts update when update yes`(): Unit = runTest {
         appUpdateManager.setUpdateAvailable(Int.MAX_VALUE, AppUpdateType.FLEXIBLE)
         testObject.checkForFlexibleUpdate()
-        verify(appUpdateManager).registerListener(any())
-        verify(appUpdateManager).startUpdateFlow(any(), eq(activity), any())
+        verify { appUpdateManager.registerListener(any()) }
+        verify { appUpdateManager.startUpdateFlow(any(), activity, any()) }
     }
 
     @Ignore("Unknown how to do?")
@@ -167,33 +170,33 @@ class AppUpdateUtilsTest {
         appUpdateManager.setUpdateAvailable(Int.MAX_VALUE, AppUpdateType.FLEXIBLE)
 
         testObject.checkForFlexibleUpdate()
-        verify(appUpdateManager).registerListener(any())
-        //verify(appUpdateManager).startUpdateFlow(any(), eq(activity), any())
+        verify { appUpdateManager.registerListener(any()) }
+        //verify { appUpdateManager.startUpdateFlow(any(), activity, any()) }
     }
 
     @Test
     fun `Verify startFlexibleUpdate removes listener when update no`() = runTest {
         appUpdateManager.setUpdateNotAvailable()
         testObject.checkForFlexibleUpdate()
-        verify(appUpdateManager, never()).registerListener(any())
-        verify(appUpdateManager, never()).startUpdateFlow(any(), any(), any())
-        verify(appUpdateManager).unregisterListener(any())
+        verify(inverse = true) { appUpdateManager.registerListener(any()) }
+        verify(inverse = true) { appUpdateManager.startUpdateFlow(any(), any(), any()) }
+        verify { appUpdateManager.unregisterListener(any()) }
     }
 
     @Test
     fun `Verify startFlexibleUpdate removes listener when update unknown`() = runTest {
         appUpdateManager.setUpdateAvailable(Int.MAX_VALUE, AppUpdateType.FLEXIBLE)
-        val updateInfoTask = spy(appUpdateManager.appUpdateInfo)
-        val updateInfo = spy(updateInfoTask.result) {
-            on { updateAvailability() } doReturn UpdateAvailability.UNKNOWN
+        val updateInfoTask = spyk(appUpdateManager.appUpdateInfo)
+        val updateInfo = spyk(updateInfoTask.result) {
+            every { updateAvailability() } returns UpdateAvailability.UNKNOWN
         }
-        whenever(appUpdateManager.appUpdateInfo).doReturn(updateInfoTask)
-        whenever(updateInfoTask.result).doReturn(updateInfo)
+        every { appUpdateManager.appUpdateInfo } returns updateInfoTask
+        every { updateInfoTask.result } returns updateInfo
         testObject.checkForFlexibleUpdate()
-        verify(appUpdateManager, never()).registerListener(any())
-        verify(appUpdateManager, never()).startUpdateFlow(any(), any(), any())
-        verify(appUpdateManager).unregisterListener(any())
-    }
+        verify(inverse = true) { appUpdateManager.registerListener(any()) }
+        verify(inverse = true) { appUpdateManager.startUpdateFlow(any(), any(), any()) }
+        verify { appUpdateManager.unregisterListener(any()) }
+        }
 
     @Test
     fun `Verify awaitIsFlexibleUpdateDownloaded returns true when downloaded`() = runTest {
@@ -222,7 +225,7 @@ class AppUpdateUtilsTest {
         appUpdateManager.downloadStarts()
         appUpdateManager.downloadCompletes()
         testObject.completeUpdate()
-        verify(appUpdateManager).completeUpdate()
+        verify { appUpdateManager.completeUpdate() }
         assertTrue(appUpdateManager.isInstallSplashScreenVisible)
         appUpdateManager.installCompletes()
     }

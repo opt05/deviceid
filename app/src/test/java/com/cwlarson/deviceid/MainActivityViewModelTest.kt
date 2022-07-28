@@ -5,6 +5,9 @@ import app.cash.turbine.test
 import com.cwlarson.deviceid.settings.PreferenceManager
 import com.cwlarson.deviceid.testutils.CoroutineTestRule
 import com.cwlarson.deviceid.util.DispatcherProvider
+import io.mockk.*
+import io.mockk.impl.annotations.MockK
+import io.mockk.junit4.MockKRule
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -13,10 +16,6 @@ import org.junit.Assert.assertFalse
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.mockito.Mock
-import org.mockito.junit.MockitoJUnit
-import org.mockito.junit.MockitoRule
-import org.mockito.kotlin.*
 import java.util.concurrent.TimeUnit
 
 class MainActivityViewModelTest {
@@ -24,9 +23,9 @@ class MainActivityViewModelTest {
     val coroutineRule = CoroutineTestRule()
 
     @get:Rule
-    val mockitoRule: MockitoRule = MockitoJUnit.rule()
+    val mockkRule = MockKRule(this)
 
-    @Mock
+    @MockK
     lateinit var preferenceManager: PreferenceManager
     private lateinit var testObject: MainActivityViewModel
     private lateinit var dispatcherProvider: DispatcherProvider
@@ -34,14 +33,15 @@ class MainActivityViewModelTest {
     @Before
     fun setup() {
         dispatcherProvider = DispatcherProvider.provideDispatcher(coroutineRule.dispatcher)
-        whenever(preferenceManager.searchHistory).doReturn(flowOf(false))
-        whenever(preferenceManager.getSearchHistoryItems(any())).doReturn(flowOf(listOf("item1")))
+        every { preferenceManager.darkTheme } returns flowOf(false)
+        every { preferenceManager.searchHistory } returns flowOf(false)
+        every { preferenceManager.getSearchHistoryItems(any()) } returns flowOf(listOf("item1"))
         testObject = MainActivityViewModel(dispatcherProvider, preferenceManager)
     }
 
     @Test
     fun `Verify isSearchHistory returns search history value`() = runTest {
-        verify(preferenceManager).searchHistory
+        verify { preferenceManager.searchHistory }
         testObject.isSearchHistory.test {
             assertFalse(awaitItem())
             awaitComplete()
@@ -52,7 +52,7 @@ class MainActivityViewModelTest {
     fun `Verify startTitleFade when is twoPane and has empty intent`() = runTest {
         testObject.titleVisibility.test {
             assertEquals(TitleVisibility(visible = true, noFade = false), awaitItem())
-            testObject.startTitleFade(true, mock())
+            testObject.startTitleFade(true, mockk())
             assertEquals(TitleVisibility(visible = false, noFade = true), awaitItem())
         }
     }
@@ -61,7 +61,7 @@ class MainActivityViewModelTest {
     fun `Verify startTitleFade when is not twoPane and has search intent`() = runTest {
         testObject.titleVisibility.test {
             assertEquals(TitleVisibility(visible = true, noFade = false), awaitItem())
-            testObject.startTitleFade(false, mock { on { action } doReturn Intent.ACTION_SEARCH })
+            testObject.startTitleFade(false, mockk { every { action } returns Intent.ACTION_SEARCH })
             assertEquals(TitleVisibility(visible = false, noFade = true), awaitItem())
         }
     }
@@ -70,7 +70,7 @@ class MainActivityViewModelTest {
     fun `Verify startTitleFade when is not twoPane and empty intent`() = runTest {
         testObject.titleVisibility.test {
             assertEquals(TitleVisibility(visible = true, noFade = false), awaitItem())
-            testObject.startTitleFade(false, mock())
+            testObject.startTitleFade(false, mockk(relaxed = true))
             expectNoEvents()
             delay(TimeUnit.SECONDS.toMillis(2))
             assertEquals(TitleVisibility(visible = false, noFade = false), awaitItem())
@@ -81,8 +81,8 @@ class MainActivityViewModelTest {
     fun `Verify startTitleFade when multiple calls does not return more`() = runTest {
         testObject.titleVisibility.test {
             assertEquals(TitleVisibility(visible = true, noFade = false), awaitItem())
-            testObject.startTitleFade(false, mock())
-            testObject.startTitleFade(false, mock())
+            testObject.startTitleFade(false, mockk(relaxed = true))
+            testObject.startTitleFade(false, mockk(relaxed = true))
             expectNoEvents()
             delay(TimeUnit.SECONDS.toMillis(2))
             assertEquals(TitleVisibility(visible = false, noFade = false), awaitItem())
@@ -91,8 +91,9 @@ class MainActivityViewModelTest {
 
     @Test
     fun `Verify saveSearchHistory saves data in preferences`() = runTest {
+        coJustRun { preferenceManager.saveSearchHistoryItem(any()) }
         testObject.saveSearchHistory("query")
-        verify(preferenceManager).saveSearchHistoryItem(eq("query"))
+        coVerify { preferenceManager.saveSearchHistoryItem("query") }
     }
 
     @Test

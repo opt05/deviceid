@@ -6,15 +6,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.cwlarson.deviceid.R
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
@@ -33,12 +32,12 @@ class ItemTest {
 
     @Before
     fun setup() {
-        context = mock()
+        context = mockk()
     }
 
     @Test
     fun `Verify item title formatted string returns when args available and not composable`() {
-        whenever(context.getString(0, "test")).doReturn("test test")
+        every { context.getString(0, "test") } returns "test test"
         assertEquals(
             "test test", Item(
                 0, ItemType.DEVICE, ItemSubtitle.Text(null), listOf("test")
@@ -60,7 +59,7 @@ class ItemTest {
 
     @Test
     fun `Verify item title formatted string returns when args not available and not composable`() {
-        whenever(context.getString(0)).doReturn("test")
+        every { context.getString(0) } returns "test"
         assertEquals(
             "test", Item(
                 0, ItemType.DEVICE, ItemSubtitle.Text(null)
@@ -87,7 +86,7 @@ class ItemTest {
     @Test
     fun `Verify item subtitle text returns text when chart type`() {
         assertEquals("test", ItemSubtitle.Chart(ChartItem(
-            0f,0f, mock(), "test"
+            0f,0f, mockk(), "test"
         )).getSubTitleText())
     }
 
@@ -103,7 +102,7 @@ class ItemTest {
 
     @Test
     fun `Verify item subtitle text returns null when permission type`() {
-        assertNull(ItemSubtitle.Permission(mock()).getSubTitleText())
+        assertNull(ItemSubtitle.Permission(mockk()).getSubTitleText())
     }
 
     @Test
@@ -118,7 +117,7 @@ class ItemTest {
 
     @Test
     fun `Verify item icon returns icon when chart type`() {
-        val icon = mock<ImageVector>()
+        val icon = mockk<ImageVector>()
         assertEquals(icon, ItemSubtitle.Chart(ChartItem(
             0f,0f, icon, "test"
         )).getIcon())
@@ -136,7 +135,7 @@ class ItemTest {
 
     @Test
     fun `Verify item icon returns null when permission type`() {
-        assertNull(ItemSubtitle.Permission(mock()).getIcon())
+        assertNull(ItemSubtitle.Permission(mockk()).getIcon())
     }
 
     @Test
@@ -152,35 +151,35 @@ class ItemTest {
     @Test
     fun `Verify item chart percentage returns null when chart type and subtitle is null`() {
         assertNull(ItemSubtitle.Chart(ChartItem(
-            0f,0f, mock(), null
+            0f,0f, mockk(), null
         )).getChartPercentage())
     }
 
     @Test
     fun `Verify item chart percentage returns null when chart type and subtitle is blank`() {
         assertNull(ItemSubtitle.Chart(ChartItem(
-            0f,0f, mock(), ""
+            0f,0f, mockk(), ""
         )).getChartPercentage())
     }
 
     @Test
     fun `Verify item chart percentage returns 0 when chart type and axis both 0`() {
         assertEquals(0f, ItemSubtitle.Chart(ChartItem(
-            0f,0f, mock(), "test"
+            0f,0f, mockk(), "test"
         )).getChartPercentage())
     }
 
     @Test
     fun `Verify item chart percentage returns when chart type and axis 1 greater than 2`() {
         assertEquals(0.5f, ItemSubtitle.Chart(ChartItem(
-            2f,1f, mock(), "test"
+            2f,1f, mockk(), "test"
         )).getChartPercentage())
     }
 
     @Test
     fun `Verify item chart percentage returns when chart type and axis 1 less than 2`() {
         assertEquals(0.5f, ItemSubtitle.Chart(ChartItem(
-            1f,2f, mock(), "test"
+            1f,2f, mockk(), "test"
         )).getChartPercentage())
     }
 
@@ -196,7 +195,7 @@ class ItemTest {
 
     @Test
     fun `Verify item chart percentage returns null when permission type`() {
-        assertNull(ItemSubtitle.Permission(mock()).getChartPercentage())
+        assertNull(ItemSubtitle.Permission(mockk()).getChartPercentage())
     }
 
     @Test

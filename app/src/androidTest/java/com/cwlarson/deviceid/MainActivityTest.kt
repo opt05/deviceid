@@ -23,6 +23,7 @@ import com.google.android.play.core.install.model.InstallStatus
 import com.google.android.play.core.install.model.UpdateAvailability
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
+import io.mockk.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.TestCoroutineScheduler
@@ -34,7 +35,6 @@ import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.mockito.kotlin.*
 import javax.inject.Inject
 
 @HiltAndroidTest
@@ -83,37 +83,27 @@ class MainActivityTest {
     fun setup() = runTest(dispatcher) {
         hiltAndroidRule.inject()
         dispatcherProvider.provideDispatcher(dispatcher)
-        whenever(appUpdateUtils.installState).doReturn(installState)
-        whenever(appUpdateUtils.updateState).doReturn(updateState)
-        whenever(appUpdateUtils.awaitIsFlexibleUpdateDownloaded()).doReturn(false)
-        whenever(preferenceManager.searchHistory).doReturn(flowOf(false))
-        whenever(preferenceManager.getSearchHistoryItems(anyOrNull()))
-            .doReturn(flowOf(listOf("history1", "history2")))
-        whenever(preferenceManager.darkTheme).doReturn(flowOf(false))
-        whenever(preferenceManager.autoRefreshRate).doReturn(flowOf(0))
-        whenever(preferenceManager.userPreferencesFlow).doReturn(flowOf(UserPreferences()))
-        whenever(allRepository.search(any())).doReturn(
-            flowOf(TabDataStatus.Success(listOf(allItem)))
-        )
-        whenever(deviceRepository.list()).doReturn(
-            flowOf(TabDataStatus.Success(listOf(deviceItem)))
-        )
-        whenever(networkRepository.list()).doReturn(
-            flowOf(TabDataStatus.Success(listOf(networkItem)))
-        )
-        whenever(softwareRepository.list()).doReturn(
-            flowOf(TabDataStatus.Success(listOf(softwareItem)))
-        )
-        whenever(hardwareRepository.list()).doReturn(
-            flowOf(TabDataStatus.Success(listOf(hardwareItem)))
-        )
+        every { appUpdateUtils.installState } returns installState
+        every { appUpdateUtils.updateState } returns updateState
+        coEvery { appUpdateUtils.awaitIsFlexibleUpdateDownloaded() } returns false
+        every { preferenceManager.searchHistory } returns flowOf(false)
+        every { preferenceManager.getSearchHistoryItems(any()) } returns flowOf(listOf("history1", "history2"))
+        every { preferenceManager.darkTheme } returns flowOf(false)
+        every { preferenceManager.autoRefreshRate } returns flowOf(0)
+        every { preferenceManager.userPreferencesFlow } returns flowOf(UserPreferences())
+        every { allRepository.search(any()) } returns flowOf(TabDataStatus.Success(listOf(allItem)))
+        every { deviceRepository.list() } returns flowOf(TabDataStatus.Success(listOf(deviceItem)))
+        every { networkRepository.list() } returns flowOf(TabDataStatus.Success(listOf(networkItem)))
+        every { softwareRepository.list() } returns flowOf(TabDataStatus.Success(listOf(softwareItem)))
+        every { hardwareRepository.list() } returns flowOf(TabDataStatus.Success(listOf(hardwareItem)))
+        coJustRun { appUpdateUtils.checkForFlexibleUpdate(any()) }
+        coJustRun { appUpdateUtils.completeUpdate() }
     }
 
     private fun launchScenario(hasSearchIntent: Boolean = false) {
         scenario = if (hasSearchIntent)
             ActivityScenario.launch(Intent(
-                ApplicationProvider.getApplicationContext(),
-                MainActivity::class.java
+                ApplicationProvider.getApplicationContext(), MainActivity::class.java
             ).apply { action = Intent.ACTION_SEARCH })
         else ActivityScenario.launch(MainActivity::class.java)
     }
@@ -147,7 +137,7 @@ class MainActivityTest {
         composeTestRule.onNodeWithText("2").assertDoesNotExist()
         composeTestRule.onNodeWithText("3").assertDoesNotExist()
         composeTestRule.onNodeWithText("4").assertDoesNotExist()
-        verify(appUpdateUtils).checkForFlexibleUpdate(false)
+        coVerify { appUpdateUtils.checkForFlexibleUpdate(false) }
     }
 
     @Test
@@ -174,7 +164,7 @@ class MainActivityTest {
         composeTestRule.onNodeWithText("2").assertDoesNotExist()
         composeTestRule.onNodeWithText("3").assertDoesNotExist()
         composeTestRule.onNodeWithText("4").assertDoesNotExist()
-        verify(appUpdateUtils).checkForFlexibleUpdate(false)
+        coVerify { appUpdateUtils.checkForFlexibleUpdate(false) }
     }
 
     @Test
@@ -356,6 +346,7 @@ class MainActivityTest {
 
     @Test
     fun test_navigation_search_back_singlePane() = runTest(dispatcher) {
+        coJustRun { preferenceManager.saveSearchHistoryItem(any()) }
         launchScenario()
         isScreenSw900dp(false)
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_TEXT).performTextInput("t")
@@ -395,7 +386,7 @@ class MainActivityTest {
 
     @Test
     fun test_search_searchHistory_displays() = runTest(dispatcher) {
-        whenever(preferenceManager.searchHistory).doReturn(flowOf(true))
+        every { preferenceManager.searchHistory } returns flowOf(true)
         launchScenario()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_TEXT).performTextInput("h")
         composeTestRule.onAllNodesWithText("history", substring = true).assertCountEquals(2)
@@ -410,7 +401,7 @@ class MainActivityTest {
 
     @Test
     fun test_appUpdate_FlexibleUpdateDownloadedSnackbar_onResume() = runTest(dispatcher) {
-        whenever(appUpdateUtils.awaitIsFlexibleUpdateDownloaded()).doReturn(true)
+        coEvery { appUpdateUtils.awaitIsFlexibleUpdateDownloaded() } returns true
         launchScenario()
         composeTestRule.onNodeWithText("An update has just been downloaded.")
             .assertIsDisplayed()
@@ -420,7 +411,7 @@ class MainActivityTest {
     @Test
     fun test_appUpdate_FlexibleUpdateDownloadedSnackbar_onStateChange() = runTest(dispatcher) {
         launchScenario()
-        whenever(appUpdateUtils.awaitIsFlexibleUpdateDownloaded()).doReturn(true)
+        coEvery { appUpdateUtils.awaitIsFlexibleUpdateDownloaded() } returns true
         installState.value = InstallState.NoError(status = InstallStatus.DOWNLOADED)
         composeTestRule.onNodeWithText("An update has just been downloaded.")
             .assertIsDisplayed()
@@ -429,15 +420,15 @@ class MainActivityTest {
 
     @Test
     fun test_appUpdate_FlexibleUpdateDownloadedSnackbar_click() = runTest(dispatcher) {
-        whenever(appUpdateUtils.awaitIsFlexibleUpdateDownloaded()).doReturn(true)
+        coEvery { appUpdateUtils.awaitIsFlexibleUpdateDownloaded() } returns true
         launchScenario()
         composeTestRule.onNodeWithText("Restart").performClick()
-        verify(appUpdateUtils).completeUpdate()
+        verify { appUpdateUtils.completeUpdate() }
     }
 
     @Test
     fun test_appUpdate_FlexibleInstallFailedSnackbar() = runTest(dispatcher) {
-        whenever(appUpdateUtils.awaitIsFlexibleUpdateDownloaded()).doReturn(true)
+        coEvery { appUpdateUtils.awaitIsFlexibleUpdateDownloaded() } returns true
         installState.value = InstallState.NoError(status = InstallStatus.FAILED)
         launchScenario()
         composeTestRule.onNodeWithText("Failed to download an update.")
@@ -447,12 +438,11 @@ class MainActivityTest {
 
     @Test
     fun test_appUpdate_FlexibleInstallFailedSnackbar_click() = runTest(dispatcher) {
-        whenever(appUpdateUtils.awaitIsFlexibleUpdateDownloaded()).doReturn(true)
+        coEvery { appUpdateUtils.awaitIsFlexibleUpdateDownloaded() } returns true
         installState.value = InstallState.NoError(status = InstallStatus.FAILED)
         launchScenario()
-        clearInvocations(appUpdateUtils)
         composeTestRule.onNodeWithText("Retry").performClick()
-        verify(appUpdateUtils).checkForFlexibleUpdate(false)
+        coVerify { appUpdateUtils.checkForFlexibleUpdate(false) }
     }
 
     @Test

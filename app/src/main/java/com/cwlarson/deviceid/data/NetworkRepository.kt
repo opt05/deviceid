@@ -27,7 +27,7 @@ import timber.log.Timber
 import java.net.InetAddress
 import javax.inject.Inject
 
-open class NetworkRepository @Inject constructor(
+class NetworkRepository @Inject constructor(
     private val dispatcherProvider: DispatcherProvider,
     private val context: Context,
     preferenceManager: PreferenceManager

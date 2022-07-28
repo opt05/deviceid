@@ -23,9 +23,9 @@ abstract class TabData(
     private val context: Context,
     private val preferenceManager: PreferenceManager
 ) {
-    internal abstract fun items(): Flow<List<Item>>
+    abstract fun items(): Flow<List<Item>>
 
-    open fun list(): Flow<TabDataStatus> = channelFlow {
+    fun list(): Flow<TabDataStatus> = channelFlow {
         trySend(TabDataStatus.Loading)
         preferenceManager.getFilters().collectLatest { filters ->
             items().collectLatest { items ->
@@ -43,7 +43,7 @@ abstract class TabData(
         }
     }.flowOn(dispatcherProvider.IO)
 
-    open fun details(item: Item): Flow<TabDetailStatus> = channelFlow {
+    fun details(item: Item): Flow<TabDetailStatus> = channelFlow {
         trySend(TabDetailStatus.Loading)
         items().collectLatest { items ->
             try {
@@ -60,7 +60,7 @@ abstract class TabData(
         }
     }.flowOn(dispatcherProvider.IO)
 
-    open fun search(searchText: StateFlow<String>): Flow<TabDataStatus> = channelFlow {
+    fun search(searchText: StateFlow<String>): Flow<TabDataStatus> = channelFlow {
         trySend(TabDataStatus.Loading)
         preferenceManager.getFilters().collectLatest { filters ->
             items().collectLatest { items ->

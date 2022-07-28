@@ -11,6 +11,8 @@ import com.cwlarson.deviceid.settings.PreferenceManager
 import com.cwlarson.deviceid.testutils.CoroutineTestRule
 import com.cwlarson.deviceid.testutils.itemFromList
 import com.cwlarson.deviceid.util.DispatcherProvider
+import io.mockk.every
+import io.mockk.mockk
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertNotNull
@@ -18,9 +20,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 
 @RunWith(AndroidJUnit4::class)
 class AllRepositoryTest {
@@ -42,13 +41,13 @@ class AllRepositoryTest {
             putExtra(BatteryManager.EXTRA_PLUGGED, -1)
         })
         dispatcherProvider = DispatcherProvider.provideDispatcher(coroutineRule.dispatcher)
-        preferencesManager = mock()
+        preferencesManager = mockk()
         repository = AllRepository(dispatcherProvider, context, preferencesManager)
     }
 
     @Test
     fun `Verify item list is from all repositories`() = runTest {
-        whenever(preferencesManager.autoRefreshRateMillis).doReturn(flowOf(0))
+        every { preferencesManager.autoRefreshRateMillis } returns flowOf(0)
         repository.items().test {
             val item = awaitItem()
             assertNotNull(item.itemFromList(R.string.device_title_android_id))

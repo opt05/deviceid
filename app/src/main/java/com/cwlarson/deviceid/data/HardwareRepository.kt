@@ -34,7 +34,7 @@ import timber.log.Timber
 import java.util.*
 import javax.inject.Inject
 
-open class HardwareRepository @Inject constructor(
+class HardwareRepository @Inject constructor(
     private val dispatcherProvider: DispatcherProvider,
     private val context: Context,
     private val preferenceManager: PreferenceManager

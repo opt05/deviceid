@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import javax.inject.Inject
 
-open class AllRepository @Inject constructor(
+class AllRepository @Inject constructor(
     private val dispatcherProvider: DispatcherProvider,
     private val context: Context,
     private val preferenceManager: PreferenceManager

@@ -18,6 +18,7 @@ import com.cwlarson.deviceid.ui.theme.AppTheme
 import com.cwlarson.deviceid.util.DispatcherProvider
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
+import io.mockk.every
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.TestCoroutineScheduler
@@ -26,8 +27,6 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.whenever
 import javax.inject.Inject
 
 @HiltAndroidTest
@@ -67,12 +66,12 @@ class TabScreenTest {
         dispatcherProvider.provideDispatcher(dispatcher)
         dataPreferences = MutableStateFlow(UserPreferences())
         dataRepository = MutableStateFlow(TabDataStatus.Loading)
-        whenever(preferenceManager.userPreferencesFlow).doReturn(dataPreferences)
-        whenever(deviceRepository.list()).doReturn(dataRepository)
-        whenever(networkRepository.list()).doReturn(dataRepository)
-        whenever(softwareRepository.list()).doReturn(dataRepository)
-        whenever(hardwareRepository.list()).doReturn(dataRepository)
-        whenever(preferenceManager.autoRefreshRate).doReturn(flowOf(0))
+        every { preferenceManager.userPreferencesFlow } returns dataPreferences
+        every { deviceRepository.list() } returns dataRepository
+        every { networkRepository.list() } returns dataRepository
+        every { softwareRepository.list() } returns dataRepository
+        every { hardwareRepository.list() } returns dataRepository
+        every { preferenceManager.autoRefreshRate } returns flowOf(0)
         clickedItem = null
         composeTestRule.setContent {
             AppTheme {

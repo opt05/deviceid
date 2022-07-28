@@ -38,7 +38,7 @@ fun Context.systemProperty(key: String): String? = try {
     @SuppressLint("PrivateApi")
     val systemProperties = classLoader.loadClass("android.os.SystemProperties")
     val methodGet = systemProperties.getMethod("get", String::class.java)
-    methodGet.invoke(systemProperties, key) as String
+    methodGet(systemProperties, key) as String
 } catch (e: Throwable) {
     null
 }

@@ -25,7 +25,7 @@ data class UserPreferences(
     val forceRefresh: Boolean = false
 )
 
-open class PreferenceManager @Inject constructor(
+class PreferenceManager @Inject constructor(
     private val dispatcherProvider: DispatcherProvider,
     private val context: Context,
     private val dataStore: DataStore<Preferences>
@@ -46,13 +46,13 @@ open class PreferenceManager @Inject constructor(
         } else throw exception
     }
 
-    open fun getFilters(): Flow<Filters> =
+    fun getFilters(): Flow<Filters> =
         combineTransform(hideUnavailable, autoRefreshRate, forceRefresh) { hide, rate, refresh ->
             Timber.d("New filter: $hide / $rate / $refresh")
             emit(Filters(hide, rate > 0))
         }
 
-    open val userPreferencesFlow: Flow<UserPreferences> = dataStore.data.catch { exception ->
+    val userPreferencesFlow: Flow<UserPreferences> = dataStore.data.catch { exception ->
         // dataStore.data throws an IOException when an error is encountered when reading data
         if (exception is IOException) {
             Timber.e(exception, "Error reading preferences.")
@@ -68,7 +68,7 @@ open class PreferenceManager @Inject constructor(
         )
     }
 
-    open val darkTheme: Flow<Boolean?>
+    val darkTheme: Flow<Boolean?>
         get() = preferences.map {
             when (it[PreferencesKeys.DAYNIGHT_MODE]) {
                 context.getString(R.string.pref_night_mode_off) -> false
@@ -77,7 +77,7 @@ open class PreferenceManager @Inject constructor(
             }
         }
 
-    open suspend fun setDarkTheme(newValue: String? = null) {
+    suspend fun setDarkTheme(newValue: String? = null) {
         val setValue = newValue?.let { v ->
             dataStore.edit { it[PreferencesKeys.DAYNIGHT_MODE] = v }
         } ?: preferences.map {
@@ -94,26 +94,26 @@ open class PreferenceManager @Inject constructor(
         )
     }
 
-    open val hideUnavailable: Flow<Boolean>
+    val hideUnavailable: Flow<Boolean>
         get() = preferences.map { it[PreferencesKeys.HIDE_UNAVAILABLE] ?: false }
 
-    open suspend fun hideUnavailable(value: Boolean) {
+    suspend fun hideUnavailable(value: Boolean) {
         dataStore.edit { it[PreferencesKeys.HIDE_UNAVAILABLE] = value }
     }
 
     private val _forceRefresh = MutableStateFlow(false)
-    open val forceRefresh
+    val forceRefresh
         get() = _forceRefresh.asStateFlow()
 
-    open fun forceRefresh() {
+    fun forceRefresh() {
         _forceRefresh.value = !_forceRefresh.value
     }
 
-    open val autoRefreshRate: Flow<Int>
+    val autoRefreshRate: Flow<Int>
         get() = preferences.map { it[PreferencesKeys.AUTO_REFRESH_RATE] ?: 0 }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    open val autoRefreshRateMillis: Flow<Long>
+    val autoRefreshRateMillis: Flow<Long>
         get() = autoRefreshRate.mapLatest {
             TimeUnit.MILLISECONDS.convert(
                 it.toLong(),
@@ -121,7 +121,7 @@ open class PreferenceManager @Inject constructor(
             )
         }
 
-    open suspend fun autoRefreshRate(value: Int) {
+    suspend fun autoRefreshRate(value: Int) {
         dataStore.edit { it[PreferencesKeys.AUTO_REFRESH_RATE] = value }
     }
 
@@ -138,7 +138,7 @@ open class PreferenceManager @Inject constructor(
     private fun JSONArray.toList(): List<String> = List(length(), this::getString)
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    open fun getSearchHistoryItems(filter: String? = null): Flow<List<String>> =
+    fun getSearchHistoryItems(filter: String? = null): Flow<List<String>> =
         searchHistoryData.mapLatest { items ->
             try {
                 JSONArray(items ?: "[]").toList().filter { item ->
@@ -149,7 +149,7 @@ open class PreferenceManager @Inject constructor(
             }
         }.flowOn(dispatcherProvider.IO)
 
-    open suspend fun saveSearchHistoryItem(item: String?) {
+    suspend fun saveSearchHistoryItem(item: String?) {
         if (searchHistory.first() && item?.isNotBlank() == true) {
             val data = JSONArray(searchHistoryData.firstOrNull() ?: "[]").toList()
             searchHistoryData(JSONArray(data.toMutableList().run {
@@ -161,10 +161,10 @@ open class PreferenceManager @Inject constructor(
         }
     }
 
-    open val searchHistory: Flow<Boolean>
+    val searchHistory: Flow<Boolean>
         get() = preferences.map { it[PreferencesKeys.SEARCH_HISTORY] ?: false }
 
-    open suspend fun searchHistory(value: Boolean) {
+    suspend fun searchHistory(value: Boolean) {
         if (!value) searchHistoryData(null)
         dataStore.edit { it[PreferencesKeys.SEARCH_HISTORY] = value }
     }

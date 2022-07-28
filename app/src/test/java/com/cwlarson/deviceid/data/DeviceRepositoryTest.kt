@@ -18,6 +18,8 @@ import com.cwlarson.deviceid.testutils.awaitItemFromList
 import com.cwlarson.deviceid.testutils.shadows.*
 import com.cwlarson.deviceid.util.AppPermission
 import com.cwlarson.deviceid.util.DispatcherProvider
+import io.mockk.every
+import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -25,8 +27,6 @@ import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadow.api.Shadow.extract
@@ -46,7 +46,7 @@ class DeviceRepositoryTest {
     fun setup() {
         dispatcherProvider = DispatcherProvider.provideDispatcher(coroutineRule.dispatcher)
         context = ApplicationProvider.getApplicationContext()
-        preferencesManager = mock()
+        preferencesManager = mockk()
         repository = DeviceRepository(dispatcherProvider ,context, preferencesManager)
     }
 
@@ -275,8 +275,8 @@ class DeviceRepositoryTest {
 
     @Test
     fun `Returns error when Android ID with an exception`() = runTest {
-        val context = mock<Application>()
-        whenever(context.contentResolver).thenThrow(NullPointerException())
+        val context = mockk<Application>()
+        every { context.contentResolver } throws NullPointerException()
         val repository = DeviceRepository(dispatcherProvider, context, preferencesManager)
         repository.items().test {
             assertEquals(

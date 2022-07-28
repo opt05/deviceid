@@ -14,6 +14,7 @@ import com.cwlarson.deviceid.util.UpdateState
 import com.google.android.play.core.install.model.InstallStatus
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
+import io.mockk.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -21,7 +22,6 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.mockito.kotlin.*
 import javax.inject.Inject
 
 @HiltAndroidTest
@@ -53,9 +53,9 @@ class SettingsScreenTest {
         dataPreferences = MutableStateFlow(UserPreferences())
         dataUpdateState = MutableStateFlow(UpdateState.Initial)
         dataInstallState = MutableStateFlow(InstallState.Initial)
-        whenever(preferenceManager.userPreferencesFlow).doReturn(dataPreferences)
-        whenever(appUpdateUtils.updateState).doReturn(dataUpdateState)
-        whenever(appUpdateUtils.installState).doReturn(dataInstallState)
+        every { preferenceManager.userPreferencesFlow } returns dataPreferences
+        every { appUpdateUtils.updateState } returns dataUpdateState
+        every { appUpdateUtils.installState } returns dataInstallState
         composeTestRule.setContent { AppTheme { SettingsScreen(appUpdateUtils = appUpdateUtils) } }
     }
 
@@ -107,8 +107,9 @@ class SettingsScreenTest {
 
     @Test
     fun test_hideUnavailable_click() = runTest(dispatcher) {
+        coJustRun { preferenceManager.hideUnavailable(any()) }
         composeTestRule.onNodeWithTag(SETTINGS_TEST_TAG_LIST_ITEM_HIDE_UNAVAILABLE).performClick()
-        verify(preferenceManager).hideUnavailable(true)
+        coVerify { preferenceManager.hideUnavailable(true) }
     }
 
     @Test
@@ -122,10 +123,11 @@ class SettingsScreenTest {
 
     @Test
     fun test_autoRefresh_click() = runTest(dispatcher) {
+        coJustRun { preferenceManager.autoRefreshRate(any()) }
         composeTestRule.onNodeWithTag(SETTINGS_TEST_TAG_LIST_ITEM_AUTO_REFRESH).onChildren()
             .filterToOne(hasProgressBarRangeInfo(ProgressBarRangeInfo(0f, 0f..1f, 10)))
             .performSemanticsAction(SemanticsActions.SetProgress) { it(0.7f) }
-        verify(preferenceManager).autoRefreshRate(7)
+        coVerify { preferenceManager.autoRefreshRate(7) }
     }
 
     @Test
@@ -158,18 +160,19 @@ class SettingsScreenTest {
 
     @Test
     fun test_theme_click_dialogItem() = runTest(dispatcher) {
+        coJustRun { preferenceManager.setDarkTheme(any()) }
         composeTestRule.onNodeWithTag(SETTINGS_TEST_TAG_LIST_ITEM_THEME).performClick()
         composeTestRule.onNodeWithText("Dark").performClick()
-        verify(preferenceManager).setDarkTheme("mode_on")
+        coVerify { preferenceManager.setDarkTheme("mode_on") }
         composeTestRule.onNodeWithTag(SETTINGS_TEST_TAG_DIALOG).assertDoesNotExist()
     }
 
     @Test
     fun test_theme_click_dialogCancel() = runTest(dispatcher) {
         composeTestRule.onNodeWithTag(SETTINGS_TEST_TAG_LIST_ITEM_THEME).performClick()
-        reset(preferenceManager)
+        clearMocks(preferenceManager)
         composeTestRule.onNodeWithTag(SETTINGS_TEST_TAG_DIALOG_BUTTON_CANCEL).performClick()
-        verifyNoMoreInteractions(preferenceManager)
+        verify { preferenceManager wasNot Called }
         composeTestRule.onNodeWithTag(SETTINGS_TEST_TAG_DIALOG).assertDoesNotExist()
     }
 
@@ -184,13 +187,14 @@ class SettingsScreenTest {
 
     @Test
     fun test_searchHistory_click() = runTest(dispatcher) {
+        coJustRun { preferenceManager.searchHistory(any()) }
         composeTestRule.onNodeWithTag(SETTINGS_TEST_TAG_LIST_ITEM_SEARCH_HISTORY).performClick()
-        verify(preferenceManager).searchHistory(true)
+        coVerify { preferenceManager.searchHistory(true) }
     }
 
     @Test
     fun test_appUpdate_updateAvailable_yes() = runTest(dispatcher) {
-        dataUpdateState.value = UpdateState.Yes(mock(), true)
+        dataUpdateState.value = UpdateState.Yes(mockk(), true)
         composeTestRule.onNodeWithTag(SETTINGS_TEST_TAG_LIST_ITEM_APP_UPDATE)
             .assertTextEquals("App update available", "Check for app update")
     }
@@ -284,7 +288,8 @@ class SettingsScreenTest {
 
     @Test
     fun test_appUpdate_click() = runTest(dispatcher) {
+        coJustRun { appUpdateUtils.checkForFlexibleUpdate(any()) }
         composeTestRule.onNodeWithTag(SETTINGS_TEST_TAG_LIST_ITEM_APP_UPDATE).performClick()
-        verify(appUpdateUtils).checkForFlexibleUpdate(true)
+        coVerify { appUpdateUtils.checkForFlexibleUpdate(true) }
     }
 }

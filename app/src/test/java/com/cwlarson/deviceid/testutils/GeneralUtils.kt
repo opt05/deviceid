@@ -4,21 +4,21 @@ import androidx.annotation.StringRes
 import app.cash.turbine.FlowTurbine
 import com.cwlarson.deviceid.tabs.Item
 
-internal suspend inline fun FlowTurbine<List<Item>>.awaitItemFromList(
+suspend inline fun FlowTurbine<List<Item>>.awaitItemFromList(
     @StringRes title: Int,
     titleFormatArgs: List<String>? = null
 ): Item? = awaitItem().firstOrNull {
     it.title == title && titleFormatArgs?.let { a -> it.titleFormatArgs == a } ?: true
 }
 
-internal fun List<Item>.itemFromList(
+fun List<Item>.itemFromList(
     @StringRes title: Int,
     titleFormatArgs: List<String>? = null
 ): Item? = firstOrNull {
     it.title == title && titleFormatArgs?.let { a -> it.titleFormatArgs == a } ?: true
 }
 
-internal fun FlowTurbine<List<Item>>.expectMostRecentItemFromList(
+fun FlowTurbine<List<Item>>.expectMostRecentItemFromList(
     @StringRes title: Int,
     titleFormatArgs: List<String>? = null
 ): Item? = expectMostRecentItem().firstOrNull {

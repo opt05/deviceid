@@ -8,7 +8,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.components.SingletonComponent
 import dagger.hilt.testing.TestInstallIn
-import org.mockito.kotlin.mock
+import io.mockk.mockk
 import javax.inject.Singleton
 
 @Module
@@ -23,29 +23,29 @@ object TestAppModule {
 
     @Provides
     @Singleton
-    fun providesPreferences(): PreferenceManager = mock()
+    fun providesPreferences(): PreferenceManager = mockk()
 
     @Provides
     @Singleton
-    fun providesAppUpdateUtils(): AppUpdateUtils = mock()
+    fun providesAppUpdateUtils(): AppUpdateUtils = mockk()
 
     @Provides
     @Singleton
-    fun providesAllRepository(): AllRepository = mock()
+    fun providesAllRepository(): AllRepository = mockk()
 
     @Provides
     @Singleton
-    fun providesDeviceRepository(): DeviceRepository = mock()
+    fun providesDeviceRepository(): DeviceRepository = mockk()
 
     @Provides
     @Singleton
-    fun providesHardwareRepository(): HardwareRepository = mock()
+    fun providesHardwareRepository(): HardwareRepository = mockk()
 
     @Provides
     @Singleton
-    fun providesNetworkRepository(): NetworkRepository = mock()
+    fun providesNetworkRepository(): NetworkRepository = mockk()
 
     @Provides
     @Singleton
-    fun providesSoftwareRepository(): SoftwareRepository = mock()
+    fun providesSoftwareRepository(): SoftwareRepository = mockk()
 }

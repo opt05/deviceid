@@ -89,7 +89,7 @@ fun Int.getCodename(): String =
         else -> ""
     }
 
-open class SoftwareRepository @Inject constructor(
+class SoftwareRepository @Inject constructor(
     private val dispatcherProvider: DispatcherProvider,
     private val context: Context,
     preferenceManager: PreferenceManager

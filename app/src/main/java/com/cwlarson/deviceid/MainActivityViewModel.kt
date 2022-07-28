@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
-internal data class TitleVisibility(val visible: Boolean, val noFade: Boolean)
+data class TitleVisibility(val visible: Boolean, val noFade: Boolean)
 
 @HiltViewModel
 class MainActivityViewModel @Inject constructor(
@@ -21,12 +21,12 @@ class MainActivityViewModel @Inject constructor(
     private val preferenceManager: PreferenceManager
 ) : ViewModel() {
     private val _titleVisibility = MutableStateFlow(TitleVisibility(visible = true, noFade = false))
-    internal val titleVisibility = _titleVisibility.asStateFlow()
+    val titleVisibility = _titleVisibility.asStateFlow()
     private var titleFadeRunning = false
 
-    internal val isSearchHistory = preferenceManager.searchHistory
+    val isSearchHistory = preferenceManager.searchHistory
 
-    internal val darkTheme = preferenceManager.darkTheme
+    val darkTheme = preferenceManager.darkTheme
 
     fun startTitleFade(twoPane: Boolean, intent: Intent) {
         if (titleFadeRunning || !titleVisibility.value.visible)

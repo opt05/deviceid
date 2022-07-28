@@ -1,5 +1,5 @@
 buildscript {
-    val hiltVersion by rootProject.extra { "2.42" }
+    val hiltVersion by rootProject.extra { "2.43" }
     repositories {
         google()
         mavenCentral()

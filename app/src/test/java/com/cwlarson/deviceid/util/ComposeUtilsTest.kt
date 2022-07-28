@@ -24,12 +24,12 @@ import com.cwlarson.deviceid.tabs.Item
 import com.cwlarson.deviceid.tabs.ItemSubtitle
 import com.cwlarson.deviceid.tabs.ItemType
 import com.cwlarson.deviceid.ui.util.*
+import io.mockk.*
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.kotlin.*
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowToast
@@ -49,16 +49,16 @@ class ComposeUtilsTest {
 
     @Before
     fun setup() {
-        context = spy(ApplicationProvider.getApplicationContext() as Application)
+        context = spyk(ApplicationProvider.getApplicationContext() as Application)
     }
 
     @Test
     fun test_loadPermissionLabel_success() {
-        val pi: PermissionInfo = mock()
-        val pm: PackageManager = mock()
-        whenever(context.packageManager).doReturn(pm)
-        whenever(pm.getPermissionInfo(any(), any())).doReturn(pi)
-        whenever(pi.loadLabel(pm)).doReturn("test")
+        val pi: PermissionInfo = mockk()
+        val pm: PackageManager = mockk()
+        every { context.packageManager } returns pm
+        every { pm.getPermissionInfo(any(), any()) } returns pi
+        every { pi.loadLabel(pm) } returns "test"
         composeTestRule.setContent {
             assertEquals("test", AppPermission.ReadPhoneState.loadPermissionLabel(context))
         }
@@ -66,7 +66,7 @@ class ComposeUtilsTest {
 
     @Test
     fun test_loadPermissionLabel_fail() {
-        whenever(context.packageManager).doThrow(NullPointerException())
+        every { context.packageManager} throws NullPointerException()
         composeTestRule.setContent {
             assertEquals(
                 "Something went wrong",
@@ -77,11 +77,12 @@ class ComposeUtilsTest {
 
     @Test
     fun test_IntentHandler_init() {
-        val activity: ComponentActivity = mock()
-        val lifecycle: Lifecycle = mock()
-        whenever(activity.lifecycle).doReturn(lifecycle)
+        val activity: ComponentActivity = mockk()
+        val lifecycle: Lifecycle = mockk()
+        every { activity.lifecycle } returns lifecycle
+        justRun { lifecycle.addObserver(any()) }
         IntentHandler(activity)
-        verify(lifecycle).addObserver(any())
+        verify { lifecycle.addObserver(any()) }
     }
 
     @Test
@@ -177,42 +178,42 @@ class ComposeUtilsTest {
 
     @Test
     fun test_share_success() {
-        val pm: PackageManager = mock()
-        val appInfo: ApplicationInfo = mock()
-        val activityInfo: ActivityInfo = mock()
-        val info: ResolveInfo = mock()
+        val pm: PackageManager = mockk()
+        val appInfo: ApplicationInfo = mockk()
+        val activityInfo: ActivityInfo = mockk()
+        val info: ResolveInfo = mockk()
         info.activityInfo = activityInfo
         activityInfo.name = "name"
         activityInfo.applicationInfo = appInfo
         appInfo.packageName = "name"
-        doReturn(pm).whenever(context).packageManager
-        doReturn(info).whenever(pm).resolveActivity(any(), any())
-        doNothing().whenever(context).startActivity(any())
+        every { context.packageManager } returns pm
+        every { pm.resolveActivity(any(), any()) } returns info
+        every { context.startActivity(any()) } returns Unit
         composeTestRule.setContent {
             Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("Name"))
-                .share(context).invoke()
+                .share(context)()
         }
-        verify(context).startActivity(any())
+        verify { context.startActivity(any()) }
     }
 
     @Test
     fun test_share_failure() {
-        val pm: PackageManager = mock()
-        doReturn(pm).whenever(context).packageManager
-        doReturn(null).whenever(pm).resolveActivity(any(), any())
-        doNothing().whenever(context).startActivity(any())
+        val pm: PackageManager = mockk()
+        every { context.packageManager } returns pm
+        every { pm.resolveActivity(any(), any()) } returns null
+        every { context.startActivity(any()) } returns Unit
         composeTestRule.setContent {
             Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("Name"))
-                .share(context).invoke()
+                .share(context)()
         }
-        verify(context, times(0)).startActivity(any())
+        verify(inverse = true) { context.startActivity(any()) }
         assertTrue(ShadowToast.showedToast("No app available"))
     }
 
     @Test
     fun test_click_permission_hasPermission() {
-        val clickedRefresh: () -> Unit = mock()
-        val clickedDetails: (Item) -> Unit = mock()
+        val clickedRefresh: () -> Unit = mockk(relaxed = true)
+        val clickedDetails: (Item) -> Unit = mockk()
         shadowOf(context).grantPermissions(Manifest.permission.READ_PHONE_STATE)
         composeTestRule.setContent {
             ComposableUnderTest(
@@ -222,14 +223,14 @@ class ComposeUtilsTest {
                 ), clickedRefresh = clickedRefresh, clickedDetails = clickedDetails
             )
         }
-        verify(clickedRefresh).invoke()
-        verifyNoInteractions(clickedDetails)
+        verify { clickedRefresh() }
+        verify { clickedDetails wasNot Called }
     }
 
     @Test
     fun test_click_permission_shouldShowRationale() {
-        val clickedRefresh: () -> Unit = mock()
-        val clickedDetails: (Item) -> Unit = mock()
+        val clickedRefresh: () -> Unit = mockk()
+        val clickedDetails: (Item) -> Unit = mockk()
         shadowOf(context).denyPermissions(Manifest.permission.READ_PHONE_STATE)
         shadowOf(context.packageManager)
             .setShouldShowRequestPermissionRationale(Manifest.permission.READ_PHONE_STATE, true)
@@ -244,14 +245,14 @@ class ComposeUtilsTest {
         composeTestRule.onNodeWithText("permission is required to display", substring = true)
             .assertIsDisplayed()
         composeTestRule.onNodeWithText("Retry").assertIsDisplayed()
-        verifyNoInteractions(clickedRefresh)
-        verifyNoInteractions(clickedDetails)
+        verify { clickedRefresh wasNot Called }
+        verify { clickedDetails wasNot Called }
     }
 
     @Test
     fun test_click_permission_shouldShowRationale_clickRetry() {
-        val clickedRefresh: () -> Unit = mock()
-        val clickedDetails: (Item) -> Unit = mock()
+        val clickedRefresh: () -> Unit = mockk()
+        val clickedDetails: (Item) -> Unit = mockk()
         shadowOf(context).denyPermissions(Manifest.permission.READ_PHONE_STATE)
         shadowOf(context.packageManager)
             .setShouldShowRequestPermissionRationale(Manifest.permission.READ_PHONE_STATE, true)
@@ -268,14 +269,14 @@ class ComposeUtilsTest {
             Manifest.permission.READ_PHONE_STATE,
             shadowOf(composeTestRule.activity).lastRequestedPermission.requestedPermissions[0]
         )
-        verifyNoInteractions(clickedRefresh)
-        verifyNoInteractions(clickedDetails)
+        verify { clickedRefresh wasNot Called }
+        verify { clickedDetails wasNot Called }
     }
 
     @Test
     fun test_click_permission_permissionRequested() {
-        val clickedRefresh: () -> Unit = mock()
-        val clickedDetails: (Item) -> Unit = mock()
+        val clickedRefresh: () -> Unit = mockk()
+        val clickedDetails: (Item) -> Unit = mockk()
         shadowOf(context).denyPermissions(Manifest.permission.READ_PHONE_STATE)
         composeTestRule.setContent {
             ComposableUnderTest(
@@ -289,14 +290,14 @@ class ComposeUtilsTest {
             Manifest.permission.READ_PHONE_STATE,
             shadowOf(composeTestRule.activity).lastRequestedPermission.requestedPermissions[0]
         )
-        verifyNoInteractions(clickedRefresh)
-        verifyNoInteractions(clickedDetails)
+        verify { clickedRefresh wasNot Called }
+        verify { clickedDetails wasNot Called }
     }
 
     @Test
     fun test_click_else_subtitle_null() {
-        val clickedRefresh: () -> Unit = mock()
-        val clickedDetails: (Item) -> Unit = mock()
+        val clickedRefresh: () -> Unit = mockk()
+        val clickedDetails: (Item) -> Unit = mockk()
         composeTestRule.setContent {
             ComposableUnderTest(
                 Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text(null)),
@@ -305,14 +306,14 @@ class ComposeUtilsTest {
         }
         composeTestRule.onNodeWithText("Unable to retrieve Device Info from this device")
             .assertIsDisplayed()
-        verifyNoInteractions(clickedRefresh)
-        verifyNoInteractions(clickedDetails)
+        verify { clickedRefresh wasNot Called }
+        verify { clickedDetails wasNot Called }
     }
 
     @Test
     fun test_click_else_subtitle_blank() {
-        val clickedRefresh: () -> Unit = mock()
-        val clickedDetails: (Item) -> Unit = mock()
+        val clickedRefresh: () -> Unit = mockk()
+        val clickedDetails: (Item) -> Unit = mockk()
         composeTestRule.setContent {
             ComposableUnderTest(
                 Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("")),
@@ -321,22 +322,22 @@ class ComposeUtilsTest {
         }
         composeTestRule.onNodeWithText("Unable to retrieve Device Info from this device")
             .assertIsDisplayed()
-        verifyNoInteractions(clickedRefresh)
-        verifyNoInteractions(clickedDetails)
+        verify { clickedRefresh wasNot Called }
+        verify { clickedDetails wasNot Called }
     }
 
     @Test
     fun test_click_else_subtitle_nonnull() {
-        val clickedRefresh: () -> Unit = mock()
-        val clickedDetails: (Item) -> Unit = mock()
+        val clickedRefresh: () -> Unit = mockk()
+        val clickedDetails: (Item) -> Unit = mockk(relaxed = true)
         val item = Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("Test"))
         composeTestRule.setContent {
             ComposableUnderTest(
                 item, clickedRefresh = clickedRefresh, clickedDetails = clickedDetails
             )
         }
-        verifyNoInteractions(clickedRefresh)
-        verify(clickedDetails).invoke(item)
+        verify { clickedRefresh wasNot Called }
+        verify { clickedDetails(item) }
     }
 
     @Suppress("TestFunctionName")

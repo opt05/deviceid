@@ -23,6 +23,7 @@ import com.cwlarson.deviceid.testutils.awaitItemFromList
 import com.cwlarson.deviceid.testutils.shadows.*
 import com.cwlarson.deviceid.util.AppPermission
 import com.cwlarson.deviceid.util.DispatcherProvider
+import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -30,7 +31,6 @@ import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.kotlin.mock
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadow.api.Shadow.extract
@@ -52,7 +52,7 @@ class NetworkRepositoryTest {
     fun setup() {
         dispatcherProvider = DispatcherProvider.provideDispatcher(coroutineRule.dispatcher)
         context = ApplicationProvider.getApplicationContext()
-        preferencesManager = mock()
+        preferencesManager = mockk()
         repository = NetworkRepository(dispatcherProvider, context, preferencesManager)
     }
 

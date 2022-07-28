@@ -17,6 +17,7 @@ import com.cwlarson.deviceid.ui.theme.AppTheme
 import com.cwlarson.deviceid.util.DispatcherProvider
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
+import io.mockk.every
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -24,9 +25,6 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.mockito.kotlin.any
-import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.whenever
 import javax.inject.Inject
 
 @HiltAndroidTest
@@ -54,7 +52,7 @@ class SearchScreenTest {
         hiltAndroidRule.inject()
         dispatcherProvider.provideDispatcher(dispatcher)
         data = MutableStateFlow(TabDataStatus.Loading)
-        whenever(repository.search(any())).doReturn(data)
+        every { repository.search(any()) } returns data
         clickedItem = null
         composeTestRule.setContent {
             AppTheme {

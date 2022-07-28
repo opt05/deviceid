@@ -20,6 +20,7 @@ import com.cwlarson.deviceid.ui.theme.AppTheme
 import com.cwlarson.deviceid.util.DispatcherProvider
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
+import io.mockk.every
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -28,9 +29,6 @@ import org.hamcrest.Matchers.allOf
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.mockito.kotlin.any
-import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.whenever
 import javax.inject.Inject
 
 @HiltAndroidTest
@@ -64,10 +62,10 @@ class TabDetailScreenTest {
         hiltAndroidRule.inject()
         dispatcherProvider.provideDispatcher(dispatcher)
         dataRepository = MutableStateFlow(TabDetailStatus.Loading)
-        whenever(deviceRepository.details(any())).doReturn(dataRepository)
-        whenever(networkRepository.details(any())).doReturn(dataRepository)
-        whenever(softwareRepository.details(any())).doReturn(dataRepository)
-        whenever(hardwareRepository.details(any())).doReturn(dataRepository)
+        every { deviceRepository.details(any()) } returns dataRepository
+        every { networkRepository.details(any()) } returns dataRepository
+        every { softwareRepository.details(any()) } returns dataRepository
+        every { hardwareRepository.details(any()) } returns dataRepository
         composeTestRule.setContent {
             AppTheme {
                 clipboardManager = LocalClipboardManager.current

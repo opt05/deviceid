@@ -21,7 +21,7 @@ import timber.log.Timber
 import java.util.*
 import javax.inject.Inject
 
-open class DeviceRepository @Inject constructor(
+class DeviceRepository @Inject constructor(
     private val dispatcherProvider: DispatcherProvider,
     private val context: Context,
     preferenceManager: PreferenceManager
