@@ -7,14 +7,16 @@ on:
 jobs:
   unit_tests:
     name: Run unit tests
-    runs-on: [ ubuntu-latest ]
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - name: Cache gradle
       uses: actions/cache@v3
       with:
-        path: ~/.gradle/caches
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-${{ hashFiles('**/*.gradle*') }}-${{ hashFiles('**/gradle/wrapper/gradle-wrapper.properties') }}-${{ hashFiles('**/buildSrc/**/*.kt') }}
         restore-keys: |
           ${{ runner.os }}-gradle-
     - name: set up JDK 11
@@ -29,14 +31,16 @@ jobs:
       
   android_tests:
     name: Run instrumented tests
-    runs-on: [ macos-latest ]
+    runs-on: macos-latest
     steps:
     - uses: actions/checkout@v3
     - name: Cache gradle
       uses: actions/cache@v3
       with:
-        path: ~/.gradle/caches
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-${{ hashFiles('**/*.gradle*') }}-${{ hashFiles('**/gradle/wrapper/gradle-wrapper.properties') }}-${{ hashFiles('**/buildSrc/**/*.kt') }}
         restore-keys: |
           ${{ runner.os }}-gradle-
     - name: set up JDK 11
@@ -44,6 +48,8 @@ jobs:
       with:
         java-version: '11'
         distribution: 'adopt'
+    - name: Build the app
+      run: ./gradlew assembleDebug
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
     - name: Instrumentation Tests
@@ -51,20 +57,21 @@ jobs:
       with:
         api-level: 32
         target: playstore
-        emulator-build: 7425822 # https://github.com/ReactiveCircus/android-emulator-runner/issues/160
         script: ./gradlew connectedCheck --stacktrace
         
   sign_and_release:
     name: Sign and release
     needs: [ unit_tests, android_tests ]
-    runs-on: [ ubuntu-latest ]
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - name: Cache gradle
       uses: actions/cache@v3
       with:
-        path: ~/.gradle/caches
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-${{ hashFiles('**/*.gradle*') }}-${{ hashFiles('**/gradle/wrapper/gradle-wrapper.properties') }}-${{ hashFiles('**/buildSrc/**/*.kt') }}
         restore-keys: |
           ${{ runner.os }}-gradle-
     - name: set up JDK 11
