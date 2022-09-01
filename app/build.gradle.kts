@@ -14,8 +14,8 @@ android {
         applicationId = "com.cwlarson.deviceid"
         minSdk = 21
         targetSdk = 32
-        versionCode = 15
-        versionName = "1.4.2"
+        versionCode = 16
+        versionName = "1.4.3"
         vectorDrawables.useSupportLibrary = true
         testInstrumentationRunner = "com.cwlarson.deviceid.CustomTestRunner"
     }
