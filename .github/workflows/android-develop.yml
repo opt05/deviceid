@@ -50,10 +50,10 @@ jobs:
       with:
         java-version: '11'
         distribution: 'adopt'
-    - name: Build the app
-      run: ./gradlew assembleDebug
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
+    - name: Build the app
+      run: ./gradlew assembleDebug
     - name: Instrumentation Tests
       uses: reactivecircus/android-emulator-runner@v2
       with:
