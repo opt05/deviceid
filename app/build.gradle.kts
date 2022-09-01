@@ -8,13 +8,6 @@ plugins {
     id("dagger.hilt.android.plugin")
 }
 
-val coroutinesVersion = "1.6.4"
-val hiltVersion: String by rootProject.extra
-val lifecycleVersion = "2.5.1"
-val composeVersion = "1.2.0"
-val composeAccompanistVersion = "0.25.0"
-val datastoreVersion = "1.0.0"
-val mockkVersion = "1.12.5"
 android {
     compileSdk = 32
     defaultConfig {
@@ -56,7 +49,7 @@ android {
     }
     kotlinOptions.jvmTarget = JavaVersion.VERSION_11.toString()
     kotlin.sourceSets.all { languageSettings.optIn("kotlin.RequiresOptIn") }
-    composeOptions.kotlinCompilerExtensionVersion = composeVersion
+    composeOptions.kotlinCompilerExtensionVersion = "1.3.0"
     testOptions {
         animationsDisabled = true
         unitTests.isIncludeAndroidResources = true
@@ -68,18 +61,24 @@ android {
     kapt.correctErrorTypes = true
 }
 
+val coroutinesVersion = "1.6.4"
+val hiltVersion: String by rootProject.extra
+val lifecycleVersion = "2.5.1"
+val composeVersion = "1.2.1"
+val composeAccompanistVersion = "0.25.1"
+val datastoreVersion = "1.0.0"
+val mockkVersion = "1.12.5"
 dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutinesVersion")
     implementation("com.google.android.material:material:1.6.1")
-    implementation("androidx.webkit:webkit:1.4.0")
+    implementation("androidx.webkit:webkit:1.5.0")
     implementation("androidx.datastore:datastore:$datastoreVersion")
     implementation("androidx.datastore:datastore-preferences:$datastoreVersion")
     implementation("androidx.core:core-ktx:1.8.0")
     implementation("androidx.core:core-splashscreen:1.0.0")
     // Compose
     implementation("androidx.activity:activity-compose:1.5.1")
-    implementation("androidx.compose.compiler:compiler:$composeVersion")
     implementation("androidx.compose.ui:ui:$composeVersion")
     // Tooling support (Previews, etc.)
     debugImplementation("androidx.compose.ui:ui-tooling:$composeVersion")
@@ -130,10 +129,10 @@ dependencies {
     testImplementation("io.mockk:mockk:$mockkVersion")
     testImplementation("io.mockk:mockk-agent-jvm:$mockkVersion")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion")
-    testImplementation("app.cash.turbine:turbine:0.8.0")
+    testImplementation("app.cash.turbine:turbine:0.9.0")
     testImplementation("androidx.compose.ui:ui-test-junit4:$composeVersion")
     // Robolectric Testing
-    testImplementation("org.robolectric:robolectric:4.8.1")
+    testImplementation("org.robolectric:robolectric:4.8.2")
     testImplementation("androidx.test.ext:junit-ktx:1.1.3")
     testImplementation("androidx.test:rules:1.4.0")
     // LeakCanary

@@ -1,10 +1,10 @@
 package com.cwlarson.deviceid.testutils
 
 import androidx.annotation.StringRes
-import app.cash.turbine.FlowTurbine
+import app.cash.turbine.ReceiveTurbine
 import com.cwlarson.deviceid.tabs.Item
 
-suspend inline fun FlowTurbine<List<Item>>.awaitItemFromList(
+suspend inline fun ReceiveTurbine<List<Item>>.awaitItemFromList(
     @StringRes title: Int,
     titleFormatArgs: List<String>? = null
 ): Item? = awaitItem().firstOrNull {
@@ -18,7 +18,7 @@ fun List<Item>.itemFromList(
     it.title == title && titleFormatArgs?.let { a -> it.titleFormatArgs == a } ?: true
 }
 
-fun FlowTurbine<List<Item>>.expectMostRecentItemFromList(
+fun ReceiveTurbine<List<Item>>.expectMostRecentItemFromList(
     @StringRes title: Int,
     titleFormatArgs: List<String>? = null
 ): Item? = expectMostRecentItem().firstOrNull {

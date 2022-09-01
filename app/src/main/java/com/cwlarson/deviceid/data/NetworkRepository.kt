@@ -143,15 +143,6 @@ class NetworkRepository @Inject constructor(
         subtitle = try {
             if(address.isEmpty()) ItemSubtitle.Error
             else ItemSubtitle.Text(address.mapNotNull { it.hostAddress }.joinToString())
-            /*wifiInfo?.let {
-                val ipAddress = it.ipAddress.run {
-                    // Convert little-endian to big-endian if needed
-                    if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN)
-                        Integer.reverseBytes(this)
-                    else this
-                }.toLong().toBigInteger().toByteArray()
-                ItemSubtitle.Text(InetAddress.getByAddress(ipAddress).hostAddress)
-            } ?: ItemSubtitle.Error*/
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error
@@ -256,15 +247,6 @@ class NetworkRepository @Inject constructor(
         subtitle = try {
             if(address.isEmpty()) ItemSubtitle.Error
             else ItemSubtitle.Text(address.joinToString { it.hostName })
-            /*wifiInfo?.let {
-                val ipAddress = it.ipAddress.run {
-                    // Convert little-endian to big-endian if needed
-                    if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN)
-                        Integer.reverseBytes(this)
-                    else this
-                }.toLong().toBigInteger().toByteArray()
-                ItemSubtitle.Text(InetAddress.getByAddress(ipAddress).hostName)
-            } ?: ItemSubtitle.Error*/
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error
@@ -277,15 +259,6 @@ class NetworkRepository @Inject constructor(
         subtitle = try {
             if(address.isEmpty()) ItemSubtitle.Error
             else ItemSubtitle.Text(address.joinToString { it.canonicalHostName })
-            /*wifiInfo?.let {
-                val ipAddress = it.ipAddress.run {
-                    // Convert little-endian to big-endian if needed
-                    if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN)
-                        Integer.reverseBytes(this)
-                    else this
-                }.toLong().toBigInteger().toByteArray()
-                ItemSubtitle.Text(InetAddress.getByAddress(ipAddress).canonicalHostName)
-            } ?: ItemSubtitle.Error*/
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error
