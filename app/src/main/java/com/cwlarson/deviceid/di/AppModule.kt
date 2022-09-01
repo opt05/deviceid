@@ -1,9 +1,12 @@
 package com.cwlarson.deviceid.di
 
 import android.content.Context
-import android.content.SharedPreferences
-import com.cwlarson.deviceid.appupdates.FakeAppUpdateManagerWrapper
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStoreFile
 import com.cwlarson.deviceid.settings.PreferenceManager
+import com.cwlarson.deviceid.util.DispatcherProvider
 import com.google.android.play.core.appupdate.AppUpdateManager
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import dagger.Module
@@ -11,24 +14,30 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import timber.log.Timber
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
+    @Singleton
+    @Provides
+    fun providesDispatcherProvider(): DispatcherProvider = DispatcherProvider
 
     @Provides
     @Singleton
-    fun providesPreferences(@ApplicationContext context: Context): SharedPreferences =
-            androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+    fun providesDataStore(@ApplicationContext context: Context): DataStore<Preferences> =
+        PreferenceDataStoreFactory.create { context.preferencesDataStoreFile("user_preferences") }
 
     @Provides
     @Singleton
-    fun providesAppManger(@ApplicationContext context: Context,
-                          preferenceManager: PreferenceManager): AppUpdateManager {
-        Timber.d("${preferenceManager.useFakeUpdateManager}")
-        return if (preferenceManager.useFakeUpdateManager) FakeAppUpdateManagerWrapper(context)
-        else AppUpdateManagerFactory.create(context)
-    }
+    fun providesPreferences(
+        dispatcherProvider: DispatcherProvider, @ApplicationContext context: Context,
+        dataStore: DataStore<Preferences>
+    ): PreferenceManager =
+        PreferenceManager(dispatcherProvider, context, dataStore)
+
+    @Provides
+    @Singleton
+    fun providesAppManger(@ApplicationContext context: Context): AppUpdateManager =
+        AppUpdateManagerFactory.create(context)
 }
