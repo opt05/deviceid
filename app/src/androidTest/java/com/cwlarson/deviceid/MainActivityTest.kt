@@ -468,6 +468,7 @@ class MainActivityTest {
         )
         launchScenario()
         composeTestRule.onNodeWithText("Got it").performClick()
+        composeTestRule.awaitIdle()
         composeTestRule.onNode(isDialog()).assertDoesNotExist()
     }
 
@@ -484,6 +485,7 @@ class MainActivityTest {
             composeTestRule.onAllNodes(isRoot()).onFirst().getUnclippedBoundsInRoot().height.roundToPx() / 2
         }
         UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).click(outsideX, outsideY)
+        composeTestRule.awaitIdle()
         composeTestRule.onNode(isDialog()).assertDoesNotExist()
     }
 
