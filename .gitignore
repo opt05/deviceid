@@ -42,11 +42,12 @@ captures/
 .idea/assetWizardSettings.xml
 .idea/runConfigurations.xml
 .idea/render.experimental.xml
-.idea/inspectionProfiles
 .idea/jarRepositories.xml
-.idea/runConfigurations.xml
 .idea/kotlinc.xml
+.idea/deploymentTargetDropDown.xml
+.idea/runConfigurations/
 *.iml
+.run/
  
 # OS-specific files
 .DS_Store

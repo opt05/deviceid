@@ -1,3 +1,6 @@
-Android R (30) support
-Better tablet support
+Android S (31) and S_V2 (32) support
+Raised min supported version from Android Ice Cream Sandwich (14) to Android Lollipop (21)
+Rewritten UI in Jetpack Compose (min API is now Android Lollipop (21))
+Updated splash screen
+New options for SoC Manufacturer and SoC Model
 Bug fixes and performance improvements

@@ -1,30 +1,36 @@
 package com.cwlarson.deviceid.tabsdetail
 
-import android.content.Context
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import com.cwlarson.deviceid.data.*
+import com.cwlarson.deviceid.tabs.Item
 import com.cwlarson.deviceid.tabs.ItemType
+import com.cwlarson.deviceid.util.DispatcherProvider
+import dagger.Lazy
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.*
 import javax.inject.Inject
 
 @HiltViewModel
 class TabsDetailViewModel @Inject constructor(
-    @ApplicationContext context: Context,
-    savedStateHandle: SavedStateHandle
+    dispatcherProvider: DispatcherProvider,
+    deviceRepository: Lazy<DeviceRepository>,
+    networkRepository: Lazy<NetworkRepository>,
+    softwareRepository: Lazy<SoftwareRepository>,
+    hardwareRepository: Lazy<HardwareRepository>,
 ) : ViewModel() {
-    private val tabData: TabData = when (savedStateHandle.get<ItemType>("type")) {
-        ItemType.DEVICE -> DeviceRepository(context)
-        ItemType.NETWORK -> NetworkRepository(context)
-        ItemType.SOFTWARE -> SoftwareRepository(context)
-        ItemType.HARDWARE -> HardwareRepository(context)
-        else -> throw IllegalArgumentException("Item type is undefined")
+    private val currentItem = MutableStateFlow<Item?>(null)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val item : Flow<TabDetailStatus> = currentItem.flatMapLatest { item ->
+        when (item?.itemType) {
+            ItemType.DEVICE -> deviceRepository.get()
+            ItemType.NETWORK -> networkRepository.get()
+            ItemType.SOFTWARE -> softwareRepository.get()
+            ItemType.HARDWARE -> hardwareRepository.get()
+            else -> return@flatMapLatest flowOf(TabDetailStatus.Error)
+        }.details(item).flowOn(dispatcherProvider.IO)
     }
 
-    @ExperimentalCoroutinesApi
-    val detailItem = tabData.subscribe(
-        savedStateHandle.get<Int>("title"), savedStateHandle.get<Array<String>>("titleFormatArgs")
-    )
+    fun updateCurrentItem(item: Item?) { currentItem.value = item }
 }

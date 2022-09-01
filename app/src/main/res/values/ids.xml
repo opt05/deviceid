@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <item name="finalVisibility" type="id"/>
-    <item name="hasInsetsSet" type="id"/>
-    <item name="origMarginStart" type="id"/>
-    <item name="origMarginEnd" type="id"/>
-</resources>

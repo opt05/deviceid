@@ -5,344 +5,433 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.os.BatteryManager
-import android.os.Build
-import android.os.Environment
-import android.os.StatFs
+import android.hardware.display.DisplayManager
+import android.os.*
 import android.text.format.Formatter
 import android.util.DisplayMetrics
 import android.view.Display
 import android.view.Surface
+import android.view.WindowManager
+import android.view.WindowManager.LayoutParams.TYPE_APPLICATION
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.BatteryStd
+import androidx.compose.material.icons.outlined.Memory
+import androidx.compose.material.icons.outlined.Storage
 import androidx.core.content.ContextCompat
+import androidx.core.content.getSystemService
 import androidx.core.os.EnvironmentCompat
 import com.cwlarson.deviceid.R
+import com.cwlarson.deviceid.settings.PreferenceManager
 import com.cwlarson.deviceid.tabs.ChartItem
 import com.cwlarson.deviceid.tabs.Item
 import com.cwlarson.deviceid.tabs.ItemSubtitle
 import com.cwlarson.deviceid.tabs.ItemType
-import com.cwlarson.deviceid.util.activityManager
-import com.cwlarson.deviceid.util.displayManger
-import kotlinx.coroutines.suspendCancellableCoroutine
+import com.cwlarson.deviceid.util.DispatcherProvider
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.*
 import timber.log.Timber
-import java.io.File
 import java.util.*
-import kotlin.coroutines.resume
+import javax.inject.Inject
 
-class HardwareRepository(private val context: Context, filterUnavailable: Boolean = false) :
-    TabData(filterUnavailable) {
+class HardwareRepository @Inject constructor(
+    private val dispatcherProvider: DispatcherProvider,
+    private val context: Context,
+    private val preferenceManager: PreferenceManager
+) : TabData(dispatcherProvider, context, preferenceManager) {
+    private val activityManager by lazy { context.getSystemService<ActivityManager>() }
+    private val displayManager by lazy { context.getSystemService<DisplayManager>() }
 
-    override suspend fun list(): List<Item> = listOf(
-        ramSize(), formattedInternalMemory(),
-        formattedExternalMemory(), getBattery(), *getDisplayInfo()
-    )
+    override fun items(): Flow<List<Item>> = combineTransform<Any, List<Item>>(
+        ramSize(), formattedInternalMemory(), formattedExternalMemory(),
+        getBattery(), getDisplayInfo(), socManufacturer(), socModel()
+    ) { items ->
+        emit(mutableListOf<Item>().apply {
+            items.forEach {
+                when (it) {
+                    is Item -> add(it)
+                    is List<*> -> addAll(it.filterIsInstance<Item>())
+                }
+            }
+        })
+    }.flowOn(dispatcherProvider.IO)
 
-    //Total memory is only available on API 16+
-    private fun ramSize() = Item(R.string.hardware_title_memory, ItemType.HARDWARE).apply {
-        try {
-            val mi = ActivityManager.MemoryInfo()
-            context.activityManager.getMemoryInfo(mi)
-            subtitle = ItemSubtitle.Chart(
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
-                    ChartItem(
-                        mi.availMem.toFloat(),
-                        0f,
-                        R.drawable.ic_memory,
-                        context.resources.getString(
-                            R.string
-                                .hardware_storage_output_format_api15,
-                            Formatter.formatFileSize(context, mi.availMem)
-                        )
-                    )
-                } else {
-                    ChartItem(
-                        mi.availMem.toFloat(),
-                        mi.totalMem.toFloat(),
-                        R.drawable.ic_memory,
-                        if (mi.totalMem > 0)
-                            context.resources.getString(
-                                R.string
-                                    .hardware_storage_output_format,
-                                Formatter.formatFileSize(context, mi.availMem),
-                                Formatter.formatFileSize(context, mi.totalMem)
+    private fun ramSize() = flow {
+        while (true) {
+            val result = Item(
+                title = R.string.hardware_title_memory, itemType = ItemType.HARDWARE,
+                subtitle = try {
+                    activityManager?.let {
+                        val mi = ActivityManager.MemoryInfo().apply {
+                            it.getMemoryInfo(this)
+                        }
+                        ItemSubtitle.Chart(
+                            ChartItem(
+                                mi.availMem.toFloat(),
+                                mi.totalMem.toFloat(),
+                                Icons.Outlined.Memory,
+                                if (mi.totalMem > 0)
+                                    context.resources.getString(
+                                        R.string.hardware_storage_output_format,
+                                        Formatter.formatFileSize(context, mi.availMem),
+                                        Formatter.formatFileSize(context, mi.totalMem)
+                                    )
+                                else null
                             )
-                        else null
-                    )
+                        )
+                    } ?: ItemSubtitle.Error
+                } catch (e: Throwable) {
+                    Timber.w(e)
+                    ItemSubtitle.Error
                 }
             )
-        } catch (e: Throwable) {
-            Timber.w(e)
+            emit(result)
+            val rate = preferenceManager.autoRefreshRateMillis.first()
+            if (rate > 0) delay(rate) else break
         }
     }
 
-    private fun formattedInternalMemory() =
-        Item(R.string.hardware_title_internal_storage, ItemType.HARDWARE).apply {
-            try {
-                val dir = Environment.getDataDirectory()
-                val stat = StatFs(dir.path)
-
-                @Suppress("DEPRECATION")
-                val available = if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.JELLY_BEAN_MR2)
-                    stat.blockSize.toLong() * stat.availableBlocks.toLong()
-                else stat.availableBytes
-
-                @Suppress("DEPRECATION")
-                val total = if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.JELLY_BEAN_MR2)
-                    stat.blockCount.toLong() * stat.blockCount.toLong()
-                else stat.totalBytes
-                subtitle = ItemSubtitle.Chart(
-                    ChartItem(
-                        available.toFloat(),
-                        total.toFloat(),
-                        R.drawable.ic_storage,
-                        if (total > 0L)
-                            context.resources.getString(
-                                R.string.hardware_storage_output_format,
-                                Formatter.formatFileSize(context, available),
-                                Formatter.formatFileSize(context, total)
-                            )
-                        else null
+    private fun formattedInternalMemory() = flow {
+        while (true) {
+            val result = Item(
+                title = R.string.hardware_title_internal_storage, itemType = ItemType.HARDWARE,
+                subtitle = try {
+                    val stat = StatFs(Environment.getDataDirectory().path)
+                    val available = stat.availableBytes
+                    val total = stat.totalBytes
+                    ItemSubtitle.Chart(
+                        ChartItem(
+                            available.toFloat(),
+                            total.toFloat(),
+                            Icons.Outlined.Storage,
+                            if (total > 0L)
+                                context.resources.getString(
+                                    R.string.hardware_storage_output_format,
+                                    Formatter.formatFileSize(context, available),
+                                    Formatter.formatFileSize(context, total)
+                                )
+                            else null
+                        )
                     )
-                )
-            } catch (e: Throwable) {
-                Timber.w(e)
-            }
-        }
-
-    private fun formattedExternalMemory() =
-        Item(R.string.hardware_title_external_storage, ItemType.HARDWARE).apply {
-            try {
-                // Mounted and not emulated, most likely a real SD Card
-                val appsDir = ContextCompat.getExternalFilesDirs(context, null).filter {
-                    it != null
-                            && EnvironmentCompat.getStorageState(it) == Environment.MEDIA_MOUNTED
-                            && !it.isExternalStorageEmulatedCompat()
+                } catch (e: Throwable) {
+                    Timber.w(e)
+                    ItemSubtitle.Error
                 }
-                val availSize = appsDir.map { it.freeSpace }.toTypedArray().sum()
-                val totalSize = appsDir.map { it.totalSpace }.toTypedArray().sum()
-                subtitle = ItemSubtitle.Chart(
-                    ChartItem(
-                        availSize.toFloat(),
-                        totalSize.toFloat(),
-                        R.drawable.ic_storage,
-                        if (totalSize > 0L)
-                            context.resources.getString(
-                                R.string.hardware_storage_output_format,
-                                Formatter.formatFileSize(context, availSize),
-                                Formatter.formatFileSize(context, totalSize)
-                            )
-                        else null
-                    )
-                )
-            } catch (e: Throwable) {
-                Timber.w(e)
-            }
+            )
+            emit(result)
+            val rate = preferenceManager.autoRefreshRateMillis.first()
+            if (rate > 0) delay(rate) else break
         }
+    }
 
-    private fun File.isExternalStorageEmulatedCompat(): Boolean =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-            Environment.isExternalStorageEmulated(this)
-        else Environment.isExternalStorageEmulated()
+    private fun formattedExternalMemory() = flow {
+        while (true) {
+            val result = Item(
+                title = R.string.hardware_title_external_storage, itemType = ItemType.HARDWARE,
+                subtitle = try {
+                    // Mounted and not emulated, most likely a real SD Card
+                    val appsDir = ContextCompat.getExternalFilesDirs(context, null).filter {
+                        it != null
+                                && EnvironmentCompat.getStorageState(it) == Environment.MEDIA_MOUNTED
+                                && !Environment.isExternalStorageEmulated(it)
+                    }
+                    val availSize = appsDir.map { it.freeSpace }.toTypedArray().sum()
+                    val totalSize = appsDir.map { it.totalSpace }.toTypedArray().sum()
+                    ItemSubtitle.Chart(
+                        ChartItem(
+                            availSize.toFloat(),
+                            totalSize.toFloat(),
+                            Icons.Outlined.Storage,
+                            if (totalSize > 0L)
+                                context.resources.getString(
+                                    R.string.hardware_storage_output_format,
+                                    Formatter.formatFileSize(context, availSize),
+                                    Formatter.formatFileSize(context, totalSize)
+                                )
+                            else null
+                        )
+                    )
+                } catch (e: Throwable) {
+                    Timber.w(e)
+                    ItemSubtitle.Error
+                }
+            )
+            emit(result)
+            val rate = preferenceManager.autoRefreshRateMillis.first()
+            if (rate > 0) delay(rate) else break
+        }
+    }
 
-    private suspend fun getBattery(): Item =
-        suspendCancellableCoroutine { cont ->
-            val batteryReceiver = object : BroadcastReceiver() {
-                override fun onReceive(c: Context?, intent: Intent?) {
-                    context.unregisterReceiver(this)
+    private fun getBattery() = callbackFlow {
+        val batteryReceiver = object : BroadcastReceiver() {
+            override fun onReceive(c: Context?, intent: Intent?) {
+                val result = goAsync()
+                try {
                     intent?.action?.let { act ->
-                        val result = goAsync()
-                        val item = Item(R.string.hardware_title_battery, ItemType.HARDWARE)
                         if (act == Intent.ACTION_BATTERY_CHANGED) {
                             //int temperature = intent.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, 0)/10;
-                            val health = when (intent.getIntExtra(BatteryManager.EXTRA_HEALTH, 0)) {
-                                BatteryManager.BATTERY_HEALTH_COLD -> context.getString(R.string.BATTERY_HEALTH_COLD)
-                                BatteryManager.BATTERY_HEALTH_DEAD -> context.getString(R.string.BATTERY_HEALTH_DEAD)
-                                BatteryManager.BATTERY_HEALTH_GOOD -> context.getString(R.string.BATTERY_HEALTH_GOOD)
-                                BatteryManager.BATTERY_HEALTH_OVERHEAT -> context.getString(R.string.BATTERY_HEALTH_OVERHEAT)
-                                BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE -> context.getString(R.string.BATTERY_HEALTH_OVER_VOLTAGE)
-                                BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE -> context.getString(
-                                    R.string.BATTERY_HEALTH_UNSPECIFIED_FAILURE
-                                )
-                                else -> context.getString(R.string.BATTERY_HEALTH_UNKNOWN)
-                            }
                             val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
-                            item.subtitle = ItemSubtitle.Chart(
-                                ChartItem(
-                                    (100 - level).toFloat(),
-                                    100f,
-                                    R.drawable.ic_battery,
-                                    StringBuilder().apply {
-                                        append("$level% - ")
-                                        // Are we charging / charged?
-                                        when (intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1)) {
-                                            BatteryManager.BATTERY_STATUS_CHARGING -> append(
-                                                context.getString(
-                                                    R.string.BATTERY_STATUS_CHARGING
-                                                )
-                                            )
-                                            BatteryManager.BATTERY_STATUS_FULL -> append(
-                                                context.getString(
-                                                    R.string.BATTERY_STATUS_FULL
-                                                )
-                                            )
-                                            BatteryManager.BATTERY_STATUS_DISCHARGING -> append(
-                                                context.getString(R.string.BATTERY_STATUS_DISCHARGING)
-                                            )
-                                            BatteryManager.BATTERY_STATUS_NOT_CHARGING -> append(
-                                                context.getString(R.string.BATTERY_STATUS_NOT_CHARGING)
-                                            )
-                                            else -> append(context.getString(R.string.BATTERY_STATUS_UNKNOWN))
-                                        }
-                                        append(" ($health)")
-                                        // How are we charging?
-                                        val chargePlug =
-                                            intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1)
-                                        val usbCharge =
-                                            chargePlug == BatteryManager.BATTERY_PLUGGED_USB
-                                        val acCharge =
-                                            chargePlug == BatteryManager.BATTERY_PLUGGED_AC
-                                        append(" ")
-                                        if (usbCharge)
-                                            append(context.getString(R.string.BATTERY_PLUGGED_USB))
-                                        else if (acCharge)
-                                            append(context.getString(R.string.BATTERY_PLUGGED_AC))
-                                        //subTitle = String.valueOf(temperature+"\u00b0C");
-                                    }.toString()
+                            val item = Item(
+                                title = R.string.hardware_title_battery,
+                                itemType = ItemType.HARDWARE,
+                                subtitle = ItemSubtitle.Chart(
+                                    ChartItem(
+                                        (100 - level).toFloat(),
+                                        100f,
+                                        Icons.Outlined.BatteryStd,
+                                        StringBuilder().apply {
+                                            append("$level% - ")
+                                            // Are we charging / charged?
+                                            when (intent.getIntExtra(
+                                                BatteryManager.EXTRA_STATUS,
+                                                -1
+                                            )) {
+                                                BatteryManager.BATTERY_STATUS_CHARGING ->
+                                                    append(context.getString(R.string.battery_status_charging))
+                                                BatteryManager.BATTERY_STATUS_FULL ->
+                                                    append(context.getString(R.string.battery_status_full))
+                                                BatteryManager.BATTERY_STATUS_DISCHARGING ->
+                                                    append(context.getString(R.string.battery_status_discharging))
+                                                BatteryManager.BATTERY_STATUS_NOT_CHARGING ->
+                                                    append(context.getString(R.string.battery_status_not_charging))
+                                                else -> append(context.getString(R.string.battery_status_unknown))
+                                            }
+                                            val health = when (intent.getIntExtra(
+                                                BatteryManager.EXTRA_HEALTH,
+                                                0
+                                            )) {
+                                                BatteryManager.BATTERY_HEALTH_COLD ->
+                                                    context.getString(R.string.battery_health_cold)
+                                                BatteryManager.BATTERY_HEALTH_DEAD ->
+                                                    context.getString(R.string.battery_health_dead)
+                                                BatteryManager.BATTERY_HEALTH_GOOD ->
+                                                    context.getString(R.string.battery_health_good)
+                                                BatteryManager.BATTERY_HEALTH_OVERHEAT ->
+                                                    context.getString(R.string.battery_health_overheat)
+                                                BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE ->
+                                                    context.getString(R.string.battery_health_over_voltage)
+                                                BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE ->
+                                                    context.getString(R.string.battery_health_unspecified_failure)
+                                                else -> context.getString(R.string.battery_health_unknown)
+                                            }
+                                            append(" ($health) ")
+                                            // How are we charging?
+                                            when (intent.getIntExtra(
+                                                BatteryManager.EXTRA_PLUGGED,
+                                                -1
+                                            )) {
+                                                BatteryManager.BATTERY_PLUGGED_USB ->
+                                                    append(context.getString(R.string.battery_plugged_usb))
+                                                BatteryManager.BATTERY_PLUGGED_AC ->
+                                                    append(context.getString(R.string.battery_plugged_ac))
+                                                BatteryManager.BATTERY_PLUGGED_WIRELESS ->
+                                                    append(context.getString(R.string.battery_plugged_wireless))
+                                            }
+                                            //subTitle = String.valueOf(temperature+"\u00b0C");
+                                        }.trim().toString()
+                                    )
                                 )
                             )
-                            // Must call finish() so the BroadcastReceiver can be recycled.
-                            result.finish()
+                            trySend(item)
                         }
-                        cont.resume(item)
                     }
+                } catch (e: Throwable) {
+                    Timber.w(e)
+                    trySend(
+                        Item(
+                            title = R.string.hardware_title_battery,
+                            itemType = ItemType.HARDWARE,
+                            subtitle = ItemSubtitle.Error
+                        )
+                    )
+                } finally {
+                    result.finish()
                 }
             }
-            cont.invokeOnCancellation {
-                try {
-                    context.unregisterReceiver(batteryReceiver)
-                } catch (e: IllegalArgumentException) {
-                    /* Do nothing as receiver is not registered */
-                }
-            }
-            context.registerReceiver(batteryReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
         }
+        context.registerReceiver(batteryReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        awaitClose { context.unregisterReceiver(batteryReceiver) }
+    }.conflate()
 
-    private fun getDisplayInfo(): Array<Item> = mutableListOf<Item>().apply {
-        try {
-            add(Item(R.string.hardware_title_display_name, ItemType.HARDWARE))
-            add(Item(R.string.hardware_title_display_hdr, ItemType.HARDWARE))
-            add(Item(R.string.hardware_title_display_rotation, ItemType.HARDWARE))
-            add(Item(R.string.hardware_title_display_state, ItemType.HARDWARE))
-            add(Item(R.string.hardware_title_display_cutout, ItemType.HARDWARE))
-            add(Item(R.string.hardware_title_display_refresh_rate, ItemType.HARDWARE))
-            add(Item(R.string.hardware_title_display_density, ItemType.HARDWARE))
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                context.displayManger.displays.forEach { display ->
-                    get(0).apply {
-                        titleFormatArgs = arrayOf(display.displayId.toString())
-                        subtitle = ItemSubtitle.Text(display.name)
-                    }
-                    get(1).apply {
-                        titleFormatArgs = arrayOf(display.displayId.toString())
-                        subtitle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-                            ItemSubtitle.Text(display.isHdr.toString())
-                        else
-                            ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.O)
-                    }
-                    get(2).apply {
-                        titleFormatArgs = arrayOf(display.displayId.toString())
-                        subtitle = ItemSubtitle.Text(
-                            when (display.rotation) {
-                                Surface.ROTATION_0 -> "0\u00B0"
-                                Surface.ROTATION_90 -> "90\u00B0"
-                                Surface.ROTATION_180 -> "180\u00B0"
-                                Surface.ROTATION_270 -> "270\u00B0"
-                                else -> null
-                            }
-                        )
-                    }
-                    get(3).apply {
-                        titleFormatArgs = arrayOf(display.displayId.toString())
-                        subtitle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH)
-                            ItemSubtitle.Text(
-                                when (display.state) {
-                                    Display.STATE_ON -> "STATE_ON"
-                                    Display.STATE_OFF -> "STATE_OFF"
-                                    Display.STATE_DOZE -> "STATE_DOZE"
-                                    Display.STATE_DOZE_SUSPEND -> "STATE_DOZE_SUSPEND"
-                                    Display.STATE_ON_SUSPEND -> "STATE_ON_SUSPEND"
-                                    Display.STATE_VR -> "STATE_VR"
-                                    else -> "STATE_UNKNOWN"
-                                }
+    private fun getDisplayInfo() = callbackFlow {
+        val map = mutableMapOf<Int, List<Item>>()
+        val listener = object : DisplayManager.DisplayListener {
+            override fun onDisplayAdded(displayId: Int) {
+                try {
+                    displayManager?.getDisplay(displayId)?.let { display ->
+                        map[displayId] = listOf(
+                            Item(
+                                title = R.string.hardware_title_display_name,
+                                itemType = ItemType.HARDWARE,
+                                subtitle = ItemSubtitle.Text(display.name),
+                                titleFormatArgs = listOf("$displayId")
+                            ), Item(
+                                title = R.string.hardware_title_display_hdr,
+                                itemType = ItemType.HARDWARE,
+                                subtitle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                                    ItemSubtitle.Text("${display.isHdr}")
+                                else ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.O),
+                                titleFormatArgs = listOf("$displayId")
+                            ), Item(
+                                title = R.string.hardware_title_display_rotation,
+                                itemType = ItemType.HARDWARE,
+                                subtitle = ItemSubtitle.Text(
+                                    when (display.rotation) {
+                                        Surface.ROTATION_0 -> context.getString(R.string.display_rotation_0)
+                                        Surface.ROTATION_90 -> context.getString(R.string.display_rotation_90)
+                                        Surface.ROTATION_180 -> context.getString(R.string.display_rotation_180)
+                                        Surface.ROTATION_270 -> context.getString(R.string.display_rotation_270)
+                                        else -> null
+                                    }
+                                ),
+                                titleFormatArgs = listOf("$displayId")
+                            ), Item(
+                                title = R.string.hardware_title_display_state,
+                                itemType = ItemType.HARDWARE,
+                                subtitle = ItemSubtitle.Text(
+                                    when (display.state) {
+                                        Display.STATE_ON -> context.getString(R.string.display_state_on)
+                                        Display.STATE_OFF -> context.getString(R.string.display_state_off)
+                                        Display.STATE_DOZE -> context.getString(R.string.display_state_doze)
+                                        Display.STATE_DOZE_SUSPEND -> context.getString(R.string.display_state_doze_suspend)
+                                        Display.STATE_ON_SUSPEND -> context.getString(R.string.display_state_on_suspend)
+                                        Display.STATE_VR -> context.getString(R.string.display_state_vr)
+                                        else -> context.getString(R.string.display_state_unknown)
+                                    }
+                                ),
+                                titleFormatArgs = listOf("$displayId")
+                            ), Item(
+                                title = R.string.hardware_title_display_cutout,
+                                itemType = ItemType.HARDWARE,
+                                subtitle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+                                    ItemSubtitle.Text(display.cutout?.run {
+                                        StringJoiner(" / ").apply {
+                                            if (!boundingRectTop.isEmpty) add(context.getString(R.string.display_cutout_top))
+                                            if (!boundingRectBottom.isEmpty) add(context.getString(R.string.display_cutout_bottom))
+                                            if (!boundingRectLeft.isEmpty) add(context.getString(R.string.display_cutout_left))
+                                            if (!boundingRectRight.isEmpty) add(context.getString(R.string.display_cutout_right))
+                                        }.toString()
+                                    })
+                                else ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.Q),
+                                titleFormatArgs = listOf("$displayId")
+                            ), Item(
+                                title = R.string.hardware_title_display_refresh_rate,
+                                itemType = ItemType.HARDWARE,
+                                subtitle = ItemSubtitle.Text(
+                                    context.getString(
+                                        R.string.display_refresh_rate,
+                                        display.refreshRate.toInt()
+                                    )
+                                ),
+                                titleFormatArgs = listOf("$displayId")
+                            ), Item(
+                                title = R.string.hardware_title_display_density,
+                                itemType = ItemType.HARDWARE,
+                                subtitle = ItemSubtitle.Text(
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+                                        context.createDisplayContext(display)
+                                            .createWindowContext(TYPE_APPLICATION, null)
+                                            .getSystemService(WindowManager::class.java)
+                                            .maximumWindowMetrics.bounds.run {
+                                                densityDpiToString(
+                                                    context.resources.configuration.densityDpi,
+                                                    height(), width()
+                                                )
+                                            }
+                                    else DisplayMetrics().apply {
+                                        @Suppress("DEPRECATION")
+                                        display.getRealMetrics(this)
+                                    }.run {
+                                        densityDpiToString(
+                                            densityDpi, heightPixels, widthPixels
+                                        )
+                                    }
+                                ), titleFormatArgs = listOf("$displayId")
                             )
-                        else
-                            ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.KITKAT_WATCH)
-                    }
-                    get(4).apply {
-                        titleFormatArgs = arrayOf(display.displayId.toString())
-                        subtitle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
-                            ItemSubtitle.Text(display.cutout?.run {
-                                StringJoiner(" / ").apply {
-                                    if (!boundingRectTop.isEmpty) add("Top")
-                                    if (!boundingRectBottom.isEmpty) add("Bottom")
-                                    if (!boundingRectLeft.isEmpty) add("Left")
-                                    if (!boundingRectRight.isEmpty) add("Right")
-                                }.toString()
-                            })
-                        else ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.Q)
-                    }
-                    get(5).apply {
-                        titleFormatArgs = arrayOf(display.displayId.toString())
-                        subtitle = ItemSubtitle.Text("${display.refreshRate.toInt()}Hz")
-                    }
-                    get(6).apply {
-                        titleFormatArgs = arrayOf(display.displayId.toString())
-                        val width: Int
-                        val height: Int
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                            val metrics = DisplayMetrics().apply { display.getRealMetrics(this) }
-                            width = metrics.widthPixels
-                            height = metrics.heightPixels
-                        } else {
-                            val rawH = Display::class.java.getMethod("getRawHeight")
-                            val rawW = Display::class.java.getMethod("getRawWidth")
-                            width = rawW.invoke(display) as Int
-                            height = rawH.invoke(display) as Int
-                        }
-                        subtitle = ItemSubtitle.Text(
-                            when (context.resources.displayMetrics.densityDpi) {
-                                DisplayMetrics.DENSITY_LOW -> "LDPI"
-                                DisplayMetrics.DENSITY_MEDIUM -> "MDPI"
-                                DisplayMetrics.DENSITY_HIGH -> "HDPI"
-                                DisplayMetrics.DENSITY_XHIGH -> "XHDPI"
-                                DisplayMetrics.DENSITY_XXHIGH -> "XXHDPI"
-                                DisplayMetrics.DENSITY_XXXHIGH -> "XXXHDPI"
-                                DisplayMetrics.DENSITY_TV -> "TVDPI"
-                                DisplayMetrics.DENSITY_140 -> "140 DPI"
-                                DisplayMetrics.DENSITY_180 -> "180 DPI"
-                                DisplayMetrics.DENSITY_200 -> "200 DPI"
-                                DisplayMetrics.DENSITY_220 -> "220 DPI"
-                                DisplayMetrics.DENSITY_260 -> "260 DPI"
-                                DisplayMetrics.DENSITY_280 -> "280 DPI"
-                                DisplayMetrics.DENSITY_300 -> "300 DPI"
-                                DisplayMetrics.DENSITY_340 -> "340 DPI"
-                                DisplayMetrics.DENSITY_360 -> "360 DPI"
-                                DisplayMetrics.DENSITY_400 -> "400 DPI"
-                                DisplayMetrics.DENSITY_420 -> "420 DPI"
-                                DisplayMetrics.DENSITY_440 -> "440 DPI"
-                                DisplayMetrics.DENSITY_560 -> "560 DPI"
-                                DisplayMetrics.DENSITY_600 -> "600 DPI"
-                                else -> null
-                            }.plus(" (${height}x${width} pixels)").trim()
                         )
                     }
+                } catch (e: Throwable) {
+                    Timber.w(e)
                 }
-            } else
-                forEach {
-                    it.titleFormatArgs = arrayOf("0")
-                    it.subtitle = ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.JELLY_BEAN_MR1)
-                }
-        } catch (e: Throwable) {
-            Timber.w(e)
+                trySend(map.values.flatten())
+            }
+
+            override fun onDisplayRemoved(displayId: Int) {
+                map.remove(displayId)
+                trySend(map.values.flatten())
+            }
+
+            override fun onDisplayChanged(displayId: Int) {
+                onDisplayAdded(displayId)
+            }
         }
-    }.toTypedArray()
+        if (map.isEmpty())
+            displayManager?.displays?.forEach { listener.onDisplayAdded(it.displayId) }
+                ?: trySend(map.values.flatten())
+        displayManager?.registerDisplayListener(listener, Handler(Looper.getMainLooper()))
+        awaitClose { displayManager?.unregisterDisplayListener(listener) }
+    }.conflate()
+
+    /**
+     * To convert screen density, height and width to the [Item] text format
+     * @param densityDpi Dpi int from either [DisplayMetrics] or [WindowManager]
+     * @param height Int value of the current screen height
+     * @param width Int value of the current screen width
+     */
+    private fun densityDpiToString(densityDpi: Int, height: Int, width: Int): String =
+        when (densityDpi) {
+            DisplayMetrics.DENSITY_LOW -> R.string.display_density_ldpi
+            DisplayMetrics.DENSITY_MEDIUM -> R.string.display_density_mdpi
+            DisplayMetrics.DENSITY_HIGH -> R.string.display_density_hdpi
+            DisplayMetrics.DENSITY_XHIGH -> R.string.display_density_xhdpi
+            DisplayMetrics.DENSITY_XXHIGH -> R.string.display_density_xxhdpi
+            DisplayMetrics.DENSITY_XXXHIGH -> R.string.display_density_xxxhdpi
+            DisplayMetrics.DENSITY_TV -> R.string.display_density_tvdpi
+            DisplayMetrics.DENSITY_140 -> R.string.display_density_140
+            DisplayMetrics.DENSITY_180 -> R.string.display_density_180
+            DisplayMetrics.DENSITY_200 -> R.string.display_density_200
+            DisplayMetrics.DENSITY_220 -> R.string.display_density_220
+            DisplayMetrics.DENSITY_260 -> R.string.display_density_260
+            DisplayMetrics.DENSITY_280 -> R.string.display_density_280
+            DisplayMetrics.DENSITY_300 -> R.string.display_density_300
+            DisplayMetrics.DENSITY_340 -> R.string.display_density_340
+            DisplayMetrics.DENSITY_360 -> R.string.display_density_360
+            DisplayMetrics.DENSITY_400 -> R.string.display_density_400
+            DisplayMetrics.DENSITY_420 -> R.string.display_density_420
+            DisplayMetrics.DENSITY_440 -> R.string.display_density_440
+            DisplayMetrics.DENSITY_450 -> R.string.display_density_450
+            DisplayMetrics.DENSITY_560 -> R.string.display_density_560
+            DisplayMetrics.DENSITY_600 -> R.string.display_density_600
+            else -> null
+        }?.run {
+            context.getString(
+                R.string.display_density_format_with_name,
+                context.getString(this), height, width
+            )
+        } ?: context.getString(
+            R.string.display_density_format_with_name,
+            context.getString(R.string.display_density_other, densityDpi), height, width
+        )
+
+    private fun socManufacturer() = flowOf(
+        Item(
+            title = R.string.hardware_title_soc_manufacturer, itemType = ItemType.HARDWARE,
+            subtitle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                ItemSubtitle.Text(Build.SOC_MANUFACTURER)
+            } else {
+                ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.S)
+            }
+        )
+    )
+
+    private fun socModel() = flowOf(
+        Item(
+            title = R.string.hardware_title_soc_model, itemType = ItemType.HARDWARE,
+            subtitle = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                ItemSubtitle.Text(Build.SOC_MODEL)
+            } else {
+                ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.S)
+            }
+        )
+    )
 }

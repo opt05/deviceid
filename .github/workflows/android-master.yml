@@ -7,18 +7,20 @@ on:
 jobs:
   unit_tests:
     name: Run unit tests
-    runs-on: [ ubuntu-latest ]
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Cache gradle
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
-        path: ~/.gradle/caches
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-${{ hashFiles('**/*.gradle*') }}-${{ hashFiles('**/gradle/wrapper/gradle-wrapper.properties') }}-${{ hashFiles('**/buildSrc/**/*.kt') }}
         restore-keys: |
           ${{ runner.os }}-gradle-
     - name: set up JDK 11
-      uses: actions/setup-java@v2
+      uses: actions/setup-java@v3
       with:
         java-version: '11'
         distribution: 'adopt'
@@ -29,46 +31,53 @@ jobs:
       
   android_tests:
     name: Run instrumented tests
-    runs-on: [ macos-latest ]
+    runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Cache gradle
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
-        path: ~/.gradle/caches
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-${{ hashFiles('**/*.gradle*') }}-${{ hashFiles('**/gradle/wrapper/gradle-wrapper.properties') }}-${{ hashFiles('**/buildSrc/**/*.kt') }}
         restore-keys: |
           ${{ runner.os }}-gradle-
     - name: set up JDK 11
-      uses: actions/setup-java@v2
+      uses: actions/setup-java@v3
       with:
         java-version: '11'
         distribution: 'adopt'
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
+    - name: Build the app
+      run: ./gradlew assembleDebug
     - name: Instrumentation Tests
       uses: reactivecircus/android-emulator-runner@v2
       with:
-        api-level: 30
+        api-level: 32
+        arch: x86_64
         target: playstore
-        emulator-build: 7425822 # https://github.com/ReactiveCircus/android-emulator-runner/issues/160
-        script: ./gradlew connectedCheck --stacktrace
+        ram-size: 4096M
+        script: ./gradlew connectedDebugAndroidTest --stacktrace
         
   sign_and_release:
     name: Sign and release
     needs: [ unit_tests, android_tests ]
-    runs-on: [ ubuntu-latest ]
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Cache gradle
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
-        path: ~/.gradle/caches
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-${{ hashFiles('**/*.gradle*') }}-${{ hashFiles('**/gradle/wrapper/gradle-wrapper.properties') }}-${{ hashFiles('**/buildSrc/**/*.kt') }}
         restore-keys: |
           ${{ runner.os }}-gradle-
     - name: set up JDK 11
-      uses: actions/setup-java@v2
+      uses: actions/setup-java@v3
       with:
         java-version: '11'
         distribution: 'adopt'
@@ -86,7 +95,7 @@ jobs:
         alias: ${{ secrets.KEYSTORE_ALIAS }}
         keyPassword: ${{ secrets.KEY_PASSWORD }}
       env:
-        BUILD_TOOLS_VERSION: "31.0.0"
+        BUILD_TOOLS_VERSION: "32.0.0"
     - name: Deploy Bundle to Play Store
       uses: r0adkll/upload-google-play@v1
       with:

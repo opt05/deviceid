@@ -2,101 +2,115 @@ package com.cwlarson.deviceid.data
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import android.telephony.TelephonyManager
+import androidx.core.content.getSystemService
+import androidx.core.net.toUri
 import com.cwlarson.deviceid.R
+import com.cwlarson.deviceid.settings.PreferenceManager
 import com.cwlarson.deviceid.tabs.Item
 import com.cwlarson.deviceid.tabs.ItemSubtitle
 import com.cwlarson.deviceid.tabs.ItemType
 import com.cwlarson.deviceid.util.AppPermission
+import com.cwlarson.deviceid.util.DispatcherProvider
 import com.cwlarson.deviceid.util.isGranted
-import com.cwlarson.deviceid.util.telephonyManager
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
 import timber.log.Timber
 import java.util.*
+import javax.inject.Inject
 
-class DeviceRepository(private val context: Context, filterUnavailable: Boolean = false)
-    : TabData(filterUnavailable) {
-    override suspend fun list(): List<Item> = listOf(imei(), deviceModel(), serial(), androidID(),
-            gsfid())
+class DeviceRepository @Inject constructor(
+    private val dispatcherProvider: DispatcherProvider,
+    private val context: Context,
+    preferenceManager: PreferenceManager
+) : TabData(dispatcherProvider, context, preferenceManager) {
+    private val telephonyManager by lazy { context.getSystemService<TelephonyManager>() }
+
+    override fun items() = flowOf(listOf(imei(), deviceModel(), serial(), androidID(), gsfid()))
+        .flowOn(dispatcherProvider.IO)
 
     // Request permission for IMEI/MEID for Android M+
     @SuppressLint("HardwareIds", "MissingPermission")
-    private fun imei(): Item = Item(R.string.device_title_imei, ItemType.DEVICE).apply {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+    private fun imei() = Item(
+        title = R.string.device_title_imei, itemType = ItemType.DEVICE,
+        subtitle = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             try {
-                subtitle = if (context.isGranted(AppPermission.ReadPhoneState)) {
-                    val telephonyManager = context.telephonyManager
-                    @Suppress("DEPRECATION") ItemSubtitle.Text(telephonyManager.deviceId)
-                } else ItemSubtitle.Permission(AppPermission.ReadPhoneState)
+                if (context.isGranted(AppPermission.ReadPhoneState))
+                    telephonyManager?.let { @Suppress("DEPRECATION") ItemSubtitle.Text(it.deviceId) }
+                        ?: ItemSubtitle.Error
+                else ItemSubtitle.Permission(AppPermission.ReadPhoneState)
             } catch (e: Throwable) {
                 Timber.w(e)
+                ItemSubtitle.Error
             }
         } else {
-            subtitle = ItemSubtitle.NoLongerPossible(Build.VERSION_CODES.O)
+            ItemSubtitle.NoLongerPossible(Build.VERSION_CODES.O)
         }
-    }
+    )
 
-    private fun deviceModel() = Item(R.string.device_title_model, ItemType.DEVICE).apply {
-        var device = ""
-        try {
-            val manufacturer = if (Build.MANUFACTURER == null || Build.MANUFACTURER.isEmpty()) ""
-            else Build.MANUFACTURER
-            val product = if (Build.PRODUCT == null || Build.PRODUCT.isEmpty()) "" else Build
-                    .PRODUCT
-            val model = if (Build.MODEL == null || Build.MODEL.isEmpty()) "" else Build.MODEL
-            device = (if (model.startsWith(manufacturer)) {
-                "$model ($product)"
-            } else {
-                "$manufacturer $model ($product)"
-            }).replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+    private fun deviceModel() = Item(
+        title = R.string.device_title_model, itemType = ItemType.DEVICE,
+        subtitle = try {
+            val manufacturer = if (Build.MANUFACTURER.isNullOrEmpty()) "" else Build.MANUFACTURER
+            val product = if (Build.PRODUCT.isNullOrEmpty()) "" else Build.PRODUCT
+            val model = if (Build.MODEL.isNullOrEmpty()) "" else Build.MODEL
+            ItemSubtitle.Text(buildString {
+                if (model.startsWith(manufacturer) && model.isNotBlank()) append(model)
+                else if (manufacturer.isNotBlank() && model.isNotBlank()) append("$manufacturer $model")
+                if (product.isNotBlank()) append(" ($product)")
+            }.trim().replaceFirstChar {
+                if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString()
+            })
         } catch (e: Throwable) {
             Timber.w(e)
+            ItemSubtitle.Error
         }
-        subtitle = ItemSubtitle.Text(device)
-    }
+    )
 
     @SuppressLint("HardwareIds")
-    private fun serial() = Item(R.string.device_title_serial, ItemType.DEVICE).apply {
+    private fun serial() = Item(
+        title = R.string.device_title_serial, itemType = ItemType.DEVICE,
         subtitle = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             @Suppress("DEPRECATION") ItemSubtitle.Text(Build.SERIAL)
         } else {
             ItemSubtitle.NoLongerPossible(Build.VERSION_CODES.O)
         }
-    }
+    )
 
     @SuppressLint("HardwareIds")
-    private fun androidID() = Item(R.string.device_title_android_id, ItemType.DEVICE).apply {
-        try {
-            subtitle = ItemSubtitle.Text(Settings.Secure.getString(context.contentResolver,
-                    Settings.Secure.ANDROID_ID))
+    private fun androidID() = Item(
+        title = R.string.device_title_android_id, itemType = ItemType.DEVICE,
+        subtitle = try {
+            ItemSubtitle.Text(
+                Settings.Secure.getString(
+                    context.contentResolver,
+                    Settings.Secure.ANDROID_ID
+                )
+            )
         } catch (e: Throwable) {
             Timber.w(e)
+            ItemSubtitle.Error
         }
-    }
+    )
 
-    private fun gsfid() = Item(R.string.device_title_gsfid, ItemType.DEVICE).apply {
-        try {
-            val uri = Uri.parse("content://com.google.android.gsf.gservices")
-            val idKey = "android_id"
-            val params = arrayOf(idKey)
-            val c = context.contentResolver.query(uri, null, null, params, null)
-            if (c != null && (!c.moveToFirst() || c.columnCount < 2)) {
-                if (!c.isClosed) c.close()
-            } else {
-                try {
-                    c?.let {
-                        val result = java.lang.Long.toHexString(java.lang.Long.parseLong(it.getString(1)))
-                        if (!it.isClosed) it.close()
-                        subtitle = ItemSubtitle.Text(result)
-                    }
-                } catch (e: Throwable) {
-                    if (c?.isClosed != true) c?.close()
-                }
-
-            }
+    private fun gsfid() = Item(
+        title = R.string.device_title_gsfid, itemType = ItemType.DEVICE,
+        subtitle = try {
+            context.contentResolver.query(
+                "content://com.google.android.gsf.gservices".toUri(),
+                null,
+                null,
+                arrayOf("android_id"),
+                null
+            )?.use { c ->
+                if (!c.moveToFirst() || c.columnCount < 2) ItemSubtitle.Error
+                else ItemSubtitle.Text(c.getString(1).toULong().toString(16))
+            } ?: ItemSubtitle.Error
         } catch (e: Throwable) {
             Timber.w(e)
+            ItemSubtitle.Error
         }
-    }
+    )
 }
