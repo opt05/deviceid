@@ -20,7 +20,6 @@ import com.cwlarson.deviceid.tabs.ItemType
 import com.cwlarson.deviceid.util.AppPermission
 import com.cwlarson.deviceid.util.DispatcherProvider
 import com.cwlarson.deviceid.util.isGranted
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
 import timber.log.Timber
@@ -38,9 +37,8 @@ class NetworkRepository @Inject constructor(
     private val bluetoothManager by lazy { context.getSystemService<BluetoothManager>() }
     private val euiccManager by lazy { context.getSystemService<EuiccManager>() }
 
-    @OptIn(FlowPreview::class)
-    override fun items(): Flow<List<Item>> = flowOf(
-        wifiInfo(), flowOf(
+    override fun items(): Flow<List<Item>> = wifiInfo().combine(
+        flowOf(
             listOf(
                 deviceSoftwareVersion(), bluetoothMac(), bluetoothHostname(), manufacturerCode(),
                 nai(), phoneCount(), simSerial(), simOperatorName(), simCountry(), simState(),
@@ -51,7 +49,7 @@ class NetworkRepository @Inject constructor(
                 isVoiceCapable()
             )
         )
-    ).flattenMerge().flowOn(dispatcherProvider.IO)
+    ) { one, two -> one + two }.flowOn(dispatcherProvider.IO)
 
     @SuppressLint("MissingPermission")
     private fun deviceSoftwareVersion() = Item(
