@@ -1,9 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#37474f</color>
-    <color name="colorPrimaryVariant">#263238</color>
-    <color name="colorOnPrimary">#FFFFFF</color>
-    <color name="colorSecondary">#03DAC6</color>
-    <color name="colorSecondaryVariant">#018786</color>
-    <color name="colorOnSecondary">#000000</color>
+    <color name="md_theme_primary">#006684</color>
+    <color name="md_theme_onPrimary">#FFFFFF</color>
+    <color name="md_theme_primaryContainer">#BDE9FF</color>
+    <color name="md_theme_onPrimaryContainer">#001F2A</color>
+    <color name="md_theme_secondary">#4D616C</color>
+    <color name="md_theme_onSecondary">#FFFFFF</color>
+    <color name="md_theme_secondaryContainer">#D0E6F2</color>
+    <color name="md_theme_onSecondaryContainer">#081E27</color>
+    <color name="md_theme_tertiary">#5D5B7D</color>
+    <color name="md_theme_onTertiary">#FFFFFF</color>
+    <color name="md_theme_tertiaryContainer">#E3DFFF</color>
+    <color name="md_theme_onTertiaryContainer">#191836</color>
+    <color name="md_theme_error">#BA1A1A</color>
+    <color name="md_theme_errorContainer">#FFDAD6</color>
+    <color name="md_theme_onError">#FFFFFF</color>
+    <color name="md_theme_onErrorContainer">#410002</color>
+    <color name="md_theme_background">#FBFCFE</color>
+    <color name="md_theme_onBackground">#191C1E</color>
+    <color name="md_theme_surface">#FBFCFE</color>
+    <color name="md_theme_onSurface">#191C1E</color>
+    <color name="md_theme_surfaceVariant">#DCE4E9</color>
+    <color name="md_theme_onSurfaceVariant">#40484C</color>
+    <color name="md_theme_outline">#70787D</color>
+    <color name="md_theme_inverseOnSurface">#EFF1F3</color>
+    <color name="md_theme_inverseSurface">#2E3132</color>
+    <color name="md_theme_inversePrimary">#67D3FF</color>
+    <color name="md_theme_shadow">#000000</color>
+    <color name="md_theme_surfaceTint">#006684</color>
+    <color name="md_theme_surfaceTintColor">#006684</color>
 </resources>
+

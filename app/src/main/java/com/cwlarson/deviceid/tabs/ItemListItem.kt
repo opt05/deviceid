@@ -12,6 +12,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.data.sdkToVersion
+import com.cwlarson.deviceid.ui.theme.AppTheme
 import com.cwlarson.deviceid.ui.util.ListItem
 import com.cwlarson.deviceid.ui.util.copyItemToClipboard
 import com.cwlarson.deviceid.ui.util.loadPermissionLabel
@@ -22,13 +23,13 @@ const val TAB_TEST_TAG_LIST_ITEM = "tab_list_item"
 
 @Preview(showBackground = true)
 @Composable
-fun ItemListItemTextPreview() {
+fun ItemListItemTextPreview() = AppTheme {
     ItemListItem(item = Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("subtitle"))) { }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun ItemListItemChartPreview() {
+fun ItemListItemChartPreview() = AppTheme {
     ItemListItem(
         item = Item(
             R.string.app_name, ItemType.DEVICE,
@@ -41,7 +42,7 @@ fun ItemListItemChartPreview() {
 
 @Preview(showBackground = true)
 @Composable
-fun ItemListItemNoLongerPreview() {
+fun ItemListItemNoLongerPreview() = AppTheme {
     ItemListItem(
         item = Item(
             R.string.app_name,
@@ -53,7 +54,7 @@ fun ItemListItemNoLongerPreview() {
 
 @Preview(showBackground = true)
 @Composable
-fun ItemListItemNotPossiblePreview() {
+fun ItemListItemNotPossiblePreview() = AppTheme {
     ItemListItem(
         item = Item(
             R.string.app_name,
@@ -65,7 +66,7 @@ fun ItemListItemNotPossiblePreview() {
 
 @Preview(showBackground = true)
 @Composable
-fun ItemListItemPermissionPreview() {
+fun ItemListItemPermissionPreview() = AppTheme {
     ItemListItem(
         item = Item(
             R.string.app_name,

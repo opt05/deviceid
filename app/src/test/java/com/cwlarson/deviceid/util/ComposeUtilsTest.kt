@@ -3,13 +3,17 @@ package com.cwlarson.deviceid.util
 import android.Manifest
 import android.app.Application
 import android.content.Intent
-import android.content.pm.*
+import android.content.pm.PackageManager
+import android.content.pm.PermissionInfo
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Scaffold
-import androidx.compose.material.rememberScaffoldState
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.test.assertIsDisplayed
@@ -179,32 +183,62 @@ class ComposeUtilsTest {
     @Test
     fun test_share_success() {
         val pm: PackageManager = mockk()
-        val appInfo: ApplicationInfo = mockk()
-        val activityInfo: ActivityInfo = mockk()
-        val info: ResolveInfo = mockk()
-        info.activityInfo = activityInfo
-        activityInfo.name = "name"
-        activityInfo.applicationInfo = appInfo
-        appInfo.packageName = "name"
+        mockkConstructor(Intent::class)
+        every {
+            constructedWith<Intent>(EqMatcher(Intent.ACTION_SEND)).resolveActivity(pm)
+        } returns mockk()
         every { context.packageManager } returns pm
-        every { pm.resolveActivity(any(), any()) } returns info
-        every { context.startActivity(any()) } returns Unit
+        every { context.getString(R.string.send_to) } returns "test"
+        every { context.getString(R.string.send_to_no_apps) } returns "No app available"
+        mockkStatic(Intent::class)
+        every { Intent.createChooser(any(), null) } returns mockk()
+        justRun { context.startActivity(any()) }
         composeTestRule.setContent {
             Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("Name"))
                 .share(context)()
         }
+        verify { constructedWith<Intent>(EqMatcher(Intent.ACTION_SEND)).type = "text/plain" }
+        verify {
+            constructedWith<Intent>(EqMatcher(Intent.ACTION_SEND)).putExtra(
+                Intent.EXTRA_TITLE, "test"
+            )
+        }
+        verify {
+            constructedWith<Intent>(EqMatcher(Intent.ACTION_SEND)).putExtra(
+                Intent.EXTRA_TEXT, "Name"
+            )
+        }
         verify { context.startActivity(any()) }
+        assertFalse(ShadowToast.showedToast("No app available"))
     }
 
     @Test
     fun test_share_failure() {
         val pm: PackageManager = mockk()
+        mockkConstructor(Intent::class)
+        every {
+            constructedWith<Intent>(EqMatcher(Intent.ACTION_SEND)).resolveActivity(pm)
+        } returns null
         every { context.packageManager } returns pm
-        every { pm.resolveActivity(any(), any()) } returns null
-        every { context.startActivity(any()) } returns Unit
+        every { context.getString(R.string.send_to) } returns "test"
+        every { context.getString(R.string.send_to_no_apps) } returns "No app available"
+        mockkStatic(Intent::class)
+        every { Intent.createChooser(any(), null) } returns null
+        justRun { context.startActivity(any()) }
         composeTestRule.setContent {
             Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("Name"))
                 .share(context)()
+        }
+        verify { constructedWith<Intent>(EqMatcher(Intent.ACTION_SEND)).type = "text/plain" }
+        verify {
+            constructedWith<Intent>(EqMatcher(Intent.ACTION_SEND)).putExtra(
+                Intent.EXTRA_TITLE, "test"
+            )
+        }
+        verify {
+            constructedWith<Intent>(EqMatcher(Intent.ACTION_SEND)).putExtra(
+                Intent.EXTRA_TEXT, "Name"
+            )
         }
         verify(inverse = true) { context.startActivity(any()) }
         assertTrue(ShadowToast.showedToast("No app available"))
@@ -340,16 +374,17 @@ class ComposeUtilsTest {
         verify { clickedDetails(item) }
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @Suppress("TestFunctionName")
     @Composable
     private fun ComposableUnderTest(
         item: Item, clickedRefresh: (() -> Unit), clickedDetails: ((Item) -> Unit)
     ) {
-        val state = rememberScaffoldState()
-        Scaffold(scaffoldState = state) { innerPadding ->
+        val snackbarHostState = remember { SnackbarHostState() }
+        Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { innerPadding ->
             Box(modifier = Modifier.padding(innerPadding)) {
                 item.click(
-                    snackbarHostState = state.snackbarHostState, forceRefresh = clickedRefresh,
+                    snackbarHostState = snackbarHostState, forceRefresh = clickedRefresh,
                     showItemDetails = clickedDetails
                 )
             }

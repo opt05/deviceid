@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Device Info</string>
     <string name="nav_app_bar_navigate_up_description">Navigate up</string>

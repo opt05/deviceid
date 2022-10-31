@@ -16,9 +16,9 @@ This is a repository for the Device Info Android app that displays specific info
 
 ## Build Tools
 
-* Android Studio Chipmunk (Gradle 7.3)
+* Android Studio Dolphin (Gradle 7.4)
 * AndroidX/Jetpack
-* Android 5.0 (API 21) or above (built against 12.1/API 32)
+* Android 5.0 (API 21) or above (built against 13/API 33)
 * Kotlin 1.7
 
 ## Android Permissions
@@ -31,6 +31,7 @@ This is a repository for the Device Info Android app that displays specific info
 1. BLUETOOTH_CONNECT - to read Bluetooth Hostname
 1. READ_GSERVICES - to read Google Services Framework (GSF) ID
 1. READ_PHONE_STATE - to read IMEI/MEID and voicemail number
+1. READ_PHONE_NUMBER - to read Phone number
 
 ## Bugs and Features
 

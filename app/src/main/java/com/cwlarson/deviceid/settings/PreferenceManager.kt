@@ -7,7 +7,6 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.util.DispatcherProvider
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import org.json.JSONArray
 import timber.log.Timber
@@ -112,7 +111,6 @@ class PreferenceManager @Inject constructor(
     val autoRefreshRate: Flow<Int>
         get() = preferences.map { it[PreferencesKeys.AUTO_REFRESH_RATE] ?: 0 }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     val autoRefreshRateMillis: Flow<Long>
         get() = autoRefreshRate.mapLatest {
             TimeUnit.MILLISECONDS.convert(
@@ -137,7 +135,6 @@ class PreferenceManager @Inject constructor(
 
     private fun JSONArray.toList(): List<String> = List(length(), this::getString)
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     fun getSearchHistoryItems(filter: String? = null): Flow<List<String>> =
         searchHistoryData.mapLatest { items ->
             try {

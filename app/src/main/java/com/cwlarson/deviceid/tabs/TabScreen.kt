@@ -8,9 +8,12 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,6 +31,7 @@ import com.cwlarson.deviceid.data.TabDataStatus
 import com.cwlarson.deviceid.ui.icons.noItemsIcon
 import com.cwlarson.deviceid.ui.theme.AppTheme
 import com.cwlarson.deviceid.ui.util.click
+import com.cwlarson.deviceid.util.DispatcherProvider
 import com.cwlarson.deviceid.util.collectAsStateWithLifecycle
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.SwipeRefreshIndicator
@@ -41,11 +45,16 @@ const val TAB_TEST_TAG_PROGRESS = "tab_progressbar"
 
 @Composable
 fun TabScreen(
-    appBarSize: Int, isTwoPane: Boolean, scaffoldState: ScaffoldState,
-    viewModel: TabsViewModel = hiltViewModel(), onItemClick: (item: Item) -> Unit
+    appBarSize: Int, isTwoPane: Boolean, snackbarHostState: SnackbarHostState,
+    dispatcherProvider: DispatcherProvider, viewModel: TabsViewModel = hiltViewModel(),
+    onItemClick: (item: Item) -> Unit
 ) {
-    val status by viewModel.allItems.collectAsStateWithLifecycle(initial = TabDataStatus.Loading)
-    val refreshDisabled by viewModel.refreshDisabled.collectAsStateWithLifecycle(initial = true)
+    val status by viewModel.allItems.collectAsStateWithLifecycle(
+        dispatcherProvider = dispatcherProvider, initial = TabDataStatus.Loading
+    )
+    val refreshDisabled by viewModel.refreshDisabled.collectAsStateWithLifecycle(
+        dispatcherProvider = dispatcherProvider, initial = true
+    )
     LoadingScreen(isVisible = status is TabDataStatus.Loading) {
         ErrorScreen(isVisible = status is TabDataStatus.Error) {
             EmptyTabScreen(
@@ -53,7 +62,7 @@ fun TabScreen(
                         (status as TabDataStatus.Success).list.isEmpty()
             ) {
                 MainContent(appBarSize = appBarSize, isTwoPane = isTwoPane,
-                    refreshDisabled = refreshDisabled, scaffoldState = scaffoldState,
+                    refreshDisabled = refreshDisabled, snackbarHostState = snackbarHostState,
                     status = status, onForceRefresh = { viewModel.forceRefresh() },
                     onItemClick = { item -> onItemClick(item) })
             }
@@ -63,13 +72,13 @@ fun TabScreen(
 
 @Preview(showBackground = true)
 @Composable
-fun TabScreenMainPreview() {
+fun TabScreenMainPreview() = AppTheme {
     AppTheme {
         MainContent(
             appBarSize = 0,
             isTwoPane = false,
             refreshDisabled = true,
-            scaffoldState = rememberScaffoldState(),
+            snackbarHostState = SnackbarHostState(),
             status = TabDataStatus.Success(
                 listOf(
                     Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("subtitle 1")),
@@ -92,19 +101,19 @@ fun TabScreenMainPreview() {
 @Composable
 private fun MainContent(
     appBarSize: Int, isTwoPane: Boolean, refreshDisabled: Boolean,
-    scaffoldState: ScaffoldState, status: TabDataStatus,
+    snackbarHostState: SnackbarHostState, status: TabDataStatus,
     onForceRefresh: () -> Unit, onItemClick: (item: Item) -> Unit
 ) {
     val swipeRefreshState = rememberSwipeRefreshState(status is TabDataStatus.Loading)
     var clickedItem by remember { mutableStateOf<Item?>(null) }
     clickedItem?.click(
-        snackbarHostState = scaffoldState.snackbarHostState, forceRefresh = onForceRefresh,
+        snackbarHostState = snackbarHostState, forceRefresh = onForceRefresh,
     ) { onItemClick(it) }
     SwipeRefresh(state = swipeRefreshState, onRefresh = onForceRefresh,
         swipeEnabled = !refreshDisabled, indicator = { state, trigger ->
             SwipeRefreshIndicator(
                 state = state, refreshTriggerDistance = trigger,
-                contentColor = MaterialTheme.colors.secondary, scale = true
+                contentColor = MaterialTheme.colorScheme.secondary, scale = true
             )
         }) {
         LazyVerticalGrid(
@@ -113,7 +122,6 @@ private fun MainContent(
                 .testTag(TAB_TEST_TAG_LIST),
             contentPadding = if (isTwoPane) WindowInsets.navigationBars.only(WindowInsetsSides.Bottom)
                 .asPaddingValues() else PaddingValues(),
-            //PaddingValues(top = with(LocalDensity.current) { appBarSize.toDp() }),
             columns = GridCells.Adaptive(dimensionResource(R.dimen.grid_view_item_width))
         ) {
             item(span = { GridItemSpan(maxLineSpan) }) {
@@ -135,7 +143,7 @@ private fun MainContent(
 
 @Preview(showBackground = true)
 @Composable
-fun TabScreenEmptyPreview() {
+fun TabScreenEmptyPreview() = AppTheme {
     EmptyTabScreen(isVisible = true) { }
 }
 
@@ -156,7 +164,7 @@ private fun EmptyTabScreen(isVisible: Boolean, content: @Composable () -> Unit) 
                 )
                 Text(
                     stringResource(R.string.textview_recyclerview_no_items),
-                    style = MaterialTheme.typography.h6
+                    style = MaterialTheme.typography.titleMedium
                 )
             }
         else content()
@@ -165,7 +173,7 @@ private fun EmptyTabScreen(isVisible: Boolean, content: @Composable () -> Unit) 
 
 @Preview(showBackground = true)
 @Composable
-fun TabScreenLoadingPreview() {
+fun TabScreenLoadingPreview() = AppTheme {
     LoadingScreen(isVisible = true) { }
 }
 
@@ -180,14 +188,14 @@ private fun LoadingScreen(isVisible: Boolean, content: @Composable () -> Unit) {
             ) {
                 Text(
                     stringResource(R.string.general_loading),
-                    style = MaterialTheme.typography.body1
+                    style = MaterialTheme.typography.bodyLarge
                 )
                 LinearProgressIndicator(
                     modifier = Modifier
                         .width(150.dp)
                         .padding(top = dimensionResource(id = R.dimen.activity_vertical_margin))
                         .testTag(TAB_TEST_TAG_PROGRESS),
-                    color = MaterialTheme.colors.secondary
+                    color = MaterialTheme.colorScheme.secondary
                 )
             }
         else content()
@@ -196,7 +204,7 @@ private fun LoadingScreen(isVisible: Boolean, content: @Composable () -> Unit) {
 
 @Preview(showBackground = true)
 @Composable
-fun TabScreenErrorPreview() {
+fun TabScreenErrorPreview() = AppTheme {
     ErrorScreen(isVisible = true) { }
 }
 
@@ -215,12 +223,12 @@ private fun ErrorScreen(isVisible: Boolean, content: @Composable () -> Unit) {
                         .size(120.dp),
                     contentScale = ContentScale.FillHeight,
                     imageVector = Icons.Outlined.ErrorOutline,
-                    colorFilter = ColorFilter.tint(MaterialTheme.colors.error),
+                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.error),
                     contentDescription = stringResource(R.string.general_error)
                 )
                 Text(
                     stringResource(R.string.general_error),
-                    style = MaterialTheme.typography.h6
+                    style = MaterialTheme.typography.titleMedium
                 )
             }
         else content()
