@@ -83,8 +83,7 @@ fun ItemListItem(item: Item, onItemClick: () -> Unit) {
         modifier = Modifier
             .testTag(TAB_TEST_TAG_LIST_ITEM)
             .combinedClickable(
-                onClick = { onItemClick() },
-                onLongClick = item.copyItemToClipboard()
+                onClick = onItemClick, onLongClick = item.copyItemToClipboard()
             ),
         icon = item.subtitle.getIcon(),
         text = item.getFormattedString(),

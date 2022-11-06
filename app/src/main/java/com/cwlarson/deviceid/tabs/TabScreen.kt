@@ -73,29 +73,27 @@ fun TabScreen(
 @Preview(showBackground = true)
 @Composable
 fun TabScreenMainPreview() = AppTheme {
-    AppTheme {
-        MainContent(
-            appBarSize = 0,
-            isTwoPane = false,
-            refreshDisabled = true,
-            snackbarHostState = SnackbarHostState(),
-            status = TabDataStatus.Success(
-                listOf(
-                    Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("subtitle 1")),
-                    Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("subtitle 2")),
-                    Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("subtitle 3")),
-                    Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("subtitle 4")),
-                    Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("subtitle 5")),
-                    Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("subtitle 6")),
-                    Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("subtitle 7")),
-                    Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("subtitle 8")),
-                    Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("subtitle 9")),
-                    Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("subtitle 10"))
-                )
-            ),
-            onForceRefresh = { }
-        ) { }
-    }
+    MainContent(
+        appBarSize = 0,
+        isTwoPane = false,
+        refreshDisabled = true,
+        snackbarHostState = SnackbarHostState(),
+        status = TabDataStatus.Success(
+            listOf(
+                Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("subtitle 1")),
+                Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("subtitle 2")),
+                Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("subtitle 3")),
+                Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("subtitle 4")),
+                Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("subtitle 5")),
+                Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("subtitle 6")),
+                Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("subtitle 7")),
+                Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("subtitle 8")),
+                Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("subtitle 9")),
+                Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("subtitle 10"))
+            )
+        ),
+        onForceRefresh = { }
+    ) { }
 }
 
 @Composable
@@ -108,7 +106,8 @@ private fun MainContent(
     var clickedItem by remember { mutableStateOf<Item?>(null) }
     clickedItem?.click(
         snackbarHostState = snackbarHostState, forceRefresh = onForceRefresh,
-    ) { onItemClick(it) }
+        showItemDetails = { onItemClick(it) }
+    )
     SwipeRefresh(state = swipeRefreshState, onRefresh = onForceRefresh,
         swipeEnabled = !refreshDisabled, indicator = { state, trigger ->
             SwipeRefreshIndicator(
@@ -133,7 +132,7 @@ private fun MainContent(
             }
             when (status) {
                 is TabDataStatus.Success -> items(status.list) { item ->
-                    ItemListItem(item = item) { clickedItem = item }
+                    ItemListItem(item = item) { clickedItem = null; clickedItem = item }
                 }
                 else -> items(emptyList<Item>()) { }
             }

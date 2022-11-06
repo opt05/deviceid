@@ -15,6 +15,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -181,6 +182,7 @@ class MainActivity : ComponentActivity() {
             lifecycleScope.launch(dispatcherProvider.Main) { appUpdateUtils.checkForFlexibleUpdate() }
         }
         setContent {
+            val scope = rememberCoroutineScope()
             val isTwoPane =
                 calculateWindowSizeClass(this).widthSizeClass > WindowWidthSizeClass.Compact
             viewModel.startTitleFade(isTwoPane, intent)
@@ -226,9 +228,6 @@ class MainActivity : ComponentActivity() {
                         keyboardController?.hide()
                         true
                     }
-                LaunchedEffect(bottomSheetItem, bottomSheetState) {
-                    if (bottomSheetItem != null) bottomSheetState.show()
-                }
                 var isSideNavVisible by rememberSaveable { mutableStateOf(true) }
                 var searchBarQuery by rememberSaveable { mutableStateOf("") }
                 var isSearchOpen by rememberSaveable { mutableStateOf(false) }
@@ -236,7 +235,9 @@ class MainActivity : ComponentActivity() {
                 val snackbarHostState = remember { SnackbarHostState() }
                 val navController = rememberNavController()
                 ModalBottomSheetLayout(sheetState = bottomSheetState,
-                    sheetContent = {
+                    sheetShape = MaterialTheme.shapes.extraLarge.copy(
+                        bottomStart = CornerSize(0.0.dp), bottomEnd = CornerSize(0.0.dp)
+                    ), sheetContent = {
                         TabDetailScreen(
                             item = bottomSheetItem, dispatcherProvider = dispatcherProvider
                         )
@@ -309,7 +310,10 @@ class MainActivity : ComponentActivity() {
                                                 isTwoPane = isTwoPane,
                                                 snackbarHostState = snackbarHostState,
                                                 dispatcherProvider = dispatcherProvider
-                                            ) { item -> bottomSheetItem = item }
+                                            ) { item ->
+                                                bottomSheetItem = item
+                                                scope.launch { bottomSheetState.show() }
+                                            }
                                         }
                                         composable(
                                             Screen.Network.route,
@@ -325,7 +329,10 @@ class MainActivity : ComponentActivity() {
                                                 isTwoPane = isTwoPane,
                                                 snackbarHostState = snackbarHostState,
                                                 dispatcherProvider = dispatcherProvider
-                                            ) { item -> bottomSheetItem = item }
+                                            ) { item ->
+                                                bottomSheetItem = item
+                                                scope.launch { bottomSheetState.show() }
+                                            }
                                         }
                                         composable(
                                             Screen.Software.route,
@@ -341,7 +348,10 @@ class MainActivity : ComponentActivity() {
                                                 isTwoPane = isTwoPane,
                                                 snackbarHostState = snackbarHostState,
                                                 dispatcherProvider = dispatcherProvider
-                                            ) { item -> bottomSheetItem = item }
+                                            ) { item ->
+                                                bottomSheetItem = item
+                                                scope.launch { bottomSheetState.show() }
+                                            }
                                         }
                                         composable(
                                             Screen.Hardware.route,
@@ -357,7 +367,10 @@ class MainActivity : ComponentActivity() {
                                                 isTwoPane = isTwoPane,
                                                 snackbarHostState = snackbarHostState,
                                                 dispatcherProvider = dispatcherProvider
-                                            ) { item -> bottomSheetItem = item }
+                                            ) { item ->
+                                                bottomSheetItem = item
+                                                scope.launch { bottomSheetState.show() }
+                                            }
                                         }
                                         composable(Screen.Search.route) {
                                             appBarVisible = false
@@ -367,7 +380,10 @@ class MainActivity : ComponentActivity() {
                                                 query = searchBarQuery,
                                                 snackbarHostState = snackbarHostState,
                                                 dispatcherProvider = dispatcherProvider
-                                            ) { item -> bottomSheetItem = item }
+                                            ) { item ->
+                                                bottomSheetItem = item
+                                                scope.launch { bottomSheetState.show() }
+                                            }
                                         }
                                         composable(Screen.Settings.route) {
                                             appBarVisible = true

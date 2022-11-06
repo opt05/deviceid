@@ -59,11 +59,11 @@ fun TabDetailScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            LoadingScreen(isVisible = status is TabDetailStatus.Loading) {
                 ErrorScreen(isVisible = status is TabDetailStatus.Error) {
-                    if (status is TabDetailStatus.Success)
-                        ResultsScreen(item = (status as TabDetailStatus.Success).item)
-                }
+                    LoadingScreen(isVisible = status is TabDetailStatus.Loading) {
+                        if (status is TabDetailStatus.Success)
+                            ResultsScreen(item = (status as TabDetailStatus.Success).item)
+                    }
             }
         }
     }
@@ -119,11 +119,15 @@ private fun ResultsScreen(item: Item) {
 @Composable
 private fun LoadingScreen(isVisible: Boolean, content: @Composable () -> Unit) {
     Crossfade(targetState = isVisible) {
-        if (it) CircularProgressIndicator(
-            modifier = Modifier.testTag(TAB_DETAIL_TEST_TAG_PROGRESS),
-            color = MaterialTheme.colorScheme.secondary
-        )
-        else content()
+        if (it) Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier.testTag(TAB_DETAIL_TEST_TAG_PROGRESS),
+                color = MaterialTheme.colorScheme.secondary
+            )
+        } else content()
     }
 }
 
@@ -131,7 +135,10 @@ private fun LoadingScreen(isVisible: Boolean, content: @Composable () -> Unit) {
 private fun ErrorScreen(isVisible: Boolean, content: @Composable () -> Unit) {
     Crossfade(targetState = isVisible) {
         if (it) {
-            Column {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 Image(
                     modifier = Modifier
                         .padding(bottom = 8.dp)

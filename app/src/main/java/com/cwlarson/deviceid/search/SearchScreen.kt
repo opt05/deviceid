@@ -71,8 +71,9 @@ private fun MainContent(
 ) {
     var clickedItem by remember { mutableStateOf<Item?>(null) }
     clickedItem?.click(
-        snackbarHostState = snackbarHostState, forceRefresh = onForceRefresh
-    ) { onItemClick(it) }
+        snackbarHostState = snackbarHostState, forceRefresh = onForceRefresh,
+        showItemDetails = { onItemClick(it) }
+    )
     LazyColumn(
         modifier = Modifier
             .padding(horizontal = dimensionResource(id = R.dimen.activity_horizontal_margin_search))
@@ -91,7 +92,7 @@ private fun MainContent(
         }
         when (status) {
             is TabDataStatus.Success -> items(status.list) { item ->
-                ItemListItem(item = item) { clickedItem = item }
+                ItemListItem(item = item) { clickedItem = null; clickedItem = item }
                 Divider(modifier = Modifier.testTag(SEARCH_TEST_TAG_DIVIDER))
             }
             else -> items(emptyList<Item>()) { }

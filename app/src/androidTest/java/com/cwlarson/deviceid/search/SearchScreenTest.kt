@@ -59,7 +59,8 @@ class SearchScreenTest {
             AppTheme {
                 SearchScreen(
                     appBarSize = 0, query = "test",
-                    snackbarHostState = remember { SnackbarHostState() }
+                    snackbarHostState = remember { SnackbarHostState() },
+                    dispatcherProvider = dispatcherProvider
                 ) { clickedItem = it }
             }
         }

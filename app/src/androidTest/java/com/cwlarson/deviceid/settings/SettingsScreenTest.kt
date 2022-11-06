@@ -56,7 +56,13 @@ class SettingsScreenTest {
         every { preferenceManager.userPreferencesFlow } returns dataPreferences
         every { appUpdateUtils.updateState } returns dataUpdateState
         every { appUpdateUtils.installState } returns dataInstallState
-        composeTestRule.setContent { AppTheme { SettingsScreen(appUpdateUtils = appUpdateUtils) } }
+        composeTestRule.setContent {
+            AppTheme {
+                SettingsScreen(
+                    appUpdateUtils = appUpdateUtils, dispatcherProvider = dispatcherProvider
+                )
+            }
+        }
     }
 
     //TODO Icon checking...

@@ -139,7 +139,7 @@ dependencies {
     testImplementation("io.mockk:mockk:$mockkVersion")
     testImplementation("io.mockk:mockk-agent-jvm:$mockkVersion")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion")
-    testImplementation("app.cash.turbine:turbine:0.12.0")
+    testImplementation("app.cash.turbine:turbine:0.12.1")
     testImplementation(composeBom)
     testImplementation("androidx.compose.ui:ui-test-junit4")
     // Robolectric Testing

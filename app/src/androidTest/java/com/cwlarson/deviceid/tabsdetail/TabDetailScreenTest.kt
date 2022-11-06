@@ -70,11 +70,11 @@ class TabDetailScreenTest {
             AppTheme {
                 clipboardManager = LocalClipboardManager.current
                 TabDetailScreen(
-                    Item(
+                    item = Item(
                         title = R.string.app_name,
                         itemType = ItemType.DEVICE,
                         subtitle = ItemSubtitle.Text("subtitle")
-                    )
+                    ), dispatcherProvider = dispatcherProvider
                 )
             }
         }

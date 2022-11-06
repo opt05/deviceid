@@ -83,7 +83,8 @@ class TabScreenTest {
                     })) {
                         TabScreen(
                             appBarSize = 0, isTwoPane = false,
-                            snackbarHostState = remember { SnackbarHostState() }
+                            snackbarHostState = remember { SnackbarHostState() },
+                            dispatcherProvider = dispatcherProvider
                         ) { item -> clickedItem = item }
                     }
                 }
