@@ -8,8 +8,12 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
@@ -33,9 +37,6 @@ import com.cwlarson.deviceid.ui.theme.AppTheme
 import com.cwlarson.deviceid.ui.util.click
 import com.cwlarson.deviceid.util.DispatcherProvider
 import com.cwlarson.deviceid.util.collectAsStateWithLifecycle
-import com.google.accompanist.swiperefresh.SwipeRefresh
-import com.google.accompanist.swiperefresh.SwipeRefreshIndicator
-import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 
 @VisibleForTesting
 const val TAB_TEST_TAG_LIST = "tab_list"
@@ -96,25 +97,23 @@ fun TabScreenMainPreview() = AppTheme {
     ) { }
 }
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 private fun MainContent(
     appBarSize: Int, isTwoPane: Boolean, refreshDisabled: Boolean,
     snackbarHostState: SnackbarHostState, status: TabDataStatus,
     onForceRefresh: () -> Unit, onItemClick: (item: Item) -> Unit
 ) {
-    val swipeRefreshState = rememberSwipeRefreshState(status is TabDataStatus.Loading)
+    //FIXME: Bug with pullRefresh staying on screen, will be fixed with Compose 1.4.0-alpha03+
+    val swipeRefreshState = rememberPullRefreshState(
+        refreshing = status is TabDataStatus.Loading, onRefresh = onForceRefresh
+    )
     var clickedItem by remember { mutableStateOf<Item?>(null) }
     clickedItem?.click(
         snackbarHostState = snackbarHostState, forceRefresh = onForceRefresh,
         showItemDetails = { onItemClick(it) }
     )
-    SwipeRefresh(state = swipeRefreshState, onRefresh = onForceRefresh,
-        swipeEnabled = !refreshDisabled, indicator = { state, trigger ->
-            SwipeRefreshIndicator(
-                state = state, refreshTriggerDistance = trigger,
-                contentColor = MaterialTheme.colorScheme.secondary, scale = true
-            )
-        }) {
+    Box(modifier = Modifier.pullRefresh(state = swipeRefreshState, enabled = !refreshDisabled)) {
         LazyVerticalGrid(
             modifier = Modifier
                 .fillMaxHeight()
@@ -137,6 +136,11 @@ private fun MainContent(
                 else -> items(emptyList<Item>()) { }
             }
         }
+        PullRefreshIndicator(
+            refreshing = status is TabDataStatus.Loading, state = swipeRefreshState,
+            modifier = Modifier.align(Alignment.TopCenter),
+            contentColor = MaterialTheme.colorScheme.secondary, scale = true
+        )
     }
 }
 

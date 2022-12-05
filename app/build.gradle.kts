@@ -66,10 +66,10 @@ android {
 val coroutinesVersion = "1.6.4"
 val hiltVersion: String by rootProject.extra
 val lifecycleVersion = "2.5.1"
-val composeBom = dependencies.platform("androidx.compose:compose-bom:2022.10.00")
-val composeAccompanistVersion = "0.27.0"
+val composeBom = dependencies.platform("androidx.compose:compose-bom:2022.11.00")
+val composeAccompanistVersion = "0.28.0"
 val datastoreVersion = "1.0.0"
-val mockkVersion = "1.13.2"
+val mockkVersion = "1.13.3"
 dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutinesVersion")
@@ -100,7 +100,6 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     // Compose Accompanist
     implementation("com.google.accompanist:accompanist-systemuicontroller:$composeAccompanistVersion")
-    implementation("com.google.accompanist:accompanist-swiperefresh:$composeAccompanistVersion")
     implementation("com.google.accompanist:accompanist-permissions:$composeAccompanistVersion")
     // Lifecycle
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycleVersion")
@@ -112,8 +111,7 @@ dependencies {
     //Navigation
     implementation("androidx.navigation:navigation-compose:2.5.3")
     // Google Play App Updates
-    implementation("com.google.android.play:core:1.10.3")
-    implementation("com.google.android.play:core-ktx:1.8.1")
+    implementation("com.google.android.play:app-update-ktx:2.0.1")
     // Timber
     implementation("com.jakewharton.timber:timber:5.0.1")
     // Hilt
@@ -123,16 +121,16 @@ dependencies {
     androidTestImplementation("com.google.dagger:hilt-android-testing:$hiltVersion")
     kaptAndroidTest("com.google.dagger:hilt-android-compiler:$hiltVersion")
     // Instrumentation Testing
-    androidTestImplementation("androidx.test:core-ktx:1.5.0-rc01")
-    androidTestImplementation("androidx.test:runner:1.5.0-rc01")
+    androidTestImplementation("androidx.test:core-ktx:1.5.0")
+    androidTestImplementation("androidx.test:runner:1.5.1")
     androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion")
     androidTestImplementation(composeBom)
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     androidTestImplementation("io.mockk:mockk-android:$mockkVersion")
     //androidTestImplementation("io.mockk:mockk-agent-jvm:$mockkVersion")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.0-rc01")
-    androidTestImplementation("androidx.test.espresso:espresso-intents:3.5.0-rc01")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.0")
+    androidTestImplementation("androidx.test.espresso:espresso-intents:3.5.0")
     androidTestImplementation("androidx.test.uiautomator:uiautomator:2.2.0")
     // Unit Testing
     testImplementation("junit:junit:4.13.2")
@@ -144,8 +142,8 @@ dependencies {
     testImplementation("androidx.compose.ui:ui-test-junit4")
     // Robolectric Testing
     testImplementation("org.robolectric:robolectric:4.9")
-    testImplementation("androidx.test.ext:junit-ktx:1.1.4-rc01")
-    testImplementation("androidx.test:rules:1.5.0-rc01")
+    testImplementation("androidx.test.ext:junit-ktx:1.1.4")
+    testImplementation("androidx.test:rules:1.5.0")
     // LeakCanary
-    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.9.1")
+    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.10")
 }
