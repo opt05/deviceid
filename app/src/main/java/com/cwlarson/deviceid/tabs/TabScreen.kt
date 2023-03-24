@@ -30,13 +30,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.data.TabDataStatus
 import com.cwlarson.deviceid.ui.icons.noItemsIcon
 import com.cwlarson.deviceid.ui.theme.AppTheme
 import com.cwlarson.deviceid.ui.util.click
 import com.cwlarson.deviceid.util.DispatcherProvider
-import com.cwlarson.deviceid.util.collectAsStateWithLifecycle
 
 @VisibleForTesting
 const val TAB_TEST_TAG_LIST = "tab_list"
@@ -51,10 +51,10 @@ fun TabScreen(
     onItemClick: (item: Item) -> Unit
 ) {
     val status by viewModel.allItems.collectAsStateWithLifecycle(
-        dispatcherProvider = dispatcherProvider, initial = TabDataStatus.Loading
+        initialValue = TabDataStatus.Loading, context = dispatcherProvider.Main
     )
     val refreshDisabled by viewModel.refreshDisabled.collectAsStateWithLifecycle(
-        dispatcherProvider = dispatcherProvider, initial = true
+        initialValue = true, context = dispatcherProvider.Main
     )
     LoadingScreen(isVisible = status is TabDataStatus.Loading) {
         ErrorScreen(isVisible = status is TabDataStatus.Error) {
@@ -111,7 +111,7 @@ private fun MainContent(
     var clickedItem by remember { mutableStateOf<Item?>(null) }
     clickedItem?.click(
         snackbarHostState = snackbarHostState, forceRefresh = onForceRefresh,
-        showItemDetails = { onItemClick(it) }
+        showItemDetails = { clickedItem = null; onItemClick(it) }
     )
     Box(modifier = Modifier.pullRefresh(state = swipeRefreshState, enabled = !refreshDisabled)) {
         LazyVerticalGrid(

@@ -22,6 +22,7 @@ import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.toUpperCase
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.data.TabDataStatus
 import com.cwlarson.deviceid.tabs.Item
@@ -29,7 +30,6 @@ import com.cwlarson.deviceid.tabs.ItemListItem
 import com.cwlarson.deviceid.ui.icons.noItemsSearchIcon
 import com.cwlarson.deviceid.ui.util.click
 import com.cwlarson.deviceid.util.DispatcherProvider
-import com.cwlarson.deviceid.util.collectAsStateWithLifecycle
 
 @VisibleForTesting
 const val SEARCH_TEST_TAG_LIST = "search_list"
@@ -48,7 +48,7 @@ fun SearchScreen(
 ) {
     viewModel.setSearchText(query)
     val status by viewModel.allItems.collectAsStateWithLifecycle(
-        dispatcherProvider = dispatcherProvider, initial = TabDataStatus.Loading
+        initialValue = TabDataStatus.Loading, context = dispatcherProvider.Main
     )
     LoadingScreen(isVisible = status is TabDataStatus.Loading) {
         ErrorScreen(isVisible = status is TabDataStatus.Error) {
@@ -72,7 +72,7 @@ private fun MainContent(
     var clickedItem by remember { mutableStateOf<Item?>(null) }
     clickedItem?.click(
         snackbarHostState = snackbarHostState, forceRefresh = onForceRefresh,
-        showItemDetails = { onItemClick(it) }
+        showItemDetails = { clickedItem = null; onItemClick(it) }
     )
     LazyColumn(
         modifier = Modifier

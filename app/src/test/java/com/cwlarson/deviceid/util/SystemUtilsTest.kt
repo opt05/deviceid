@@ -115,7 +115,7 @@ class SystemUtilsTest {
     class TestClass {
         companion object {
             @JvmStatic
-            @Suppress("UNUSED_PARAMETER")
+            @Suppress("UNUSED_PARAMETER", "SameReturnValue")
             fun get(key: String): String = "lorem ipsum"
         }
     }

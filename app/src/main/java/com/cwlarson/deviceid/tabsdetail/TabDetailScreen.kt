@@ -23,13 +23,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.toUpperCase
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.data.TabDetailStatus
 import com.cwlarson.deviceid.tabs.Item
 import com.cwlarson.deviceid.ui.util.copyItemToClipboard
 import com.cwlarson.deviceid.ui.util.share
 import com.cwlarson.deviceid.util.DispatcherProvider
-import com.cwlarson.deviceid.util.collectAsStateWithLifecycle
 
 @VisibleForTesting
 const val TAB_DETAIL_TEST_TAG_PROGRESS = "tab_detail_progress"
@@ -37,33 +37,38 @@ const val TAB_DETAIL_TEST_TAG_PROGRESS = "tab_detail_progress"
 @VisibleForTesting
 const val TAB_DETAIL_TEST_TAG_RESULTS = "tab_detail_results"
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TabDetailScreen(
     item: Item?, dispatcherProvider: DispatcherProvider,
-    viewModel: TabsDetailViewModel = hiltViewModel())
-{
+    viewModel: TabsDetailViewModel = hiltViewModel(), onDismissRequest: () -> Unit
+) {
+    val bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     LaunchedEffect(key1 = item) { viewModel.updateCurrentItem(item) }
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(all = 16.dp)
-            .navigationBarsPadding(), contentAlignment = Alignment.TopCenter
+    ModalBottomSheet(
+        sheetState = bottomSheetState, onDismissRequest = onDismissRequest
     ) {
-        val status by viewModel.item.collectAsStateWithLifecycle(
-            dispatcherProvider = dispatcherProvider, initial = TabDetailStatus.Loading
-        )
-        Column(
+        Box(
             modifier = Modifier
-                .widthIn(max = 500.dp)
-                .heightIn(min = 150.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp), contentAlignment = Alignment.TopCenter
         ) {
+            val status by viewModel.item.collectAsStateWithLifecycle(
+                initialValue = TabDetailStatus.Loading, context = dispatcherProvider.Main
+            )
+            Column(
+                modifier = Modifier
+                    .widthIn(max = 500.dp)
+                    .heightIn(min = 150.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
                 ErrorScreen(isVisible = status is TabDetailStatus.Error) {
                     LoadingScreen(isVisible = status is TabDetailStatus.Loading) {
                         if (status is TabDetailStatus.Success)
                             ResultsScreen(item = (status as TabDetailStatus.Success).item)
                     }
+                }
             }
         }
     }

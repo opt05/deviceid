@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.ui.theme.AppTheme
 import com.cwlarson.deviceid.ui.util.ListItem
@@ -94,13 +95,13 @@ fun SettingsScreen(
 ) {
     val scope = rememberCoroutineScope()
     val values by viewModel.userPreferencesFlow.collectAsStateWithLifecycle(
-        dispatcherProvider = dispatcherProvider, initial = UserPreferences()
+        initialValue = UserPreferences(), context = dispatcherProvider.Main
     )
     val appUpdateState by appUpdateUtils.updateState.collectAsStateWithLifecycle(
-        dispatcherProvider = dispatcherProvider, initial = UpdateState.Initial
+        initialValue = UpdateState.Initial, context = dispatcherProvider.Main
     )
     val appInstallState by appUpdateUtils.installState.collectAsStateWithLifecycle(
-        dispatcherProvider = dispatcherProvider, initial = InstallState.Initial
+        initialValue = InstallState.Initial, context = dispatcherProvider.Main
     )
     LazyColumn(
         modifier = Modifier.padding(horizontal = dimensionResource(id = R.dimen.activity_horizontal_margin_search))

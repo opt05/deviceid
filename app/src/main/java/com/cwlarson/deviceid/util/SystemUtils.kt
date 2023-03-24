@@ -6,11 +6,6 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.compose.runtime.*
-import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.repeatOnLifecycle
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 /**
@@ -46,19 +41,4 @@ fun Context.systemProperty(key: String): String? = try {
     methodGet(systemProperties, key) as String
 } catch (e: Throwable) {
     null
-}
-
-@Composable
-fun <T : R, R> Flow<T>.collectAsStateWithLifecycle(
-    dispatcherProvider: DispatcherProvider, initial: R,
-    minActiveState: Lifecycle.State = Lifecycle.State.STARTED
-): State<R> {
-    val lifecycle = checkNotNull(LocalLifecycleOwner.current).lifecycle
-    return produceState(initial, this, lifecycle, minActiveState, dispatcherProvider.Main) {
-        lifecycle.repeatOnLifecycle(minActiveState) {
-            withContext(dispatcherProvider.Main) {
-                this@collectAsStateWithLifecycle.collect { this@produceState.value = it }
-            }
-        }
-    }
 }

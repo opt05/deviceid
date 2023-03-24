@@ -8,7 +8,6 @@ import android.content.pm.PermissionInfo
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -27,8 +26,10 @@ import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.tabs.Item
 import com.cwlarson.deviceid.tabs.ItemSubtitle
 import com.cwlarson.deviceid.tabs.ItemType
+import com.cwlarson.deviceid.testutils.CoroutineTestRule
 import com.cwlarson.deviceid.ui.util.*
 import io.mockk.*
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Rule
@@ -48,12 +49,18 @@ import org.robolectric.shadows.ShadowToast
 )
 class ComposeUtilsTest {
     @get:Rule
+    val coroutineRule = CoroutineTestRule()
+
+    @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
     private lateinit var context: Application
+    private lateinit var dispatcherProvider: DispatcherProvider
+
 
     @Before
     fun setup() {
         context = spyk(ApplicationProvider.getApplicationContext() as Application)
+        dispatcherProvider = DispatcherProvider.provideDispatcher(coroutineRule.dispatcher)
     }
 
     @Test
@@ -109,11 +116,11 @@ class ComposeUtilsTest {
     }
 
     @Test
-    fun test_IntentHandler_onNewIntent() {
+    fun test_IntentHandler_onNewIntent() = runTest {
         val intent = composeTestRule.activity.intent
             .apply { putExtra(Intent.EXTRA_TEXT, "test") }
         val handler = composeTestRule.runOnUiThread { IntentHandler(composeTestRule.activity) }
-        handler.onNewIntent(intent)
+        handler.onNewIntent(dispatcherProvider, intent)
         composeTestRule.setContent { handler.OnIntent { assertEquals(intent, it) } }
     }
 
@@ -374,7 +381,6 @@ class ComposeUtilsTest {
         verify { clickedDetails(item) }
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Suppress("TestFunctionName")
     @Composable
     private fun ComposableUnderTest(

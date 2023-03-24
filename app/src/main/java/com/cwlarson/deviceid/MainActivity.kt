@@ -15,19 +15,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.ModalBottomSheetLayout
-import androidx.compose.material.ModalBottomSheetValue
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.*
-import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.material3.*
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
@@ -58,6 +53,7 @@ import androidx.compose.ui.window.PopupProperties
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavController
@@ -136,9 +132,7 @@ const val MAIN_ACTIVITY_TEST_TAG_DUAL_PANE_NAV_SOFTWARE = "main_activity_dual_pa
 const val MAIN_ACTIVITY_TEST_TAG_DUAL_PANE_NAV_HARDWARE = "main_activity_dual_pane_nav_hardware"
 
 private sealed class Screen(
-    val route: String,
-    @StringRes val stringRes: Int,
-    val icon: ImageVector
+    val route: String, @StringRes val stringRes: Int, val icon: ImageVector
 ) {
     object Device :
         Screen("device", R.string.bottom_nav_title_device, Icons.Outlined.PermDeviceInformation)
@@ -157,7 +151,7 @@ private sealed class Screen(
 }
 
 @OptIn(
-    ExperimentalComposeUiApi::class, ExperimentalMaterialApi::class,
+    ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class,
     ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class
 )
 @AndroidEntryPoint
@@ -182,19 +176,19 @@ class MainActivity : ComponentActivity() {
             lifecycleScope.launch(dispatcherProvider.Main) { appUpdateUtils.checkForFlexibleUpdate() }
         }
         setContent {
-            val scope = rememberCoroutineScope()
             val isTwoPane =
                 calculateWindowSizeClass(this).widthSizeClass > WindowWidthSizeClass.Compact
             viewModel.startTitleFade(isTwoPane, intent)
+            var showBottomSheet by rememberSaveable { mutableStateOf(false) }
             var showUpdateDialog by rememberSaveable { mutableStateOf(false) }
             var updateDialogTitle by rememberSaveable { mutableStateOf(0) }
             var updateDialogMessage by rememberSaveable { mutableStateOf(0) }
             var updateDialogButton by rememberSaveable { mutableStateOf(0) }
             val installState by appUpdateUtils.installState.collectAsStateWithLifecycle(
-                dispatcherProvider = dispatcherProvider, initial = InstallState.Initial
+                initialValue = InstallState.Initial, context = dispatcherProvider.Main
             )
             val updateState by appUpdateUtils.updateState.collectAsStateWithLifecycle(
-                dispatcherProvider = dispatcherProvider, initial = UpdateState.Initial
+                initialValue = UpdateState.Initial, context = dispatcherProvider.Main
             )
             with(updateState) {
                 if (this is UpdateState.No) {
@@ -202,11 +196,10 @@ class MainActivity : ComponentActivity() {
                     updateDialogTitle = title
                     updateDialogMessage = message
                     updateDialogButton = button
-
                 }
             }
             val darkTheme by viewModel.darkTheme.collectAsStateWithLifecycle(
-                dispatcherProvider = dispatcherProvider, initial = null
+                initialValue = null, context = dispatcherProvider.Main
             )
             AppTheme(darkTheme = darkTheme ?: isSystemInDarkTheme()) {
                 var appBarVisible by rememberSaveable { mutableStateOf(false) }
@@ -221,228 +214,213 @@ class MainActivity : ComponentActivity() {
                     )
                     systemUiController.setStatusBarColor(statusBarColor, darkIcons = useDarkIcons)
                 }
-                var bottomSheetItem by rememberSaveable { mutableStateOf<Item?>(null) }
-                val bottomSheetState =
-                    rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden) {
-                        if (it == ModalBottomSheetValue.Hidden) bottomSheetItem = null
-                        keyboardController?.hide()
-                        true
-                    }
                 var isSideNavVisible by rememberSaveable { mutableStateOf(true) }
                 var searchBarQuery by rememberSaveable { mutableStateOf("") }
                 var isSearchOpen by rememberSaveable { mutableStateOf(false) }
                 var topSearchBarSize by remember { mutableStateOf(0) }
                 val snackbarHostState = remember { SnackbarHostState() }
                 val navController = rememberNavController()
-                ModalBottomSheetLayout(sheetState = bottomSheetState,
-                    sheetShape = MaterialTheme.shapes.extraLarge.copy(
-                        bottomStart = CornerSize(0.0.dp), bottomEnd = CornerSize(0.0.dp)
-                    ), sheetContent = {
-                        TabDetailScreen(
-                            item = bottomSheetItem, dispatcherProvider = dispatcherProvider
-                        )
-                    }) {
-                    Scaffold(
-                        snackbarHost = { SnackbarHost(snackbarHostState) },
-                        topBar = {
-                            if (appBarVisible) TopAppBar(
-                                modifier = Modifier.testTag(MAIN_ACTIVITY_TEST_TAG_TOOLBAR),
-                                title = {
-                                    Text(
-                                        stringResource(
-                                            when (navController.currentDestination?.route) {
-                                                Screen.Settings.route -> Screen.Settings.stringRes
-                                                else -> R.string.app_name
-                                            }
-                                        )
+                var bottomSheetItem by rememberSaveable { mutableStateOf<Item?>(null) }
+                Scaffold(
+                    snackbarHost = { SnackbarHost(snackbarHostState) },
+                    topBar = {
+                        if (appBarVisible) TopAppBar(
+                            modifier = Modifier.testTag(MAIN_ACTIVITY_TEST_TAG_TOOLBAR),
+                            title = {
+                                Text(
+                                    stringResource(
+                                        when (navController.currentDestination?.route) {
+                                            Screen.Settings.route -> Screen.Settings.stringRes
+                                            else -> R.string.app_name
+                                        }
                                     )
-                                }, navigationIcon = {
-                                    if (navController.backQueue.size > 1)
-                                        IconButton(
-                                            modifier = Modifier.testTag(
-                                                MAIN_ACTIVITY_TEST_TAG_TOOLBAR_BACK
-                                            ),
-                                            onClick = { navController.navigateUp() }) {
-                                            Icon(
-                                                imageVector = Icons.Outlined.ArrowBack,
-                                                contentDescription = stringResource(R.string.menu_back)
-                                            )
-                                        }
-                                }
-                            )
-                        }, bottomBar = {
-                            if (!isTwoPane) BottomAppBar(
-                                appBarVisible = appBarVisible, isSearchOpen = isSearchOpen,
-                                navController = navController, items = navigationItems
-                            )
-                        }
-                    ) { innerPadding ->
-                        Row(modifier = Modifier.fillMaxSize()) {
-                            DualPaneNavigationView(
-                                items = navigationItems, navController = navController,
-                                isVisible = isSideNavVisible, isTwoPane = isTwoPane
-                            ) {
-                                Box(
-                                    modifier = if (!isTwoPane) Modifier.padding(innerPadding) else
-                                        Modifier.padding(
-                                            top = innerPadding.calculateTopPadding(),
-                                            start = innerPadding.calculateStartPadding
-                                                (LocalLayoutDirection.current),
-                                            end = innerPadding.calculateEndPadding
-                                                (LocalLayoutDirection.current)
+                                )
+                            }, navigationIcon = {
+                                if (navController.backQueue.size > 1)
+                                    IconButton(
+                                        modifier = Modifier.testTag(
+                                            MAIN_ACTIVITY_TEST_TAG_TOOLBAR_BACK
+                                        ),
+                                        onClick = { navController.navigateUp() }) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.ArrowBack,
+                                            contentDescription = stringResource(R.string.menu_back)
                                         )
+                                    }
+                            }
+                        )
+                    }, bottomBar = {
+                        if (!isTwoPane) BottomAppBar(
+                            appBarVisible = appBarVisible, isSearchOpen = isSearchOpen,
+                            navController = navController, items = navigationItems
+                        )
+                    }
+                ) { innerPadding ->
+                    Row(modifier = Modifier.fillMaxSize()) {
+                        DualPaneNavigationView(
+                            items = navigationItems, navController = navController,
+                            isVisible = isSideNavVisible, isTwoPane = isTwoPane
+                        ) {
+                            Box(
+                                modifier = if (!isTwoPane) Modifier.padding(innerPadding) else
+                                    Modifier.padding(
+                                        top = innerPadding.calculateTopPadding(),
+                                        start = innerPadding.calculateStartPadding
+                                            (LocalLayoutDirection.current),
+                                        end = innerPadding.calculateEndPadding
+                                            (LocalLayoutDirection.current)
+                                    )
+                            ) {
+                                NavHost(
+                                    navController, startDestination = Screen.Device.route,
+                                    modifier = Modifier.fillMaxSize()
                                 ) {
-                                    NavHost(
-                                        navController, startDestination = Screen.Device.route,
-                                        modifier = Modifier.fillMaxSize()
+                                    composable(
+                                        Screen.Device.route,
+                                        arguments = listOf(navArgument("tab") {
+                                            type = NavType.EnumType(ItemType::class.java)
+                                            defaultValue = ItemType.DEVICE
+                                        })
                                     ) {
-                                        composable(
-                                            Screen.Device.route,
-                                            arguments = listOf(navArgument("tab") {
-                                                type = NavType.EnumType(ItemType::class.java)
-                                                defaultValue = ItemType.DEVICE
-                                            })
-                                        ) {
-                                            appBarVisible = false
-                                            isSideNavVisible = true
-                                            TabScreen(
-                                                appBarSize = topSearchBarSize,
-                                                isTwoPane = isTwoPane,
-                                                snackbarHostState = snackbarHostState,
-                                                dispatcherProvider = dispatcherProvider
-                                            ) { item ->
-                                                bottomSheetItem = item
-                                                scope.launch { bottomSheetState.show() }
-                                            }
-                                        }
-                                        composable(
-                                            Screen.Network.route,
-                                            arguments = listOf(navArgument("tab") {
-                                                type = NavType.EnumType(ItemType::class.java)
-                                                defaultValue = ItemType.NETWORK
-                                            })
-                                        ) {
-                                            appBarVisible = false
-                                            isSideNavVisible = true
-                                            TabScreen(
-                                                appBarSize = topSearchBarSize,
-                                                isTwoPane = isTwoPane,
-                                                snackbarHostState = snackbarHostState,
-                                                dispatcherProvider = dispatcherProvider
-                                            ) { item ->
-                                                bottomSheetItem = item
-                                                scope.launch { bottomSheetState.show() }
-                                            }
-                                        }
-                                        composable(
-                                            Screen.Software.route,
-                                            arguments = listOf(navArgument("tab") {
-                                                type = NavType.EnumType(ItemType::class.java)
-                                                defaultValue = ItemType.SOFTWARE
-                                            })
-                                        ) {
-                                            appBarVisible = false
-                                            isSideNavVisible = true
-                                            TabScreen(
-                                                appBarSize = topSearchBarSize,
-                                                isTwoPane = isTwoPane,
-                                                snackbarHostState = snackbarHostState,
-                                                dispatcherProvider = dispatcherProvider
-                                            ) { item ->
-                                                bottomSheetItem = item
-                                                scope.launch { bottomSheetState.show() }
-                                            }
-                                        }
-                                        composable(
-                                            Screen.Hardware.route,
-                                            arguments = listOf(navArgument("tab") {
-                                                type = NavType.EnumType(ItemType::class.java)
-                                                defaultValue = ItemType.HARDWARE
-                                            })
-                                        ) {
-                                            appBarVisible = false
-                                            isSideNavVisible = true
-                                            TabScreen(
-                                                appBarSize = topSearchBarSize,
-                                                isTwoPane = isTwoPane,
-                                                snackbarHostState = snackbarHostState,
-                                                dispatcherProvider = dispatcherProvider
-                                            ) { item ->
-                                                bottomSheetItem = item
-                                                scope.launch { bottomSheetState.show() }
-                                            }
-                                        }
-                                        composable(Screen.Search.route) {
-                                            appBarVisible = false
-                                            isSideNavVisible = false
-                                            SearchScreen(
-                                                appBarSize = topSearchBarSize,
-                                                query = searchBarQuery,
-                                                snackbarHostState = snackbarHostState,
-                                                dispatcherProvider = dispatcherProvider
-                                            ) { item ->
-                                                bottomSheetItem = item
-                                                scope.launch { bottomSheetState.show() }
-                                            }
-                                        }
-                                        composable(Screen.Settings.route) {
-                                            appBarVisible = true
-                                            isSideNavVisible = false
-                                            SettingsScreen(
-                                                dispatcherProvider = dispatcherProvider,
-                                                appUpdateUtils = appUpdateUtils
-                                            )
+                                        appBarVisible = false
+                                        isSideNavVisible = true
+                                        TabScreen(
+                                            appBarSize = topSearchBarSize,
+                                            isTwoPane = isTwoPane,
+                                            snackbarHostState = snackbarHostState,
+                                            dispatcherProvider = dispatcherProvider
+                                        ) { item ->
+                                            bottomSheetItem = item
+                                            showBottomSheet = true
                                         }
                                     }
-
-                                    if (!appBarVisible)
-                                        SearchView(
-                                            navController = navController,
-                                            dispatcherProvider = dispatcherProvider,
-                                            modifier = Modifier.onSizeChanged {
-                                                topSearchBarSize = it.height
-                                            },
-                                            isSearchOpen = isSearchOpen,
+                                    composable(
+                                        Screen.Network.route,
+                                        arguments = listOf(navArgument("tab") {
+                                            type = NavType.EnumType(ItemType::class.java)
+                                            defaultValue = ItemType.NETWORK
+                                        })
+                                    ) {
+                                        appBarVisible = false
+                                        isSideNavVisible = true
+                                        TabScreen(
+                                            appBarSize = topSearchBarSize,
                                             isTwoPane = isTwoPane,
-                                            searchBarQuery = searchBarQuery,
-                                            viewModel = viewModel,
-                                            keyboardController = keyboardController,
-                                            onSearchOpen = {
-                                                isSearchOpen = it
-                                                if (it && navController.currentBackStackEntry?.destination?.route != Screen.Search.route)
-                                                    navController.navigate(Screen.Search.route)
-                                                else if (!it && navController.currentBackStackEntry?.destination?.route == Screen.Search.route)
-                                                    navController.navigateUp()
-                                            }) { searchBarQuery = it }
-
-                                    intentHandler.OnIntent { intent ->
-                                        if (intent?.action == Intent.ACTION_SEARCH) {
-                                            isSearchOpen = true
-                                            navController.navigate(Screen.Search.route)
+                                            snackbarHostState = snackbarHostState,
+                                            dispatcherProvider = dispatcherProvider
+                                        ) { item ->
+                                            bottomSheetItem = item
+                                            showBottomSheet = true
                                         }
+                                    }
+                                    composable(
+                                        Screen.Software.route,
+                                        arguments = listOf(navArgument("tab") {
+                                            type = NavType.EnumType(ItemType::class.java)
+                                            defaultValue = ItemType.SOFTWARE
+                                        })
+                                    ) {
+                                        appBarVisible = false
+                                        isSideNavVisible = true
+                                        TabScreen(
+                                            appBarSize = topSearchBarSize,
+                                            isTwoPane = isTwoPane,
+                                            snackbarHostState = snackbarHostState,
+                                            dispatcherProvider = dispatcherProvider
+                                        ) { item ->
+                                            bottomSheetItem = item
+                                            showBottomSheet = true
+                                        }
+                                    }
+                                    composable(
+                                        Screen.Hardware.route,
+                                        arguments = listOf(navArgument("tab") {
+                                            type = NavType.EnumType(ItemType::class.java)
+                                            defaultValue = ItemType.HARDWARE
+                                        })
+                                    ) {
+                                        appBarVisible = false
+                                        isSideNavVisible = true
+                                        TabScreen(
+                                            appBarSize = topSearchBarSize,
+                                            isTwoPane = isTwoPane,
+                                            snackbarHostState = snackbarHostState,
+                                            dispatcherProvider = dispatcherProvider
+                                        ) { item ->
+                                            bottomSheetItem = item
+                                            showBottomSheet = true
+                                        }
+                                    }
+                                    composable(Screen.Search.route) {
+                                        appBarVisible = false
+                                        isSideNavVisible = false
+                                        SearchScreen(
+                                            appBarSize = topSearchBarSize,
+                                            query = searchBarQuery,
+                                            snackbarHostState = snackbarHostState,
+                                            dispatcherProvider = dispatcherProvider
+                                        ) { item ->
+                                            bottomSheetItem = item
+                                            showBottomSheet = true
+                                        }
+                                    }
+                                    composable(Screen.Settings.route) {
+                                        appBarVisible = true
+                                        isSideNavVisible = false
+                                        SettingsScreen(
+                                            dispatcherProvider = dispatcherProvider,
+                                            appUpdateUtils = appUpdateUtils
+                                        )
+                                    }
+                                }
+
+                                if (!appBarVisible)
+                                    SearchView(
+                                        navController = navController,
+                                        dispatcherProvider = dispatcherProvider,
+                                        modifier = Modifier.onSizeChanged {
+                                            topSearchBarSize = it.height
+                                        }, isSearchOpen = isSearchOpen, isTwoPane = isTwoPane,
+                                        searchBarQuery = searchBarQuery, viewModel = viewModel,
+                                        keyboardController = keyboardController, onSearchOpen = {
+                                            isSearchOpen = it
+                                            if (it && navController.currentBackStackEntry?.destination?.route != Screen.Search.route)
+                                                navController.navigate(Screen.Search.route)
+                                            else if (!it && navController.currentBackStackEntry?.destination?.route == Screen.Search.route)
+                                                navController.navigateUp()
+                                        }) { searchBarQuery = it }
+
+                                intentHandler.OnIntent { intent ->
+                                    if (intent?.action == Intent.ACTION_SEARCH) {
+                                        isSearchOpen = true
+                                        navController.navigate(Screen.Search.route)
                                     }
                                 }
                             }
                         }
                     }
+                }
 
-                    FlexibleUpdateDialog(
-                        showUpdateDialog, updateDialogTitle,
-                        updateDialogMessage, updateDialogButton
-                    ) { showUpdateDialog = false }
+                if(showBottomSheet) TabDetailScreen(
+                    item = bottomSheetItem, dispatcherProvider = dispatcherProvider
+                ) { showBottomSheet = false }
 
-                    with(installState) {
-                        if (this is InstallState.NoError) {
-                            when (status) {
-                                InstallStatus.DOWNLOADED ->
-                                    FlexibleUpdateDownloadedSnackbar(snackbarHostState)
-                                InstallStatus.FAILED ->
-                                    FlexibleInstallFailedSnackbar(snackbarHostState)
-                                else -> { /* Do nothing */
-                                }
+                FlexibleUpdateDialog(
+                    showUpdateDialog, updateDialogTitle,
+                    updateDialogMessage, updateDialogButton
+                ) { showUpdateDialog = false }
+
+                with(installState) {
+                    if (this is InstallState.NoError) {
+                        when (status) {
+                            InstallStatus.DOWNLOADED ->
+                                FlexibleUpdateDownloadedSnackbar(snackbarHostState)
+                            InstallStatus.FAILED ->
+                                FlexibleInstallFailedSnackbar(snackbarHostState)
+                            else -> { /* Do nothing */
                             }
-                        } else FlexibleUpdateDownloadedSnackbar(snackbarHostState)
-                    }
+                        }
+                    } else FlexibleUpdateDownloadedSnackbar(snackbarHostState)
                 }
             }
         }
@@ -492,18 +470,16 @@ class MainActivity : ComponentActivity() {
     private fun FlexibleUpdateDialog(
         showDialog: Boolean, title: Int, message: Int, button: Int, onDismiss: () -> Unit
     ) {
-        if (showDialog)
-            AlertDialog(onDismissRequest = { onDismiss() },
-                title = { Text(stringResource(title)) },
-                text = { Text(stringResource(message)) },
-                confirmButton = {
-                    TextButton(onClick = { onDismiss() }) { Text(stringResource(button)) }
-                })
+        if (showDialog) AlertDialog(onDismissRequest = { onDismiss() },
+            title = { Text(stringResource(title)) }, text = { Text(stringResource(message)) },
+            confirmButton = {
+                TextButton(onClick = { onDismiss() }) { Text(stringResource(button)) }
+            })
     }
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
-        intentHandler.onNewIntent(intent)
+        intentHandler.onNewIntent(dispatcherProvider = dispatcherProvider, intent = intent)
     }
 }
 
@@ -517,14 +493,14 @@ private fun SearchView(
     onSearchQueryChange: (String) -> Unit
 ) {
     val titleVisibility by viewModel.titleVisibility.collectAsStateWithLifecycle(
-        dispatcherProvider = dispatcherProvider,
-        initial = TitleVisibility(visible = true, noFade = false)
+        initialValue = TitleVisibility(visible = true, noFade = false),
+        context = dispatcherProvider.Main
     )
     val state by viewModel.isSearchHistory.collectAsStateWithLifecycle(
-        dispatcherProvider = dispatcherProvider, initial = false
+        initialValue = false, context = dispatcherProvider.Main
     )
     val items by viewModel.getSearchHistoryItems(searchBarQuery)
-        .collectAsStateWithLifecycle(dispatcherProvider = dispatcherProvider, initial = emptyList())
+        .collectAsStateWithLifecycle(initialValue = emptyList(), context = dispatcherProvider.Main)
     val focusRequesterTextField = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     var forceCloseDropdown by rememberSaveable { mutableStateOf(false) }
@@ -537,9 +513,8 @@ private fun SearchView(
                 vertical = 8.dp
             )
             .onGloballyPositioned { layoutCoordinates -> rowSize = layoutCoordinates.size.toSize() }
-            .testTag(MAIN_ACTIVITY_TEST_TAG_SEARCH), elevation = CardDefaults.cardElevation(
-            defaultElevation = 4.dp
-        )
+            .testTag(MAIN_ACTIVITY_TEST_TAG_SEARCH),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Box(contentAlignment = Alignment.Center) {
             Row(
@@ -604,12 +579,11 @@ private fun SearchView(
                 if (!isSearchOpen) {
                     onSearchQueryChange("")
                     focusManager.clearFocus(true)
-                } else if (!forceCloseDropdown)
-                    DisposableEffect(Unit) {
-                        focusRequesterTextField.requestFocus()
-                        keyboardController?.show()
-                        onDispose { }
-                    }
+                } else if (!forceCloseDropdown) DisposableEffect(Unit) {
+                    focusRequesterTextField.requestFocus()
+                    keyboardController?.show()
+                    onDispose { }
+                }
             }
             if (state)
                 SearchViewHistory(items, rowSize, isSearchOpen && !forceCloseDropdown) { query ->
@@ -618,12 +592,11 @@ private fun SearchView(
                     forceCloseDropdown = true
                 }
             Crossfade(targetState = titleVisibility.visible) {
-                if (it)
-                    Text(
-                        stringResource(id = R.string.app_name),
-                        color = MaterialTheme.colorScheme.secondary,
-                        style = MaterialTheme.typography.titleLarge
-                    )
+                if (it) Text(
+                    stringResource(id = R.string.app_name),
+                    color = MaterialTheme.colorScheme.secondary,
+                    style = MaterialTheme.typography.titleLarge
+                )
             }
         }
     }

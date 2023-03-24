@@ -16,10 +16,10 @@ This is a repository for the Device Info Android app that displays specific info
 
 ## Build Tools
 
-* Android Studio Dolphin (Gradle 7.4)
+* Android Studio Electric Eel (Gradle 7.5)
 * AndroidX/Jetpack
 * Android 5.0 (API 21) or above (built against 13/API 33)
-* Kotlin 1.7
+* Kotlin 1.8
 
 ## Android Permissions
 

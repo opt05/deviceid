@@ -24,14 +24,13 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.DefaultLifecycleObserver
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.*
 import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.tabs.Item
 import com.cwlarson.deviceid.tabs.ItemSubtitle
 import com.cwlarson.deviceid.ui.theme.AppTheme
 import com.cwlarson.deviceid.util.AppPermission
+import com.cwlarson.deviceid.util.DispatcherProvider
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionStatus
 import com.google.accompanist.permissions.rememberPermissionState
@@ -40,6 +39,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.onSubscription
+import kotlinx.coroutines.launch
 
 @Composable
 fun AppPermission.loadPermissionLabel(context: Context = LocalContext.current): CharSequence =
@@ -83,11 +83,15 @@ class IntentHandler(private val activity: ComponentActivity) : DefaultLifecycleO
     }
 
     /**
-     * Call in [android.app.Activity.onNewIntent]
+     * Call in [ComponentActivity.onNewIntent]
      */
-    fun onNewIntent(intent: Intent?) {
+    fun onNewIntent(dispatcherProvider: DispatcherProvider, intent: Intent?) {
         activity.intent = intent
-        activity.lifecycleScope.launchWhenCreated { intent?.let { intentFlow.emit(it) } }
+        activity.lifecycleScope.launch(dispatcherProvider.Main) {
+            activity.repeatOnLifecycle(Lifecycle.State.CREATED) {
+                intent?.let { intentFlow.emit(it) }
+            }
+        }
     }
 
 

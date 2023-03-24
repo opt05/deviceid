@@ -154,8 +154,7 @@ class SettingsScreenTest {
     fun test_theme_click_displaysDialog() = runTest(dispatcher) {
         val array = composeTestRule.activity.resources.getStringArray(R.array.pref_daynight_mode_entries)
         composeTestRule.onNodeWithTag(SETTINGS_TEST_TAG_LIST_ITEM_THEME).performClick()
-        composeTestRule.onNodeWithTag(SETTINGS_TEST_TAG_DIALOG).assertIsDisplayed()
-            .onChildren().filterToOne(hasText("Choose theme")).assertIsDisplayed()
+        composeTestRule.onNode(hasText("Choose theme") and hasAnyAncestor(isDialog())).assertIsDisplayed()
         composeTestRule.onNodeWithTag(SETTINGS_TEST_TAG_DIALOG_LIST).assertIsDisplayed().apply {
             onChildren().filterToOne(hasText(array[0])).assertIsNotSelected()
             onChildren().filterToOne(hasText(array[1])).assertIsNotSelected()
