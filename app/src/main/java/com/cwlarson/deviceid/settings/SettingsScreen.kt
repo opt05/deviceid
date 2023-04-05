@@ -4,6 +4,7 @@ import androidx.annotation.ArrayRes
 import androidx.annotation.StringRes
 import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -11,9 +12,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -32,7 +33,9 @@ import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cwlarson.deviceid.R
+import com.cwlarson.deviceid.ui.theme.AppTheme
 import com.cwlarson.deviceid.ui.util.ListItem
 import com.cwlarson.deviceid.util.*
 import com.google.android.play.core.appupdate.testing.FakeAppUpdateManager
@@ -69,11 +72,11 @@ const val SETTINGS_TEST_TAG_DIALOG_BUTTON_CANCEL = "settings_dialog_button_cance
 
 @Preview(showBackground = true)
 @Composable
-fun SettingsPreview() {
-    Scaffold {
+fun SettingsPreview() = AppTheme {
+    Column {
         val context = LocalContext.current
         SettingsScreen(
-            appUpdateUtils = AppUpdateUtils(
+            dispatcherProvider = DispatcherProvider, appUpdateUtils = AppUpdateUtils(
                 DispatcherProvider, FakeAppUpdateManager(context), context
             ), viewModel = SettingsViewModel(
                 DispatcherProvider,
@@ -86,11 +89,20 @@ fun SettingsPreview() {
 }
 
 @Composable
-fun SettingsScreen(appUpdateUtils: AppUpdateUtils, viewModel: SettingsViewModel = hiltViewModel()) {
+fun SettingsScreen(
+    dispatcherProvider: DispatcherProvider, appUpdateUtils: AppUpdateUtils,
+    viewModel: SettingsViewModel = hiltViewModel()
+) {
     val scope = rememberCoroutineScope()
-    val values by viewModel.userPreferencesFlow.collectAsStateWithLifecycle(initial = UserPreferences())
-    val appUpdateState by appUpdateUtils.updateState.collectAsStateWithLifecycle(initial = UpdateState.Initial)
-    val appInstallState by appUpdateUtils.installState.collectAsStateWithLifecycle(initial = InstallState.Initial)
+    val values by viewModel.userPreferencesFlow.collectAsStateWithLifecycle(
+        initialValue = UserPreferences(), context = dispatcherProvider.Main
+    )
+    val appUpdateState by appUpdateUtils.updateState.collectAsStateWithLifecycle(
+        initialValue = UpdateState.Initial, context = dispatcherProvider.Main
+    )
+    val appInstallState by appUpdateUtils.installState.collectAsStateWithLifecycle(
+        initialValue = InstallState.Initial, context = dispatcherProvider.Main
+    )
     LazyColumn(
         modifier = Modifier.padding(horizontal = dimensionResource(id = R.dimen.activity_horizontal_margin_search))
     ) {
@@ -167,12 +179,12 @@ fun SettingsScreen(appUpdateUtils: AppUpdateUtils, viewModel: SettingsViewModel 
 private fun Title(testTag: String, @StringRes title: Int) {
     Row(
         modifier = Modifier
-            .padding(start = 72.dp, top = 24.dp, bottom = 8.dp)
+            .padding(start = 72.dp, top = 8.dp, bottom = 8.dp)
             .testTag(testTag),
         verticalAlignment = Alignment.Bottom
     ) {
-        ProvideTextStyle(MaterialTheme.typography.body2) {
-            Text(text = stringResource(title), color = MaterialTheme.colors.secondary)
+        ProvideTextStyle(MaterialTheme.typography.bodyMedium) {
+            Text(text = stringResource(title), color = MaterialTheme.colorScheme.secondary)
         }
     }
 }
@@ -206,8 +218,8 @@ private fun SeekBarPreference(
                     onValueChange = { onValueChanged((it * 10).roundToInt()) },
                     modifier = Modifier.weight(1f),
                     colors = SliderDefaults.colors(
-                        thumbColor = MaterialTheme.colors.secondary,
-                        activeTrackColor = MaterialTheme.colors.secondary
+                        thumbColor = MaterialTheme.colorScheme.secondary,
+                        activeTrackColor = MaterialTheme.colorScheme.secondary
                     )
                 )
                 Text(
@@ -267,7 +279,7 @@ private fun ListPreference(
                             )
                             Text(
                                 text = subtitles[index],
-                                style = MaterialTheme.typography.body1.merge(),
+                                style = MaterialTheme.typography.bodyLarge.merge(),
                                 modifier = Modifier.padding(start = 16.dp)
                             )
                         }

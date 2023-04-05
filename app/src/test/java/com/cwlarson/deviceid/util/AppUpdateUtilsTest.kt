@@ -653,7 +653,7 @@ class AppUpdateUtilsTest {
         }
 
     private class TestLifecycleOwner : LifecycleOwner {
-        private val lifecycle = LifecycleRegistry(this)
+        override val lifecycle = LifecycleRegistry(this)
         fun onCreate() {
             lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
         }
@@ -661,7 +661,5 @@ class AppUpdateUtilsTest {
         fun onDestroy() {
             lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         }
-
-        override fun getLifecycle() = lifecycle
     }
 }

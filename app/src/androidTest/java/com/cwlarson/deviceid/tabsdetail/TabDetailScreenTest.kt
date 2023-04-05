@@ -21,12 +21,15 @@ import com.cwlarson.deviceid.util.DispatcherProvider
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.hamcrest.Matchers.allOf
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import javax.inject.Inject
@@ -56,12 +59,14 @@ class TabDetailScreenTest {
     private val dispatcher = UnconfinedTestDispatcher(TestCoroutineScheduler())
     private lateinit var dataRepository: MutableStateFlow<TabDetailStatus>
     private lateinit var clipboardManager: ClipboardManager
+    private lateinit var clickListener: () -> Unit
 
     @Before
     fun setup() {
         hiltAndroidRule.inject()
         dispatcherProvider.provideDispatcher(dispatcher)
         dataRepository = MutableStateFlow(TabDetailStatus.Loading)
+        clickListener = mockk(relaxed = true)
         every { deviceRepository.details(any()) } returns dataRepository
         every { networkRepository.details(any()) } returns dataRepository
         every { softwareRepository.details(any()) } returns dataRepository
@@ -70,11 +75,11 @@ class TabDetailScreenTest {
             AppTheme {
                 clipboardManager = LocalClipboardManager.current
                 TabDetailScreen(
-                    Item(
+                    item = Item(
                         title = R.string.app_name,
                         itemType = ItemType.DEVICE,
                         subtitle = ItemSubtitle.Text("subtitle")
-                    )
+                    ), dispatcherProvider = dispatcherProvider, onDismissRequest = clickListener
                 )
             }
         }
@@ -137,7 +142,8 @@ class TabDetailScreenTest {
         )
         intentsSafeRelease {
             intending(anyIntent()).respondWith(ActivityResult(0, null))
-            composeTestRule.onNodeWithContentDescription("Share").assertHasClickAction().performClick()
+            composeTestRule.onNodeWithContentDescription("Share").assertHasClickAction()
+                .performClick()
             intended(allOf(hasAction(Intent.ACTION_CHOOSER), hasExtraWithKey(Intent.EXTRA_INTENT)))
         }
     }
@@ -153,5 +159,15 @@ class TabDetailScreenTest {
         )
         composeTestRule.onNodeWithContentDescription("Copy").assertHasClickAction().performClick()
         assert(clipboardManager.getText()?.text == "subtitle")
+    }
+
+    @Ignore("FIXME: Unable to click outside dialog")
+    @Test
+    fun test_dismiss() = runTest(dispatcher) {
+        dataRepository.value = TabDetailStatus.Loading
+        composeTestRule.onAllNodes(isRoot()).onFirst().performTouchInput { click(topCenter) }
+        composeTestRule.awaitIdle()
+        composeTestRule.onNodeWithTag(TAB_DETAIL_TEST_TAG_PROGRESS).assertDoesNotExist()
+        verify { clickListener() }
     }
 }

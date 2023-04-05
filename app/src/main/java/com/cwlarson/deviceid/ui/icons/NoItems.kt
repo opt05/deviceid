@@ -2,7 +2,6 @@ package com.cwlarson.deviceid.ui.icons
 
 import android.content.res.Configuration
 import androidx.compose.foundation.Image
-import androidx.compose.material.MaterialTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -15,6 +14,7 @@ import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.cwlarson.deviceid.ui.theme.AppTheme
+import com.cwlarson.deviceid.ui.theme.isLight
 
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
@@ -29,8 +29,7 @@ fun NoItemsPreviewDark() = AppTheme {
 }
 
 @Composable
-fun noItemsIcon() =
-    if (MaterialTheme.colors.isLight) Icons.Default.NoItemsLight else Icons.Default.NoItemsDark
+fun noItemsIcon() = if (isLight) Icons.Default.NoItemsLight else Icons.Default.NoItemsDark
 
 @Suppress("unused")
 val Icons.Filled.NoItemsLight: ImageVector

@@ -12,6 +12,10 @@ sealed class AppPermission(val permissionName: String) : Parcelable {
     @Parcelize
     object ReadPhoneState : AppPermission(Manifest.permission.READ_PHONE_STATE)
 
+    @RequiresApi(Build.VERSION_CODES.O)
+    @Parcelize
+    object ReadPhoneNumbers : AppPermission(Manifest.permission.READ_PHONE_NUMBERS)
+
     @Parcelize
     object AccessFineLocation : AppPermission(Manifest.permission.ACCESS_FINE_LOCATION)
 
@@ -25,7 +29,6 @@ sealed class AppPermission(val permissionName: String) : Parcelable {
  */
 fun Context.isGranted(vararg permission: AppPermission) = permission.map { p ->
     PermissionChecker.checkSelfPermission(
-        this,
-        p.permissionName
+        this, p.permissionName
     ) == PermissionChecker.PERMISSION_GRANTED
 }.all { it }

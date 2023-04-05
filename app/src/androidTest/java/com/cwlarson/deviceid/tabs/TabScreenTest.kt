@@ -1,6 +1,7 @@
 package com.cwlarson.deviceid.tabs
 
-import androidx.compose.material.rememberScaffoldState
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.navigation.NavType
@@ -80,7 +81,11 @@ class TabScreenTest {
                         type = NavType.EnumType(ItemType::class.java)
                         defaultValue = ItemType.DEVICE
                     })) {
-                        TabScreen(0, false, rememberScaffoldState()) { item -> clickedItem = item }
+                        TabScreen(
+                            appBarSize = 0, isTwoPane = false,
+                            snackbarHostState = remember { SnackbarHostState() },
+                            dispatcherProvider = dispatcherProvider
+                        ) { item -> clickedItem = item }
                     }
                 }
             }

@@ -3,14 +3,9 @@ package com.cwlarson.deviceid.util
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageInfo
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.State
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.flowWithLifecycle
-import kotlinx.coroutines.flow.Flow
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.compose.runtime.*
 import timber.log.Timber
 
 /**
@@ -26,7 +21,12 @@ class HyperlinkedDebugTree : Timber.DebugTree() {
 
 inline val Context.gmsPackageInfo: PackageInfo?
     get() = try {
-        packageManager.getPackageInfo("com.google.android.gms", 0)
+        val name = "com.google.android.gms"
+        when {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU ->
+                packageManager.getPackageInfo(name, PackageManager.PackageInfoFlags.of(0))
+            else -> @Suppress("DEPRECATION") packageManager.getPackageInfo(name, 0)
+        }
     } catch (e: Throwable) {
         null
     }
@@ -41,15 +41,4 @@ fun Context.systemProperty(key: String): String? = try {
     methodGet(systemProperties, key) as String
 } catch (e: Throwable) {
     null
-}
-
-@Composable
-fun <T : R, R> Flow<T>.collectAsStateWithLifecycle(
-    initial: R,
-    minActiveState: Lifecycle.State = Lifecycle.State.STARTED
-): State<R> {
-    val lifecycleOwner = checkNotNull(LocalLifecycleOwner.current)
-    return remember(this, lifecycleOwner) {
-        flowWithLifecycle(lifecycleOwner.lifecycle, minActiveState)
-    }.collectAsState(initial = initial)
 }

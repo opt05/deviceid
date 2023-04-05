@@ -8,10 +8,12 @@ import android.net.*
 import android.net.wifi.WifiInfo
 import android.net.wifi.WifiManager
 import android.os.Build
+import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
 import android.telephony.euicc.EuiccManager
 import androidx.annotation.RequiresPermission
 import androidx.core.content.getSystemService
+import androidx.core.telephony.TelephonyManagerCompat
 import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.settings.PreferenceManager
 import com.cwlarson.deviceid.tabs.Item
@@ -20,7 +22,6 @@ import com.cwlarson.deviceid.tabs.ItemType
 import com.cwlarson.deviceid.util.AppPermission
 import com.cwlarson.deviceid.util.DispatcherProvider
 import com.cwlarson.deviceid.util.isGranted
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
 import timber.log.Timber
@@ -28,8 +29,7 @@ import java.net.InetAddress
 import javax.inject.Inject
 
 class NetworkRepository @Inject constructor(
-    private val dispatcherProvider: DispatcherProvider,
-    private val context: Context,
+    private val dispatcherProvider: DispatcherProvider, private val context: Context,
     preferenceManager: PreferenceManager
 ) : TabData(dispatcherProvider, context, preferenceManager) {
     private val connectivityManager by lazy { context.getSystemService<ConnectivityManager>() }
@@ -37,35 +37,39 @@ class NetworkRepository @Inject constructor(
     private val telephonyManager by lazy { context.getSystemService<TelephonyManager>() }
     private val bluetoothManager by lazy { context.getSystemService<BluetoothManager>() }
     private val euiccManager by lazy { context.getSystemService<EuiccManager>() }
+    private val subscriptionManager by lazy { context.getSystemService<SubscriptionManager>() }
 
-    @OptIn(FlowPreview::class)
-    override fun items(): Flow<List<Item>> = flowOf(
-        wifiInfo(), flowOf(
-            listOf(
-                deviceSoftwareVersion(), bluetoothMac(), bluetoothHostname(), manufacturerCode(),
-                nai(), phoneCount(), simSerial(), simOperatorName(), simCountry(), simState(),
-                phoneNumber(), voicemailNumber(), cellNetworkName(), cellNetworkType(),
-                cellNetworkClass(), eSimID(), eSimEnabled(), eSimOSVersion(),
-                isConcurrentVoiceAndDataSupported(), isDataRoamingEnabled(),
-                isHearingAidSupported(), isMultiSimSupported(), isRttSupported(), isSmsCapable(),
-                isVoiceCapable()
-            )
-        )
-    ).flattenMerge().flowOn(dispatcherProvider.IO)
+    override fun items(): Flow<List<Item>> = combineTransform<Any, List<Item>>(
+        wifiInfo(), deviceSoftwareVersion(), bluetoothMac(), bluetoothHostname(),
+        manufacturerCode(), nai(), phoneCount(), simSerial(), simOperatorName(), simCountry(),
+        simState(), phoneNumber(), voicemailNumber(), cellNetworkName(), cellNetworkType(),
+        cellNetworkClass(), eSimID(), eSimEnabled(), eSimOSVersion(),
+        isConcurrentVoiceAndDataSupported(), isDataRoamingEnabled(), isHearingAidSupported(),
+        isMultiSimSupported(), isRttSupported(), isSmsCapable(), isVoiceCapable()
+    ) { items ->
+        emit(mutableListOf<Item>().apply {
+            items.forEach {
+                when (it) {
+                    is Item -> add(it)
+                    is List<*> -> addAll(it.filterIsInstance<Item>())
+                }
+            }
+        })
+    }.flowOn(dispatcherProvider.IO)
 
     @SuppressLint("MissingPermission")
-    private fun deviceSoftwareVersion() = Item(
-        title = R.string.network_title_device_software_version, itemType = ItemType.NETWORK,
-        subtitle = try {
-            if (context.isGranted(AppPermission.ReadPhoneState)) {
-                telephonyManager?.let { ItemSubtitle.Text(it.deviceSoftwareVersion) }
-                    ?: ItemSubtitle.Error
-            } else ItemSubtitle.Permission(AppPermission.ReadPhoneState)
-        } catch (e: Throwable) {
-            Timber.w(e)
-            ItemSubtitle.Error
-        }
-    )
+    private fun deviceSoftwareVersion() =
+        flowOf(Item(title = R.string.network_title_device_software_version,
+            itemType = ItemType.NETWORK,
+            subtitle = try {
+                if (context.isGranted(AppPermission.ReadPhoneState)) {
+                    telephonyManager?.let { ItemSubtitle.Text(it.deviceSoftwareVersion) }
+                        ?: ItemSubtitle.Error
+                } else ItemSubtitle.Permission(AppPermission.ReadPhoneState)
+            } catch (e: Throwable) {
+                Timber.w(e)
+                ItemSubtitle.Error
+            }))
 
     /**
      * Marshmallow has started to depreciate this method
@@ -267,7 +271,7 @@ class NetworkRepository @Inject constructor(
 
     @RequiresPermission(Manifest.permission.ACCESS_NETWORK_STATE)
     private fun wifiInfo() = callbackFlow {
-        val map = mutableMapOf(0 to wifiMac(null))
+        val map = mutableMapOf<Int, Item>()
         val listener = object : ConnectivityManager.NetworkCallback() {
             override fun onLost(network: Network) {
                 onUnavailable()
@@ -292,6 +296,34 @@ class NetworkRepository @Inject constructor(
                 trySend(map.values.toList())
             }
 
+            override fun onAvailable(network: Network) {
+                super.onAvailable(network)
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+                    val wifiInfo = @Suppress("DEPRECATION") wifiManager?.connectionInfo
+                    val ipAddresses =
+                        connectivityManager?.getLinkProperties(network)?.linkAddresses?.map { it.address }
+                            ?: emptyList()
+                    map[0] = wifiMac(wifiInfo)
+                    map[1] = wifiBSSID(wifiInfo)
+                    map[2] = wifiSSID(wifiInfo)
+                    map[3] = wifiFrequency(wifiInfo)
+                    map[4] = wifiHiddenSSID(wifiInfo)
+                    map[5] = wifiIpAddress(ipAddresses)
+                    map[6] = wifiLinkSpeed(wifiInfo)
+                    map[7] = wifiTxLinkSpeed(wifiInfo)
+                    map[8] = wifiNetworkID(wifiInfo)
+                    map[9] = wifiPasspointFqdn(wifiInfo)
+                    map[10] = wifiPasspointProviderFriendlyName(wifiInfo)
+                    map[11] = wifiRSSI(wifiInfo)
+                    map[12] = wifiSignalLevel(wifiInfo)
+                    map[13] = wifiHostname(ipAddresses)
+                    map[14] = wifiCanonicalHostname(ipAddresses)
+                    trySend(map.values.toList())
+                }
+            }
+
+            /** Starting with [Build.VERSION_CODES.O] this method is guaranteed to be called
+             * immediately after [onAvailable] **/
             override fun onLinkPropertiesChanged(
                 network: Network, linkProperties: LinkProperties
             ) {
@@ -302,6 +334,8 @@ class NetworkRepository @Inject constructor(
                 trySend(map.values.toList())
             }
 
+            /** Starting with [Build.VERSION_CODES.O] this method is guaranteed to be called
+             * immediately after [onAvailable] **/
             override fun onCapabilitiesChanged(
                 network: Network, networkCapabilities: NetworkCapabilities
             ) {
@@ -336,8 +370,8 @@ class NetworkRepository @Inject constructor(
      * http://developer.android.com/about/versions/marshmallow/android-6.0-changes.html#behavior-hardware-id
      */
     @SuppressLint("HardwareIds", "MissingPermission")
-    private fun bluetoothMac() = Item(
-        title = R.string.network_title_bluetooth_mac, itemType = ItemType.NETWORK,
+    private fun bluetoothMac() = flowOf(Item(title = R.string.network_title_bluetooth_mac,
+        itemType = ItemType.NETWORK,
         subtitle = try {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
                 bluetoothManager?.let {
@@ -349,18 +383,19 @@ class NetworkRepository @Inject constructor(
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error
-        }
-    )
+        }))
 
     @SuppressLint("MissingPermission")
-    private fun bluetoothHostname() = Item(
-        title = R.string.network_title_bluetooth_hostname, itemType = ItemType.NETWORK,
+    private fun bluetoothHostname() = flowOf(Item(title = R.string.network_title_bluetooth_hostname,
+        itemType = ItemType.NETWORK,
         subtitle = try {
             when {
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-                    if (context.isGranted(AppPermission.AccessBluetoothConnect))
-                        bluetoothManager?.let { ItemSubtitle.Text(it.adapter.name) }
-                            ?: ItemSubtitle.Error
+                    if (context.isGranted(AppPermission.AccessBluetoothConnect)) bluetoothManager?.let {
+                        ItemSubtitle.Text(
+                            it.adapter.name
+                        )
+                    } ?: ItemSubtitle.Error
                     else ItemSubtitle.Permission(AppPermission.AccessBluetoothConnect)
                 }
                 else -> bluetoothManager?.let { ItemSubtitle.Text(it.adapter.name) }
@@ -369,116 +404,108 @@ class NetworkRepository @Inject constructor(
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error
-        }
-    )
+        }))
 
-    private fun manufacturerCode() = Item(
-        title = R.string.network_title_manufacturer_code, itemType = ItemType.NETWORK,
+    private fun manufacturerCode() = flowOf(Item(title = R.string.network_title_manufacturer_code,
+        itemType = ItemType.NETWORK,
         subtitle = try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
-                telephonyManager?.let {
-                    ItemSubtitle.Text(it.manufacturerCode)
-                } ?: ItemSubtitle.Error
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) telephonyManager?.let {
+                ItemSubtitle.Text(it.manufacturerCode)
+            } ?: ItemSubtitle.Error
             else ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.Q)
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error
-        }
-    )
+        }))
 
     @SuppressLint("MissingPermission")
-    private fun nai() = Item(
-        title = R.string.network_title_nai, itemType = ItemType.NETWORK,
+    private fun nai() = flowOf(Item(title = R.string.network_title_nai,
+        itemType = ItemType.NETWORK,
         subtitle = try {
             when {
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ->
-                    ItemSubtitle.NoLongerPossible(Build.VERSION_CODES.P)
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.P ->
-                    if (context.isGranted(AppPermission.ReadPhoneState))
-                        telephonyManager?.let { ItemSubtitle.Text(it.nai) } ?: ItemSubtitle.Error
-                    else ItemSubtitle.Permission(AppPermission.ReadPhoneState)
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q -> ItemSubtitle.NoLongerPossible(
+                    Build.VERSION_CODES.P
+                )
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.P -> if (context.isGranted(
+                        AppPermission.ReadPhoneState
+                    )
+                ) telephonyManager?.let { ItemSubtitle.Text(it.nai) } ?: ItemSubtitle.Error
+                else ItemSubtitle.Permission(AppPermission.ReadPhoneState)
                 else -> ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.P)
             }
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error
-        }
-    )
+        }))
 
-    private fun phoneCount() = Item(
-        title = R.string.network_title_phone_count, itemType = ItemType.NETWORK,
+    private fun phoneCount() = flowOf(Item(title = R.string.network_title_phone_count,
+        itemType = ItemType.NETWORK,
         subtitle = try {
             when {
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.R ->
-                    telephonyManager?.let { ItemSubtitle.Text("${it.activeModemCount}") }
-                        ?: ItemSubtitle.Error
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ->
-                    @Suppress("DEPRECATION")
-                    telephonyManager?.let { ItemSubtitle.Text("${it.phoneCount}") }
-                        ?: ItemSubtitle.Error
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> telephonyManager?.let {
+                    ItemSubtitle.Text(
+                        "${it.activeModemCount}"
+                    )
+                } ?: ItemSubtitle.Error
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> telephonyManager?.let {
+                    @Suppress("DEPRECATION") ItemSubtitle.Text("${it.phoneCount}")
+                } ?: ItemSubtitle.Error
                 else -> ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.M)
             }
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error
-        }
-    )
+        }))
 
     @SuppressLint("MissingPermission", "HardwareIds")
-    private fun simSerial() = Item(
-        title = R.string.network_title_sim_serial, itemType = ItemType.NETWORK,
+    private fun simSerial() = flowOf(Item(title = R.string.network_title_sim_serial,
+        itemType = ItemType.NETWORK,
         subtitle = try {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q)
-                telephonyManager?.let { ItemSubtitle.Text(it.simSerialNumber) }
-                    ?: ItemSubtitle.Error
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) telephonyManager?.let {
+                ItemSubtitle.Text(
+                    it.simSerialNumber
+                )
+            } ?: ItemSubtitle.Error
             else ItemSubtitle.NoLongerPossible(Build.VERSION_CODES.Q)
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error
-        }
-    )
+        }))
 
-    private fun simOperatorName() = Item(
-        title = R.string.network_title_sim_operator, itemType = ItemType.NETWORK,
+    private fun simOperatorName() = flowOf(Item(title = R.string.network_title_sim_operator,
+        itemType = ItemType.NETWORK,
         subtitle = try {
             telephonyManager?.let { ItemSubtitle.Text(it.simOperatorName) } ?: ItemSubtitle.Error
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error
-        }
-    )
+        }))
 
-    private fun simCountry() = Item(
-        title = R.string.network_title_sim_country, itemType = ItemType.NETWORK,
+    private fun simCountry() = flowOf(Item(title = R.string.network_title_sim_country,
+        itemType = ItemType.NETWORK,
         subtitle = try {
             telephonyManager?.let { ItemSubtitle.Text(it.simCountryIso) } ?: ItemSubtitle.Error
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error
-        }
-    )
+        }))
 
-    private fun simState() = Item(
-        title = R.string.network_title_sim_state, itemType = ItemType.NETWORK,
+    private fun simState() = flowOf(Item(title = R.string.network_title_sim_state,
+        itemType = ItemType.NETWORK,
         subtitle = try {
             telephonyManager?.let {
                 ItemSubtitle.Text(
                     when (it.simState) {
-                        TelephonyManager.SIM_STATE_ABSENT ->
-                            "No SIM card is available in the device"
-                        TelephonyManager.SIM_STATE_NETWORK_LOCKED ->
-                            "Locked: requires a network PIN to unlock"
-                        TelephonyManager.SIM_STATE_PIN_REQUIRED ->
-                            "Locked: requires the user's SIM PIN to unlock"
-                        TelephonyManager.SIM_STATE_PUK_REQUIRED ->
-                            "Locked: requires the user's SIM PUK to unlock"
+                        TelephonyManager.SIM_STATE_ABSENT -> "No SIM card is available in the device"
+                        TelephonyManager.SIM_STATE_NETWORK_LOCKED -> "Locked: requires a network PIN to unlock"
+                        TelephonyManager.SIM_STATE_PIN_REQUIRED -> "Locked: requires the user's SIM PIN to unlock"
+                        TelephonyManager.SIM_STATE_PUK_REQUIRED -> "Locked: requires the user's SIM PUK to unlock"
                         TelephonyManager.SIM_STATE_READY -> "Ready"
                         TelephonyManager.SIM_STATE_NOT_READY -> "Not ready"
                         TelephonyManager.SIM_STATE_PERM_DISABLED -> "Permanently disabled"
                         TelephonyManager.SIM_STATE_UNKNOWN -> "Network unknown"
                         TelephonyManager.SIM_STATE_CARD_IO_ERROR -> "Error, present but faulty"
-                        TelephonyManager.SIM_STATE_CARD_RESTRICTED ->
-                            "Restricted, present but not usable due to carrier restrictions"
+                        TelephonyManager.SIM_STATE_CARD_RESTRICTED -> "Restricted, present but not usable due to carrier restrictions"
                         else -> "Network unknown"
                     }
                 )
@@ -486,269 +513,254 @@ class NetworkRepository @Inject constructor(
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error
-        }
-    )
+        }))
 
     @SuppressLint("HardwareIds", "MissingPermission")
-    private fun phoneNumber() = Item(
-        title = R.string.network_title_phone_number, itemType = ItemType.NETWORK,
-        subtitle = try {
-            if (context.isGranted(AppPermission.ReadPhoneState))
-                telephonyManager?.let { ItemSubtitle.Text(it.line1Number) } ?: ItemSubtitle.Error
-            else ItemSubtitle.Permission(AppPermission.ReadPhoneState)
+    private fun phoneNumber() = flowOf(Item(title = R.string.network_title_phone_number,
+        itemType = ItemType.NETWORK, subtitle = try {
+            when {
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> {
+                    if (context.isGranted(AppPermission.ReadPhoneNumbers)) subscriptionManager?.let { sm ->
+                        telephonyManager?.let { tm ->
+                            ItemSubtitle.Text(
+                                sm.getPhoneNumber(TelephonyManagerCompat.getSubscriptionId(tm)))
+                        } ?: ItemSubtitle.Error
+                    } ?: ItemSubtitle.Error
+                    else ItemSubtitle.Permission(AppPermission.ReadPhoneNumbers)
+                }
+                else -> {
+                    @Suppress("DEPRECATION")
+                    if (context.isGranted(AppPermission.ReadPhoneState))
+                        telephonyManager?.let { ItemSubtitle.Text(it.line1Number) }
+                            ?: ItemSubtitle.Error
+                    else ItemSubtitle.Permission(AppPermission.ReadPhoneState)
+                }
+            }
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error
-        }
-    )
+        }))
 
     @SuppressLint("MissingPermission")
-    private fun voicemailNumber() = Item(
-        title = R.string.network_title_voicemail_number, itemType = ItemType.NETWORK,
+    private fun voicemailNumber() = flowOf(Item(title = R.string.network_title_voicemail_number,
+        itemType = ItemType.NETWORK,
         subtitle = try {
-            if (context.isGranted(AppPermission.ReadPhoneState))
-                telephonyManager?.let { ItemSubtitle.Text(it.voiceMailNumber) }
-                    ?: ItemSubtitle.Error
+            if (context.isGranted(AppPermission.ReadPhoneState)) telephonyManager?.let {
+                ItemSubtitle.Text(
+                    it.voiceMailNumber
+                )
+            } ?: ItemSubtitle.Error
             else ItemSubtitle.Permission(AppPermission.ReadPhoneState)
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error
-        }
-    )
+        }))
 
-    private fun cellNetworkName() = Item(
-        title = R.string.network_title_cell_network_name, itemType = ItemType.NETWORK,
+    private fun cellNetworkName() = flowOf(Item(title = R.string.network_title_cell_network_name,
+        itemType = ItemType.NETWORK,
         subtitle = try {
             telephonyManager?.let { ItemSubtitle.Text(it.networkOperatorName) }
                 ?: ItemSubtitle.Error
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error
-        }
-    )
+        }))
 
     @SuppressLint("MissingPermission")
     @Suppress("DEPRECATION")
-    private fun cellNetworkType() = Item(
-        title = R.string.network_title_cell_network_type, itemType = ItemType.NETWORK,
+    private fun cellNetworkType() = flowOf(Item(title = R.string.network_title_cell_network_type,
+        itemType = ItemType.NETWORK,
         subtitle = try {
-            if (context.isGranted(AppPermission.ReadPhoneState))
-                telephonyManager?.let {
-                    ItemSubtitle.Text(
-                        when (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) it.dataNetworkType else it.networkType) {
-                            TelephonyManager.NETWORK_TYPE_GPRS -> "GPRS"
-                            TelephonyManager.NETWORK_TYPE_EDGE -> "EDGE"
-                            TelephonyManager.NETWORK_TYPE_UMTS -> "UMTS"
-                            TelephonyManager.NETWORK_TYPE_HSDPA -> "HSDPA"
-                            TelephonyManager.NETWORK_TYPE_HSUPA -> "HSUPA"
-                            TelephonyManager.NETWORK_TYPE_HSPA -> "HSPA"
-                            TelephonyManager.NETWORK_TYPE_CDMA -> "CDMA"
-                            TelephonyManager.NETWORK_TYPE_EVDO_0 -> "CDMA - EvDo rev. 0"
-                            TelephonyManager.NETWORK_TYPE_EVDO_A -> "CDMA - EvDo rev. A"
-                            TelephonyManager.NETWORK_TYPE_EVDO_B -> "CDMA - EvDo rev. B"
-                            TelephonyManager.NETWORK_TYPE_1xRTT -> "CDMA - 1xRTT"
-                            TelephonyManager.NETWORK_TYPE_LTE -> "LTE"
-                            TelephonyManager.NETWORK_TYPE_EHRPD -> "CDMA - eHRPD"
-                            TelephonyManager.NETWORK_TYPE_IDEN -> "iDEN"
-                            TelephonyManager.NETWORK_TYPE_HSPAP -> "HSPA+"
-                            TelephonyManager.NETWORK_TYPE_GSM -> "GSM"
-                            TelephonyManager.NETWORK_TYPE_TD_SCDMA -> "TD_SCDMA"
-                            TelephonyManager.NETWORK_TYPE_IWLAN -> "IWLAN"
-                            TelephonyManager.NETWORK_TYPE_NR -> "5G"
-                            else -> null
-                        }
-                    )
-                } ?: ItemSubtitle.Error
+            if (context.isGranted(AppPermission.ReadPhoneState)) telephonyManager?.let {
+                ItemSubtitle.Text(
+                    when (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) it.dataNetworkType else it.networkType) {
+                        TelephonyManager.NETWORK_TYPE_GPRS -> "GPRS"
+                        TelephonyManager.NETWORK_TYPE_EDGE -> "EDGE"
+                        TelephonyManager.NETWORK_TYPE_UMTS -> "UMTS"
+                        TelephonyManager.NETWORK_TYPE_HSDPA -> "HSDPA"
+                        TelephonyManager.NETWORK_TYPE_HSUPA -> "HSUPA"
+                        TelephonyManager.NETWORK_TYPE_HSPA -> "HSPA"
+                        TelephonyManager.NETWORK_TYPE_CDMA -> "CDMA"
+                        TelephonyManager.NETWORK_TYPE_EVDO_0 -> "CDMA - EvDo rev. 0"
+                        TelephonyManager.NETWORK_TYPE_EVDO_A -> "CDMA - EvDo rev. A"
+                        TelephonyManager.NETWORK_TYPE_EVDO_B -> "CDMA - EvDo rev. B"
+                        TelephonyManager.NETWORK_TYPE_1xRTT -> "CDMA - 1xRTT"
+                        TelephonyManager.NETWORK_TYPE_LTE -> "LTE"
+                        TelephonyManager.NETWORK_TYPE_EHRPD -> "CDMA - eHRPD"
+                        TelephonyManager.NETWORK_TYPE_IDEN -> "iDEN"
+                        TelephonyManager.NETWORK_TYPE_HSPAP -> "HSPA+"
+                        TelephonyManager.NETWORK_TYPE_GSM -> "GSM"
+                        TelephonyManager.NETWORK_TYPE_TD_SCDMA -> "TD_SCDMA"
+                        TelephonyManager.NETWORK_TYPE_IWLAN -> "IWLAN"
+                        TelephonyManager.NETWORK_TYPE_NR -> "5G"
+                        else -> null
+                    }
+                )
+            } ?: ItemSubtitle.Error
             else ItemSubtitle.Permission(AppPermission.ReadPhoneState)
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error
-        }
-    )
+        }))
 
     @SuppressLint("MissingPermission")
     @Suppress("DEPRECATION")
-    private fun cellNetworkClass() = Item(
-        title = R.string.network_title_cell_network_class, itemType = ItemType.NETWORK,
+    private fun cellNetworkClass() = flowOf(Item(title = R.string.network_title_cell_network_class,
+        itemType = ItemType.NETWORK,
         subtitle = try {
-            if (context.isGranted(AppPermission.ReadPhoneState))
-                telephonyManager?.let {
-                    ItemSubtitle.Text(
-                        when (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) it.dataNetworkType else it.networkType) {
-                            TelephonyManager.NETWORK_TYPE_GPRS,
-                            TelephonyManager.NETWORK_TYPE_GSM,
-                            TelephonyManager.NETWORK_TYPE_EDGE,
-                            TelephonyManager.NETWORK_TYPE_CDMA,
-                            TelephonyManager.NETWORK_TYPE_1xRTT,
-                            TelephonyManager.NETWORK_TYPE_IDEN -> "2G"
-                            TelephonyManager.NETWORK_TYPE_UMTS,
-                            TelephonyManager.NETWORK_TYPE_EVDO_0,
-                            TelephonyManager.NETWORK_TYPE_EVDO_A,
-                            TelephonyManager.NETWORK_TYPE_HSDPA,
-                            TelephonyManager.NETWORK_TYPE_HSUPA,
-                            TelephonyManager.NETWORK_TYPE_HSPA,
-                            TelephonyManager.NETWORK_TYPE_EVDO_B,
-                            TelephonyManager.NETWORK_TYPE_EHRPD,
-                            TelephonyManager.NETWORK_TYPE_HSPAP,
-                            TelephonyManager.NETWORK_TYPE_TD_SCDMA -> "3G"
-                            TelephonyManager.NETWORK_TYPE_LTE,
-                            TelephonyManager.NETWORK_TYPE_IWLAN -> "4G"
-                            TelephonyManager.NETWORK_TYPE_NR -> "5G"
-                            TelephonyManager.NETWORK_TYPE_UNKNOWN -> null
-                            else -> null
-                        }
-                    )
-                } ?: ItemSubtitle.Error
+            if (context.isGranted(AppPermission.ReadPhoneState)) telephonyManager?.let {
+                ItemSubtitle.Text(
+                    when (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) it.dataNetworkType else it.networkType) {
+                        TelephonyManager.NETWORK_TYPE_GPRS, TelephonyManager.NETWORK_TYPE_GSM, TelephonyManager.NETWORK_TYPE_EDGE, TelephonyManager.NETWORK_TYPE_CDMA, TelephonyManager.NETWORK_TYPE_1xRTT, TelephonyManager.NETWORK_TYPE_IDEN -> "2G"
+                        TelephonyManager.NETWORK_TYPE_UMTS, TelephonyManager.NETWORK_TYPE_EVDO_0, TelephonyManager.NETWORK_TYPE_EVDO_A, TelephonyManager.NETWORK_TYPE_HSDPA, TelephonyManager.NETWORK_TYPE_HSUPA, TelephonyManager.NETWORK_TYPE_HSPA, TelephonyManager.NETWORK_TYPE_EVDO_B, TelephonyManager.NETWORK_TYPE_EHRPD, TelephonyManager.NETWORK_TYPE_HSPAP, TelephonyManager.NETWORK_TYPE_TD_SCDMA -> "3G"
+                        TelephonyManager.NETWORK_TYPE_LTE, TelephonyManager.NETWORK_TYPE_IWLAN -> "4G"
+                        TelephonyManager.NETWORK_TYPE_NR -> "5G"
+                        TelephonyManager.NETWORK_TYPE_UNKNOWN -> null
+                        else -> null
+                    }
+                )
+            } ?: ItemSubtitle.Error
             else ItemSubtitle.Permission(AppPermission.ReadPhoneState)
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error
-        }
-    )
+        }))
 
-    private fun isConcurrentVoiceAndDataSupported() = Item(
-        title = R.string.network_title_concurrent_voice_data_supported, itemType = ItemType.NETWORK,
-        subtitle = try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-                telephonyManager?.let {
+    private fun isConcurrentVoiceAndDataSupported() =
+        flowOf(Item(title = R.string.network_title_concurrent_voice_data_supported,
+            itemType = ItemType.NETWORK,
+            subtitle = try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) telephonyManager?.let {
                     ItemSubtitle.Text("${it.isConcurrentVoiceAndDataSupported}")
                 } ?: ItemSubtitle.Error
-            else ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.O)
-        } catch (e: Throwable) {
-            Timber.w(e)
-            ItemSubtitle.Error
-        }
-    )
+                else ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.O)
+            } catch (e: Throwable) {
+                Timber.w(e)
+                ItemSubtitle.Error
+            }))
 
     @SuppressLint("MissingPermission")
-    private fun isDataRoamingEnabled() = Item(
-        title = R.string.network_title_data_roaming_enabled, itemType = ItemType.NETWORK,
-        subtitle = try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
-                if (context.isGranted(AppPermission.ReadPhoneState))
-                    telephonyManager?.let {
-                        ItemSubtitle.Text("${it.isDataRoamingEnabled}")
-                    } ?: ItemSubtitle.Error
+    private fun isDataRoamingEnabled() =
+        flowOf(Item(title = R.string.network_title_data_roaming_enabled,
+            itemType = ItemType.NETWORK,
+            subtitle = try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) if (context.isGranted(
+                        AppPermission.ReadPhoneState
+                    )
+                ) telephonyManager?.let {
+                    ItemSubtitle.Text("${it.isDataRoamingEnabled}")
+                } ?: ItemSubtitle.Error
                 else ItemSubtitle.Permission(AppPermission.ReadPhoneState)
-            else ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.Q)
-        } catch (e: Throwable) {
-            Timber.w(e)
-            ItemSubtitle.Error
-        }
-    )
+                else ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.Q)
+            } catch (e: Throwable) {
+                Timber.w(e)
+                ItemSubtitle.Error
+            }))
 
-    private fun isHearingAidSupported() = Item(
-        title = R.string.network_title_hearing_aid_supported, itemType = ItemType.NETWORK,
-        subtitle = try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
-                telephonyManager?.let {
+    private fun isHearingAidSupported() =
+        flowOf(Item(title = R.string.network_title_hearing_aid_supported,
+            itemType = ItemType.NETWORK,
+            subtitle = try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) telephonyManager?.let {
                     ItemSubtitle.Text("${it.isHearingAidCompatibilitySupported}")
                 } ?: ItemSubtitle.Error
-            else ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.M)
-        } catch (e: Throwable) {
-            Timber.w(e)
-            ItemSubtitle.Error
-        }
-    )
+                else ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.M)
+            } catch (e: Throwable) {
+                Timber.w(e)
+                ItemSubtitle.Error
+            }))
 
     @SuppressLint("MissingPermission")
-    private fun isMultiSimSupported() = Item(
-        title = R.string.network_title_multi_sim_supported, itemType = ItemType.NETWORK,
-        subtitle = try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
-                if (context.isGranted(AppPermission.ReadPhoneState))
-                    telephonyManager?.let {
-                        ItemSubtitle.Text(
-                            when (it.isMultiSimSupported) {
-                                TelephonyManager.MULTISIM_ALLOWED ->
-                                    "Supports multiple SIMs"
-                                TelephonyManager.MULTISIM_NOT_SUPPORTED_BY_HARDWARE ->
-                                    "Device does not support multiple SIMs"
-                                TelephonyManager.MULTISIM_NOT_SUPPORTED_BY_CARRIER ->
-                                    "Device does support multiple SIMS but restricted by carrier"
-                                else -> null
-                            }
-                        )
-                    } ?: ItemSubtitle.Error
-                else ItemSubtitle.Permission(AppPermission.ReadPhoneState)
-            else ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.Q)
-        } catch (e: Throwable) {
-            Timber.w(e)
-            ItemSubtitle.Error
-        }
-    )
-
-    private fun isRttSupported() = Item(
-        title = R.string.network_title_rtt_supported, itemType = ItemType.NETWORK,
-        subtitle = try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
-                telephonyManager?.let {
-                    ItemSubtitle.Text("${it.isRttSupported}")
+    private fun isMultiSimSupported() =
+        flowOf(Item(title = R.string.network_title_multi_sim_supported,
+            itemType = ItemType.NETWORK,
+            subtitle = try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) if (context.isGranted(
+                        AppPermission.ReadPhoneState
+                    )
+                ) telephonyManager?.let {
+                    ItemSubtitle.Text(
+                        when (it.isMultiSimSupported) {
+                            TelephonyManager.MULTISIM_ALLOWED -> "Supports multiple SIMs"
+                            TelephonyManager.MULTISIM_NOT_SUPPORTED_BY_HARDWARE -> "Device does not support multiple SIMs"
+                            TelephonyManager.MULTISIM_NOT_SUPPORTED_BY_CARRIER -> "Device does support multiple SIMS but restricted by carrier"
+                            else -> null
+                        }
+                    )
                 } ?: ItemSubtitle.Error
+                else ItemSubtitle.Permission(AppPermission.ReadPhoneState)
+                else ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.Q)
+            } catch (e: Throwable) {
+                Timber.w(e)
+                ItemSubtitle.Error
+            }))
+
+    private fun isRttSupported() = flowOf(Item(title = R.string.network_title_rtt_supported,
+        itemType = ItemType.NETWORK,
+        subtitle = try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) telephonyManager?.let {
+                ItemSubtitle.Text("${it.isRttSupported}")
+            } ?: ItemSubtitle.Error
             else ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.Q)
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error
-        }
-    )
+        }))
 
-    private fun isSmsCapable() = Item(
-        title = R.string.network_title_sms_capable, itemType = ItemType.NETWORK,
+    private fun isSmsCapable() = flowOf(Item(title = R.string.network_title_sms_capable,
+        itemType = ItemType.NETWORK,
         subtitle = try {
             telephonyManager?.let { ItemSubtitle.Text("${it.isSmsCapable}") } ?: ItemSubtitle.Error
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error
-        }
-    )
+        }))
 
-    private fun isVoiceCapable() = Item(
-        title = R.string.network_title_voice_capable, itemType = ItemType.NETWORK,
+    private fun isVoiceCapable() = flowOf(Item(title = R.string.network_title_voice_capable,
+        itemType = ItemType.NETWORK,
         subtitle = try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1)
-                telephonyManager?.let { ItemSubtitle.Text("${it.isVoiceCapable}") }
-                    ?: ItemSubtitle.Error
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) telephonyManager?.let {
+                ItemSubtitle.Text("${it.isVoiceCapable}")
+            } ?: ItemSubtitle.Error
             else ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.LOLLIPOP_MR1)
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error
-        }
-    )
+        }))
 
-    private fun eSimID() = Item(
-        title = R.string.network_title_esim_id, itemType = ItemType.NETWORK,
+    private fun eSimID() = flowOf(Item(title = R.string.network_title_esim_id,
+        itemType = ItemType.NETWORK,
         subtitle = try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
-                euiccManager?.let { ItemSubtitle.Text("${it.eid}") } ?: ItemSubtitle.Error
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) euiccManager?.let {
+                ItemSubtitle.Text("${it.eid}")
+            } ?: ItemSubtitle.Error
             else ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.P)
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error
-        }
-    )
+        }))
 
-    private fun eSimEnabled() = Item(
-        title = R.string.network_title_esim_enabled, itemType = ItemType.NETWORK,
+    private fun eSimEnabled() = flowOf(Item(title = R.string.network_title_esim_enabled,
+        itemType = ItemType.NETWORK,
         subtitle = try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
-                euiccManager?.let { ItemSubtitle.Text("${it.isEnabled}") } ?: ItemSubtitle.Error
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) euiccManager?.let {
+                ItemSubtitle.Text("${it.isEnabled}")
+            } ?: ItemSubtitle.Error
             else ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.P)
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error
-        }
-    )
+        }))
 
-    private fun eSimOSVersion() = Item(
-        title = R.string.network_title_esim_os_version, itemType = ItemType.NETWORK,
+    private fun eSimOSVersion() = flowOf(Item(title = R.string.network_title_esim_os_version,
+        itemType = ItemType.NETWORK,
         subtitle = try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
-                euiccManager?.let { ItemSubtitle.Text(it.euiccInfo?.osVersion) }
-                    ?: ItemSubtitle.Error
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) euiccManager?.let {
+                ItemSubtitle.Text(it.euiccInfo?.osVersion)
+            } ?: ItemSubtitle.Error
             else ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.P)
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error
-        }
-    )
+        }))
 }

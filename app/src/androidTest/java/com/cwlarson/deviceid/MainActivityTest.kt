@@ -1,7 +1,7 @@
 package com.cwlarson.deviceid
 
 import android.content.Intent
-import android.util.TypedValue
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.unit.height
@@ -9,6 +9,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
+import com.cwlarson.deviceid.androidtestutils.hasRole
 import com.cwlarson.deviceid.data.*
 import com.cwlarson.deviceid.settings.PreferenceManager
 import com.cwlarson.deviceid.settings.UserPreferences
@@ -113,7 +114,7 @@ class MainActivityTest {
     @Test
     fun test_initial_singlePane() = runTest(dispatcher) {
         launchScenario()
-        isScreenSw900dp(false)
+        isScreenSw600dp(false)
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH).assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription("Navigate up").assertDoesNotExist()
         composeTestRule.onNodeWithContentDescription("Clear search").assertDoesNotExist()
@@ -140,7 +141,7 @@ class MainActivityTest {
     @Test
     fun test_initial_dualPane() = runTest(dispatcher) {
         launchScenario()
-        isScreenSw900dp()
+        isScreenSw600dp()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH).assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription("Navigate up").assertDoesNotExist()
         composeTestRule.onNodeWithContentDescription("Clear search").assertDoesNotExist()
@@ -167,7 +168,7 @@ class MainActivityTest {
     @Test
     fun test_SearchView_nameFade_singlePane_initial() = runTest(dispatcher) {
         launchScenario()
-        isScreenSw900dp(false)
+        isScreenSw600dp(false)
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH).onChildren()
             .filterToOne(hasTextExactly("Device Info")).assertIsDisplayed()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH).onChildren()
@@ -182,7 +183,7 @@ class MainActivityTest {
     @Test
     fun test_SearchView_nameFade_singlePane_recreate() = runTest(dispatcher) {
         launchScenario()
-        isScreenSw900dp(false)
+        isScreenSw600dp(false)
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH).onChildren()
             .filterToOne(hasTextExactly("Device Info")).assertIsDisplayed()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH).onChildren()
@@ -198,13 +199,15 @@ class MainActivityTest {
     @Test
     fun test_SearchView_nameFade_dualPane() = runTest(dispatcher) {
         launchScenario()
-        isScreenSw900dp()
+        isScreenSw600dp()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH).onChildren()
             .filterToOne(hasTextExactly("Device Info")).assertDoesNotExist()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH).onChildren()
             .filterToOne(hasTextExactly("Search all")).assertIsDisplayed()
-        composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_DUAL_PANE_NAV).onChildren()
-            .filterToOne(hasTextExactly("Device Info")).assertIsDisplayed()
+        composeTestRule.onNode(
+            hasContentDescription("Device Info") and hasRole(Role.Image)
+                    and hasAnyAncestor(hasTestTag(MAIN_ACTIVITY_TEST_TAG_DUAL_PANE_NAV))
+        ).assertIsDisplayed()
     }
 
     @Test
@@ -265,7 +268,7 @@ class MainActivityTest {
     @Test
     fun test_navigation_settings_back_singlePane() = runTest(dispatcher) {
         launchScenario()
-        isScreenSw900dp(false)
+        isScreenSw600dp(false)
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_MENU, useUnmergedTree = true)
             .performClick()
         composeTestRule.onNodeWithText("Settings").performClick()
@@ -281,7 +284,7 @@ class MainActivityTest {
     @Test
     fun test_navigation_settings_back_dualPane() = runTest(dispatcher) {
         launchScenario()
-        isScreenSw900dp()
+        isScreenSw600dp()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_MENU, useUnmergedTree = true)
             .performClick()
         composeTestRule.onNodeWithText("Settings").performClick()
@@ -297,7 +300,7 @@ class MainActivityTest {
     @Test
     fun test_navigation_search_initial_singlePane() = runTest(dispatcher) {
         launchScenario()
-        isScreenSw900dp(false)
+        isScreenSw600dp(false)
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_TEXT).performClick()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_TOOLBAR).assertDoesNotExist()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_BOTTOM_NAV).assertIsDisplayed()
@@ -309,7 +312,7 @@ class MainActivityTest {
     @Test
     fun test_navigation_search_initial_dualPane() = runTest(dispatcher) {
         launchScenario()
-        isScreenSw900dp()
+        isScreenSw600dp()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_TEXT).performClick()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_TOOLBAR).assertDoesNotExist()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_BOTTOM_NAV).assertDoesNotExist()
@@ -345,7 +348,7 @@ class MainActivityTest {
     fun test_navigation_search_back_singlePane() = runTest(dispatcher) {
         coJustRun { preferenceManager.saveSearchHistoryItem(any()) }
         launchScenario()
-        isScreenSw900dp(false)
+        isScreenSw600dp(false)
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_TEXT).performTextInput("t")
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_BACK).performClick()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_TOOLBAR).assertDoesNotExist()
@@ -357,8 +360,9 @@ class MainActivityTest {
 
     @Test
     fun test_navigation_search_back_dualPane() = runTest(dispatcher) {
+        coJustRun { preferenceManager.saveSearchHistoryItem(any()) }
         launchScenario()
-        isScreenSw900dp()
+        isScreenSw600dp()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_TEXT).performTextInput("t")
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_BACK).performClick()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_TOOLBAR).assertDoesNotExist()
@@ -487,12 +491,9 @@ class MainActivityTest {
         composeTestRule.onNode(isDialog()).assertDoesNotExist()
     }
 
-    private fun isScreenSw900dp(assumeTrue: Boolean = true) {
+    private fun isScreenSw600dp(assumeTrue: Boolean = true) {
         scenario.onActivity {
-            val twoPane = TypedValue().apply {
-                it.resources.getValue(R.dimen.two_pane_min, this, true)
-            }.run { TypedValue.complexToFloat(data) }
-            with(it.resources.configuration.screenWidthDp >= twoPane) {
+            with(it.resources.configuration.screenWidthDp >= 600) {
                 if (assumeTrue) assumeTrue(this) else assumeFalse(this)
             }
         }
