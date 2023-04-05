@@ -7,6 +7,7 @@ on:
 jobs:
   tests:
     uses: ./.github/workflows/tests.yml
+    secrets: inherit
         
   sign_and_release:
     name: Sign and release

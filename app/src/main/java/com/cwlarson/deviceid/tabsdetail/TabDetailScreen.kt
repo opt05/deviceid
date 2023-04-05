@@ -1,6 +1,5 @@
 package com.cwlarson.deviceid.tabsdetail
 
-import androidx.annotation.VisibleForTesting
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
@@ -16,7 +15,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
@@ -30,12 +28,6 @@ import com.cwlarson.deviceid.tabs.Item
 import com.cwlarson.deviceid.ui.util.copyItemToClipboard
 import com.cwlarson.deviceid.ui.util.share
 import com.cwlarson.deviceid.util.DispatcherProvider
-
-@VisibleForTesting
-const val TAB_DETAIL_TEST_TAG_PROGRESS = "tab_detail_progress"
-
-@VisibleForTesting
-const val TAB_DETAIL_TEST_TAG_RESULTS = "tab_detail_results"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,7 +68,7 @@ fun TabDetailScreen(
 
 @Composable
 private fun ResultsScreen(item: Item) {
-    Column(modifier = Modifier.testTag(TAB_DETAIL_TEST_TAG_RESULTS)) {
+    Column {
         Text(
             modifier = Modifier.fillMaxWidth(),
             text = item.getFormattedString(),
@@ -128,10 +120,7 @@ private fun LoadingScreen(isVisible: Boolean, content: @Composable () -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            CircularProgressIndicator(
-                modifier = Modifier.testTag(TAB_DETAIL_TEST_TAG_PROGRESS),
-                color = MaterialTheme.colorScheme.secondary
-            )
+            CircularProgressIndicator(color = MaterialTheme.colorScheme.secondary)
         } else content()
     }
 }
