@@ -4,6 +4,7 @@ import android.app.Instrumentation.ActivityResult
 import android.content.Intent
 import androidx.compose.ui.platform.ClipboardManager
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.espresso.intent.Intents.intended
@@ -88,25 +89,25 @@ class TabDetailScreenTest {
     @Test
     fun test_loading() = runTest(dispatcher) {
         dataRepository.value = TabDetailStatus.Loading
-
-        composeTestRule.onNodeWithTag(TAB_DETAIL_TEST_TAG_PROGRESS).assertIsDisplayed()
+        composeTestRule.onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate))
+            .assertIsDisplayed()
 
         composeTestRule.onNodeWithContentDescription("Something went wrong").assertDoesNotExist()
         composeTestRule.onNodeWithText("Something went wrong").assertDoesNotExist()
 
-        composeTestRule.onNodeWithTag(TAB_DETAIL_TEST_TAG_RESULTS).assertDoesNotExist()
+        composeTestRule.onNodeWithContentDescription("Share").assertDoesNotExist()
     }
 
     @Test
     fun test_error() = runTest(dispatcher) {
         dataRepository.value = TabDetailStatus.Error
-
-        composeTestRule.onNodeWithTag(TAB_DETAIL_TEST_TAG_PROGRESS).assertDoesNotExist()
+        composeTestRule.onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate))
+            .assertDoesNotExist()
 
         composeTestRule.onNodeWithContentDescription("Something went wrong").assertIsDisplayed()
         composeTestRule.onNodeWithText("Something went wrong").assertIsDisplayed()
 
-        composeTestRule.onNodeWithTag(TAB_DETAIL_TEST_TAG_RESULTS).assertDoesNotExist()
+        composeTestRule.onNodeWithContentDescription("Share").assertDoesNotExist()
     }
 
     @Test
@@ -118,13 +119,12 @@ class TabDetailScreenTest {
                 subtitle = ItemSubtitle.Text("subtitle")
             )
         )
-
-        composeTestRule.onNodeWithTag(TAB_DETAIL_TEST_TAG_PROGRESS).assertDoesNotExist()
+        composeTestRule.onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate))
+            .assertDoesNotExist()
 
         composeTestRule.onNodeWithContentDescription("Something went wrong").assertDoesNotExist()
         composeTestRule.onNodeWithText("Something went wrong").assertDoesNotExist()
 
-        composeTestRule.onNodeWithTag(TAB_DETAIL_TEST_TAG_RESULTS).assertIsDisplayed()
         composeTestRule.onNodeWithText("Device Info").assertIsDisplayed()
         composeTestRule.onNodeWithText("subtitle").assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription("Share").assertIsDisplayed()
@@ -167,7 +167,8 @@ class TabDetailScreenTest {
         dataRepository.value = TabDetailStatus.Loading
         composeTestRule.onAllNodes(isRoot()).onFirst().performTouchInput { click(topCenter) }
         composeTestRule.awaitIdle()
-        composeTestRule.onNodeWithTag(TAB_DETAIL_TEST_TAG_PROGRESS).assertDoesNotExist()
+        composeTestRule.onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate))
+            .assertDoesNotExist()
         verify { clickListener() }
     }
 }
