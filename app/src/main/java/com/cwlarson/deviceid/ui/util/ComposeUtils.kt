@@ -8,9 +8,9 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Android
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,13 +24,13 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.DefaultLifecycleObserver
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.*
 import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.tabs.Item
 import com.cwlarson.deviceid.tabs.ItemSubtitle
+import com.cwlarson.deviceid.ui.theme.AppTheme
 import com.cwlarson.deviceid.util.AppPermission
+import com.cwlarson.deviceid.util.DispatcherProvider
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionStatus
 import com.google.accompanist.permissions.rememberPermissionState
@@ -39,6 +39,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.onSubscription
+import kotlinx.coroutines.launch
 
 @Composable
 fun AppPermission.loadPermissionLabel(context: Context = LocalContext.current): CharSequence =
@@ -82,11 +83,15 @@ class IntentHandler(private val activity: ComponentActivity) : DefaultLifecycleO
     }
 
     /**
-     * Call in [android.app.Activity.onNewIntent]
+     * Call in [ComponentActivity.onNewIntent]
      */
-    fun onNewIntent(intent: Intent?) {
+    fun onNewIntent(dispatcherProvider: DispatcherProvider, intent: Intent?) {
         activity.intent = intent
-        activity.lifecycleScope.launchWhenCreated { intent?.let { intentFlow.emit(it) } }
+        activity.lifecycleScope.launch(dispatcherProvider.Main) {
+            activity.repeatOnLifecycle(Lifecycle.State.CREATED) {
+                intent?.let { intentFlow.emit(it) }
+            }
+        }
     }
 
 
@@ -103,7 +108,7 @@ class IntentHandler(private val activity: ComponentActivity) : DefaultLifecycleO
 fun Item.copyItemToClipboard(): (() -> Unit)? {
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
-    val string = stringResource(R.string.copy_to_clipboard, getFormattedString(context))
+    val string = stringResource(R.string.copy_to_clipboard, getFormattedString())
     return subtitle.getSubTitleText()?.let {
         if (it.isBlank()) null else ({
             clipboardManager.setText(AnnotatedString(it))
@@ -113,20 +118,17 @@ fun Item.copyItemToClipboard(): (() -> Unit)? {
 }
 
 @Composable
-fun Item.share(context: Context = LocalContext.current): () -> Unit {
-    val string = stringResource(R.string.send_to)
-    val stringFail = stringResource(R.string.send_to_no_apps)
-    return {
-        val shareIntent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(Intent.EXTRA_TITLE, string)
-            putExtra(Intent.EXTRA_TEXT, subtitle.getSubTitleText())
-        }
-        shareIntent.resolveActivity(context.packageManager)?.let {
-            context.startActivity(Intent.createChooser(shareIntent, null))
-            true
-        } ?: Toast.makeText(context, stringFail, Toast.LENGTH_LONG).show()
+fun Item.share(context: Context = LocalContext.current): () -> Unit = {
+    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_TITLE, context.getString(R.string.send_to))
+        putExtra(Intent.EXTRA_TEXT, subtitle.getSubTitleText())
     }
+    shareIntent.resolveActivity(context.packageManager)?.let {
+        context.startActivity(Intent.createChooser(shareIntent, null))
+    } ?:
+    Toast.makeText(context, context.getString(R.string.send_to_no_apps), Toast.LENGTH_LONG)
+        .show()
 }
 
 @SuppressLint("ComposableNaming")
@@ -185,50 +187,40 @@ fun Item.click(
 
 @Preview
 @Composable
-private fun ListItemPreviewDefaultIcon() {
+private fun ListItemPreviewDefaultIcon() = AppTheme {
     ListItem(
-        icon = Icons.Default.Android,
-        text = "This is a title",
-        chartPercentage = 75f,
-        secondaryText = "This is a subtitle",
+        icon = Icons.Default.Android, text = "This is a title", chartPercentage = 75f,
+        secondaryText = "This is a subtitle", trailing = { Switch(true, { }) }
+    )
+}
+
+@Preview
+@Composable
+private fun ListItemPreviewSmallIcon() = AppTheme {
+    ListItem(
+        icon = Icons.Default.Android, isSmallIcon = true, text = "This is a title",
+        secondaryText = "This is a subtitle", trailing = { Switch(true, { }) }
+    )
+}
+
+@Preview
+@Composable
+private fun ListItemPreviewNoIcon() = AppTheme {
+    ListItem(
+        text = "This is a title", secondaryText = "This is a subtitle",
         trailing = { Switch(true, { }) }
     )
 }
 
 @Preview
 @Composable
-private fun ListItemPreviewSmallIcon() {
-    ListItem(
-        icon = Icons.Default.Android,
-        isSmallIcon = true,
-        text = "This is a title",
-        secondaryText = "This is a subtitle",
-        trailing = { Switch(true, { }) }
-    )
+private fun ListItemPreviewNoIconNoTrailing() = AppTheme {
+    ListItem(text = "This is a title", secondaryText = "This is a subtitle")
 }
 
 @Preview
 @Composable
-private fun ListItemPreviewNoIcon() {
-    ListItem(
-        text = "This is a title",
-        secondaryText = "This is a subtitle",
-        trailing = { Switch(true, { }) }
-    )
-}
-
-@Preview
-@Composable
-private fun ListItemPreviewNoIconNoTrailing() {
-    ListItem(
-        text = "This is a title",
-        secondaryText = "This is a subtitle"
-    )
-}
-
-@Preview
-@Composable
-private fun ListItemPreviewNoIconNoTrailingMultiLine() {
+private fun ListItemPreviewNoIconNoTrailingMultiLine() = AppTheme {
     ListItem(
         text = "This is a title",
         secondaryText = "This is a subtitle that is really long and will go over to the next line" +
@@ -244,14 +236,9 @@ const val LIST_ITEM_TEST_TAG_PROGRESS = "list_item_progress"
 
 @Composable
 fun ListItem(
-    modifier: Modifier = Modifier,
-    icon: ImageVector? = null,
-    isSmallIcon: Boolean = false,
-    text: String,
-    chartPercentage: Float? = null,
-    secondaryText: String? = null,
-    secondaryTrailing: @Composable (() -> Unit)? = null,
-    trailing: @Composable (() -> Unit)? = null
+    modifier: Modifier = Modifier, icon: ImageVector? = null, isSmallIcon: Boolean = false,
+    text: String, chartPercentage: Float? = null, secondaryText: String? = null,
+    secondaryTrailing: @Composable (() -> Unit)? = null, trailing: @Composable (() -> Unit)? = null
 ) {
     var multiLineSecondaryText by remember { mutableStateOf(false) }
     val minHeight = when {
@@ -261,19 +248,16 @@ fun ListItem(
         secondaryText != null && icon != null -> 72.dp
         else -> 48.dp
     }
-
     val topPadding = when {
         chartPercentage != null -> 0.dp
         icon != null -> 32.dp
         secondaryText != null -> 28.dp
         else -> 0.dp
     }
-
     val secondaryPadding = when {
         chartPercentage != null -> 0.dp
         else -> 16.dp
     }
-
     Surface {
         Row(
             modifier = modifier
@@ -281,87 +265,66 @@ fun ListItem(
                 .padding(end = 16.dp)
         ) {
             icon?.let { i ->
-                if (isSmallIcon)
-                    Box(
-                        Modifier
-                            .align(Alignment.Top)
-                            .padding(start = 16.dp, top = 16.dp),
-                        contentAlignment = Alignment.TopStart
-                    ) {
-                        CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
-                            Icon(
-                                imageVector = i,
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .testTag(LIST_ITEM_TEST_TAG_ICON)
-                            )
-                        }
-                    }
-                else
-                    Box(
-                        Modifier
-                            .align(Alignment.CenterVertically)
-                            .padding(start = 16.dp),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        Icon(
-                            imageVector = i,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(40.dp)
-                                .testTag(LIST_ITEM_TEST_TAG_ICON),
-                            tint = MaterialTheme.colors.secondary
-                        )
-                    }
+                if (isSmallIcon) Box(
+                    modifier = Modifier
+                        .align(Alignment.Top)
+                        .padding(start = 16.dp, top = 16.dp),
+                    contentAlignment = Alignment.TopStart
+                ) {
+                    Icon(
+                        imageVector = i, tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        contentDescription = null, modifier = Modifier
+                            .size(24.dp)
+                            .testTag(LIST_ITEM_TEST_TAG_ICON)
+                    )
+                }
+                else Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterVertically)
+                        .padding(start = 16.dp), contentAlignment = Alignment.CenterStart
+                ) {
+                    Icon(
+                        imageVector = i, contentDescription = null, modifier = Modifier
+                            .size(40.dp)
+                            .testTag(LIST_ITEM_TEST_TAG_ICON),
+                        tint = MaterialTheme.colorScheme.secondary
+                    )
+                }
             }
-
             Column(
-                Modifier
+                modifier = Modifier
                     .heightIn(min = minHeight)
                     .weight(1f)
                     .padding(start = if (isSmallIcon) 32.dp else 16.dp),
                 verticalArrangement = if (topPadding == 0.dp) Arrangement.Center else Arrangement.Top
             ) {
-                CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.high) {
-                    ProvideTextStyle(MaterialTheme.typography.subtitle1) {
-                        Text(
-                            modifier = Modifier.paddingFromBaseline(top = topPadding),
-                            text = text, maxLines = 1, overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-
-                if (chartPercentage != null)
-                    LinearProgressIndicator(
-                        modifier = Modifier
-                            .height(16.dp)
-                            .fillMaxWidth()
-                            .testTag(LIST_ITEM_TEST_TAG_PROGRESS),
-                        color = MaterialTheme.colors.secondary,
-                        backgroundColor = Color.Transparent,
-                        progress = chartPercentage
-                    )
-
-                if (secondaryText != null)
-                    CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
-                        ProvideTextStyle(MaterialTheme.typography.body2) {
-                            Text(modifier = Modifier.paddingFromBaseline(top = secondaryPadding),
-                                text = secondaryText,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
-                                onTextLayout = { multiLineSecondaryText = it.lineCount > 1 })
-                        }
-                    }
+                Text(
+                    modifier = Modifier.paddingFromBaseline(top = topPadding),
+                    text = text, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                if (chartPercentage != null) LinearProgressIndicator(
+                    modifier = Modifier
+                        .height(16.dp)
+                        .fillMaxWidth()
+                        .testTag(LIST_ITEM_TEST_TAG_PROGRESS),
+                    color = MaterialTheme.colorScheme.secondary, trackColor = Color.Transparent,
+                    progress = chartPercentage
+                )
+                if (secondaryText != null) Text(
+                    modifier = Modifier.paddingFromBaseline(top = secondaryPadding),
+                    text = secondaryText, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium,
+                    onTextLayout = { multiLineSecondaryText = it.lineCount > 1 })
                 secondaryTrailing?.invoke()
             }
-
-            if (trailing != null)
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.CenterVertically)
-                        .padding(start = 16.dp)
-                ) { trailing() }
+            if (trailing != null) Box(
+                modifier = Modifier
+                    .align(Alignment.CenterVertically)
+                    .padding(start = 16.dp)
+            ) { trailing() }
         }
     }
 }

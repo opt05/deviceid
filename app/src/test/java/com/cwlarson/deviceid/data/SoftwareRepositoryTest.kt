@@ -90,7 +90,7 @@ class SoftwareRepositoryTest {
 
     @Test
     fun `Verify sdk to version returned correct text when method is called`() {
-        assertEquals("REL", 0.sdkToVersion())
+        assertEquals("", 0.sdkToVersion())
         assertEquals("1.0", 1.sdkToVersion())
         assertEquals("1.1", 2.sdkToVersion())
         assertEquals("1.5", 3.sdkToVersion())
@@ -122,6 +122,9 @@ class SoftwareRepositoryTest {
         assertEquals("10.0", 29.sdkToVersion())
         assertEquals("11.0", 30.sdkToVersion())
         assertEquals("12.0", 31.sdkToVersion())
+        assertEquals("12.1", 32.sdkToVersion())
+        assertEquals("13.0", 33.sdkToVersion())
+        assertEquals("", 34.sdkToVersion())
     }
 
     @Test
@@ -679,12 +682,40 @@ class SoftwareRepositoryTest {
     }
 
     @Test
-    fun `Returns error when play services version with an exception`() = runTest {
+    fun `Returns error when play services version with an exception on Android 13+`() = runTest {
         val context: Context = mockk()
         val packageManager: PackageManager = mockk()
         val packageInfo: PackageInfo = mockk()
         every { context.packageManager } returns packageManager
-        every { packageManager.getPackageInfo(any<String>(), any()) } returns packageInfo
+        every {
+            @Suppress("DEPRECATION")
+            packageManager.getPackageInfo(any<String>(), any<PackageManager.PackageInfoFlags>())
+        } returns packageInfo
+        every { packageInfo.longVersionCode } throws NullPointerException("")
+        val repository = SoftwareRepository(dispatcherProvider, context, preferencesManager)
+        repository.items().test {
+            assertEquals(
+                Item(
+                    title = R.string.software_title_google_play_services_version,
+                    itemType = ItemType.SOFTWARE,
+                    subtitle = ItemSubtitle.Error
+                ), awaitItemFromList(R.string.software_title_google_play_services_version)
+            )
+            awaitComplete()
+        }
+    }
+
+    @Config(sdk = [Build.VERSION_CODES.S_V2])
+    @Test
+    fun `Returns error when play services version with an exception on older Android`() = runTest {
+        val context: Context = mockk()
+        val packageManager: PackageManager = mockk()
+        val packageInfo: PackageInfo = mockk()
+        every { context.packageManager } returns packageManager
+        every {
+            @Suppress("DEPRECATION")
+            packageManager.getPackageInfo(any<String>(), any<Int>())
+        } returns packageInfo
         every { packageInfo.longVersionCode } throws NullPointerException("")
         val repository = SoftwareRepository(dispatcherProvider, context, preferencesManager)
         repository.items().test {
@@ -741,24 +772,52 @@ class SoftwareRepositoryTest {
     }
 
     @Test
-    fun `Returns error when play services install date with an exception`() = runTest {
-        val context: Context = mockk()
-        val packageManager: PackageManager = mockk()
-        val packageInfo: PackageInfo = mockk()
-        every { context.packageManager } returns packageManager
-        every { packageManager.getPackageInfo(any<String>(), any()) } returns packageInfo
-        val repository = SoftwareRepository(dispatcherProvider, context, preferencesManager)
-        repository.items().test {
-            assertEquals(
-                Item(
-                    title = R.string.software_title_google_play_services_install_date,
-                    itemType = ItemType.SOFTWARE,
-                    subtitle = ItemSubtitle.Error
-                ), awaitItemFromList(R.string.software_title_google_play_services_install_date)
-            )
-            awaitComplete()
+    fun `Returns error when play services install date with an exception on Android 13+`() =
+        runTest {
+            val context: Context = mockk()
+            val packageManager: PackageManager = mockk()
+            val packageInfo: PackageInfo = mockk()
+            every { context.packageManager } returns packageManager
+            every {
+                packageManager.getPackageInfo(any<String>(), any<PackageManager.PackageInfoFlags>())
+            } returns packageInfo
+            val repository = SoftwareRepository(dispatcherProvider, context, preferencesManager)
+            repository.items().test {
+                assertEquals(
+                    Item(
+                        title = R.string.software_title_google_play_services_install_date,
+                        itemType = ItemType.SOFTWARE,
+                        subtitle = ItemSubtitle.Error
+                    ), awaitItemFromList(R.string.software_title_google_play_services_install_date)
+                )
+                awaitComplete()
+            }
         }
-    }
+
+    @Config(sdk = [Build.VERSION_CODES.S_V2])
+    @Test
+    fun `Returns error when play services install date with an exception on older Android`() =
+        runTest {
+            val context: Context = mockk()
+            val packageManager: PackageManager = mockk()
+            val packageInfo: PackageInfo = mockk()
+            every { context.packageManager } returns packageManager
+            every {
+                @Suppress("DEPRECATION")
+                packageManager.getPackageInfo(any<String>(), any<Int>())
+            } returns packageInfo
+            val repository = SoftwareRepository(dispatcherProvider, context, preferencesManager)
+            repository.items().test {
+                assertEquals(
+                    Item(
+                        title = R.string.software_title_google_play_services_install_date,
+                        itemType = ItemType.SOFTWARE,
+                        subtitle = ItemSubtitle.Error
+                    ), awaitItemFromList(R.string.software_title_google_play_services_install_date)
+                )
+                awaitComplete()
+            }
+        }
 
     @Test
     fun `Returns text when play services update date is available`() = runTest {
@@ -802,24 +861,52 @@ class SoftwareRepositoryTest {
     }
 
     @Test
-    fun `Returns error when play services update date with an exception`() = runTest {
-        val context: Context = mockk()
-        val packageManager: PackageManager = mockk()
-        val packageInfo: PackageInfo = mockk()
-        every { context.packageManager } returns packageManager
-        every { packageManager.getPackageInfo(any<String>(), any()) } returns packageInfo
-        val repository = SoftwareRepository(dispatcherProvider, context, preferencesManager)
-        repository.items().test {
-            assertEquals(
-                Item(
-                    title = R.string.software_title_google_play_services_updated_date,
-                    itemType = ItemType.SOFTWARE,
-                    subtitle = ItemSubtitle.Error
-                ), awaitItemFromList(R.string.software_title_google_play_services_updated_date)
-            )
-            awaitComplete()
+    fun `Returns error when play services update date with an exception on Android 13+`() =
+        runTest {
+            val context: Context = mockk()
+            val packageManager: PackageManager = mockk()
+            val packageInfo: PackageInfo = mockk()
+            every { context.packageManager } returns packageManager
+            every {
+                packageManager.getPackageInfo(any<String>(), any<PackageManager.PackageInfoFlags>())
+            } returns packageInfo
+            val repository = SoftwareRepository(dispatcherProvider, context, preferencesManager)
+            repository.items().test {
+                assertEquals(
+                    Item(
+                        title = R.string.software_title_google_play_services_updated_date,
+                        itemType = ItemType.SOFTWARE,
+                        subtitle = ItemSubtitle.Error
+                    ), awaitItemFromList(R.string.software_title_google_play_services_updated_date)
+                )
+                awaitComplete()
+            }
         }
-    }
+
+    @Config(sdk = [Build.VERSION_CODES.S_V2])
+    @Test
+    fun `Returns error when play services update date with an exception on older Android`() =
+        runTest {
+            val context: Context = mockk()
+            val packageManager: PackageManager = mockk()
+            val packageInfo: PackageInfo = mockk()
+            every { context.packageManager } returns packageManager
+            every {
+                @Suppress("DEPRECATION")
+                packageManager.getPackageInfo(any<String>(), any<Int>())
+            } returns packageInfo
+            val repository = SoftwareRepository(dispatcherProvider, context, preferencesManager)
+            repository.items().test {
+                assertEquals(
+                    Item(
+                        title = R.string.software_title_google_play_services_updated_date,
+                        itemType = ItemType.SOFTWARE,
+                        subtitle = ItemSubtitle.Error
+                    ), awaitItemFromList(R.string.software_title_google_play_services_updated_date)
+                )
+                awaitComplete()
+            }
+        }
 
     @Test
     fun `Returns text when web view version is available`() = runTest {

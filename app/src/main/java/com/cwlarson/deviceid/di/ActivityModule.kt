@@ -18,8 +18,7 @@ object ActivityModule {
     @Provides
     @ActivityScoped
     fun providesAppUpdateUtils(
-        dispatcherProvider: DispatcherProvider,
-        manager: AppUpdateManager,
+        dispatcherProvider: DispatcherProvider, manager: AppUpdateManager,
         @ActivityContext activity: Context
     ): AppUpdateUtils = AppUpdateUtils(dispatcherProvider, manager, activity)
 }

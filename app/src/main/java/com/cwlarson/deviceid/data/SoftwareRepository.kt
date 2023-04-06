@@ -60,7 +60,9 @@ fun Int.sdkToVersion(): String {
         Build.VERSION_CODES.Q -> "10.0"
         Build.VERSION_CODES.R -> "11.0"
         Build.VERSION_CODES.S -> "12.0"
-        else -> Build.VERSION.CODENAME
+        Build.VERSION_CODES.S_V2 -> "12.1"
+        Build.VERSION_CODES.TIRAMISU -> "13.0"
+        else -> ""
     }
 }
 

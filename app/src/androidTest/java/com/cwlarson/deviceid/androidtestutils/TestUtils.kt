@@ -1,6 +1,9 @@
 package com.cwlarson.deviceid.androidtestutils
 
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.*
 import androidx.test.espresso.intent.Intents
 
@@ -25,6 +28,22 @@ fun SemanticsNodeInteraction.assertHasNoLongClickAction(): SemanticsNodeInteract
  */
 fun SemanticsNodeInteraction.performLongClick(): SemanticsNodeInteraction =
     performTouchInput { longClick() }
+
+/**
+ * Returns whether the node's text contains the given [Role].
+ *
+ * Note that in merged semantics tree there can be a list of items that got merged from
+ * the child nodes. Typically an accessibility tooling will decide based on its heuristics which
+ * ones to use.
+ *
+ * @param role Value to match as one of the items in the list of role values.
+ *
+ * @see SemanticsProperties.Role
+ */
+fun hasRole(role: Role) = SemanticsMatcher("${SemanticsProperties.Role.name} contains '$role'") {
+    val roleProperty = it.config.getOrNull(SemanticsProperties.Role) ?: false
+    roleProperty == role
+}
 
 inline fun intentsSafeRelease(block: () -> Unit) {
     try {

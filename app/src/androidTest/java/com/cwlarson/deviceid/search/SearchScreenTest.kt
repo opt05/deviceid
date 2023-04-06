@@ -1,6 +1,7 @@
 package com.cwlarson.deviceid.search
 
-import androidx.compose.material.rememberScaffoldState
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import com.cwlarson.deviceid.HiltTestActivity
@@ -58,7 +59,8 @@ class SearchScreenTest {
             AppTheme {
                 SearchScreen(
                     appBarSize = 0, query = "test",
-                    scaffoldState = rememberScaffoldState()
+                    snackbarHostState = remember { SnackbarHostState() },
+                    dispatcherProvider = dispatcherProvider
                 ) { clickedItem = it }
             }
         }

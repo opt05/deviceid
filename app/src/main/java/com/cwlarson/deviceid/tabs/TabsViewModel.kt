@@ -10,7 +10,6 @@ import com.cwlarson.deviceid.settings.PreferenceManager
 import com.cwlarson.deviceid.util.DispatcherProvider
 import dagger.Lazy
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.mapLatest
@@ -26,7 +25,6 @@ class TabsViewModel @Inject constructor(
     private val preferenceManager: PreferenceManager,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
-    @OptIn(ExperimentalCoroutinesApi::class)
     val refreshDisabled =
         preferenceManager.autoRefreshRate.distinctUntilChanged().mapLatest { it > 0 }
             .flowOn(dispatcherProvider.IO)

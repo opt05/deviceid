@@ -45,6 +45,7 @@ captures/
 .idea/jarRepositories.xml
 .idea/kotlinc.xml
 .idea/deploymentTargetDropDown.xml
+.idea/androidTestResultsUserPreferences.xml
 .idea/runConfigurations/
 *.iml
 .run/

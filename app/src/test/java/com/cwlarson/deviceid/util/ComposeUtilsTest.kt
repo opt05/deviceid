@@ -3,13 +3,16 @@ package com.cwlarson.deviceid.util
 import android.Manifest
 import android.app.Application
 import android.content.Intent
-import android.content.pm.*
+import android.content.pm.PackageManager
+import android.content.pm.PermissionInfo
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Scaffold
-import androidx.compose.material.rememberScaffoldState
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.test.assertIsDisplayed
@@ -23,8 +26,10 @@ import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.tabs.Item
 import com.cwlarson.deviceid.tabs.ItemSubtitle
 import com.cwlarson.deviceid.tabs.ItemType
+import com.cwlarson.deviceid.testutils.CoroutineTestRule
 import com.cwlarson.deviceid.ui.util.*
 import io.mockk.*
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Rule
@@ -44,12 +49,18 @@ import org.robolectric.shadows.ShadowToast
 )
 class ComposeUtilsTest {
     @get:Rule
+    val coroutineRule = CoroutineTestRule()
+
+    @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
     private lateinit var context: Application
+    private lateinit var dispatcherProvider: DispatcherProvider
+
 
     @Before
     fun setup() {
         context = spyk(ApplicationProvider.getApplicationContext() as Application)
+        dispatcherProvider = DispatcherProvider.provideDispatcher(coroutineRule.dispatcher)
     }
 
     @Test
@@ -105,11 +116,11 @@ class ComposeUtilsTest {
     }
 
     @Test
-    fun test_IntentHandler_onNewIntent() {
+    fun test_IntentHandler_onNewIntent() = runTest {
         val intent = composeTestRule.activity.intent
             .apply { putExtra(Intent.EXTRA_TEXT, "test") }
         val handler = composeTestRule.runOnUiThread { IntentHandler(composeTestRule.activity) }
-        handler.onNewIntent(intent)
+        handler.onNewIntent(dispatcherProvider, intent)
         composeTestRule.setContent { handler.OnIntent { assertEquals(intent, it) } }
     }
 
@@ -179,32 +190,62 @@ class ComposeUtilsTest {
     @Test
     fun test_share_success() {
         val pm: PackageManager = mockk()
-        val appInfo: ApplicationInfo = mockk()
-        val activityInfo: ActivityInfo = mockk()
-        val info: ResolveInfo = mockk()
-        info.activityInfo = activityInfo
-        activityInfo.name = "name"
-        activityInfo.applicationInfo = appInfo
-        appInfo.packageName = "name"
+        mockkConstructor(Intent::class)
+        every {
+            constructedWith<Intent>(EqMatcher(Intent.ACTION_SEND)).resolveActivity(pm)
+        } returns mockk()
         every { context.packageManager } returns pm
-        every { pm.resolveActivity(any(), any()) } returns info
-        every { context.startActivity(any()) } returns Unit
+        every { context.getString(R.string.send_to) } returns "test"
+        every { context.getString(R.string.send_to_no_apps) } returns "No app available"
+        mockkStatic(Intent::class)
+        every { Intent.createChooser(any(), null) } returns mockk()
+        justRun { context.startActivity(any()) }
         composeTestRule.setContent {
             Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("Name"))
                 .share(context)()
         }
+        verify { constructedWith<Intent>(EqMatcher(Intent.ACTION_SEND)).type = "text/plain" }
+        verify {
+            constructedWith<Intent>(EqMatcher(Intent.ACTION_SEND)).putExtra(
+                Intent.EXTRA_TITLE, "test"
+            )
+        }
+        verify {
+            constructedWith<Intent>(EqMatcher(Intent.ACTION_SEND)).putExtra(
+                Intent.EXTRA_TEXT, "Name"
+            )
+        }
         verify { context.startActivity(any()) }
+        assertFalse(ShadowToast.showedToast("No app available"))
     }
 
     @Test
     fun test_share_failure() {
         val pm: PackageManager = mockk()
+        mockkConstructor(Intent::class)
+        every {
+            constructedWith<Intent>(EqMatcher(Intent.ACTION_SEND)).resolveActivity(pm)
+        } returns null
         every { context.packageManager } returns pm
-        every { pm.resolveActivity(any(), any()) } returns null
-        every { context.startActivity(any()) } returns Unit
+        every { context.getString(R.string.send_to) } returns "test"
+        every { context.getString(R.string.send_to_no_apps) } returns "No app available"
+        mockkStatic(Intent::class)
+        every { Intent.createChooser(any(), null) } returns null
+        justRun { context.startActivity(any()) }
         composeTestRule.setContent {
             Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("Name"))
                 .share(context)()
+        }
+        verify { constructedWith<Intent>(EqMatcher(Intent.ACTION_SEND)).type = "text/plain" }
+        verify {
+            constructedWith<Intent>(EqMatcher(Intent.ACTION_SEND)).putExtra(
+                Intent.EXTRA_TITLE, "test"
+            )
+        }
+        verify {
+            constructedWith<Intent>(EqMatcher(Intent.ACTION_SEND)).putExtra(
+                Intent.EXTRA_TEXT, "Name"
+            )
         }
         verify(inverse = true) { context.startActivity(any()) }
         assertTrue(ShadowToast.showedToast("No app available"))
@@ -345,11 +386,11 @@ class ComposeUtilsTest {
     private fun ComposableUnderTest(
         item: Item, clickedRefresh: (() -> Unit), clickedDetails: ((Item) -> Unit)
     ) {
-        val state = rememberScaffoldState()
-        Scaffold(scaffoldState = state) { innerPadding ->
+        val snackbarHostState = remember { SnackbarHostState() }
+        Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { innerPadding ->
             Box(modifier = Modifier.padding(innerPadding)) {
                 item.click(
-                    snackbarHostState = state.snackbarHostState, forceRefresh = clickedRefresh,
+                    snackbarHostState = snackbarHostState, forceRefresh = clickedRefresh,
                     showItemDetails = clickedDetails
                 )
             }

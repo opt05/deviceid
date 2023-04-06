@@ -52,7 +52,6 @@ class AppUpdateUtils @Inject constructor(
     val installState = _installState.asStateFlow()
 
     init {
-        @Suppress("LeakingThis")
         if (activity is LifecycleOwner) activity.lifecycle.addObserver(this)
     }
 

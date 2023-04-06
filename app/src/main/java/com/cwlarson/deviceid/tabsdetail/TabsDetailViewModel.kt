@@ -7,7 +7,6 @@ import com.cwlarson.deviceid.tabs.ItemType
 import com.cwlarson.deviceid.util.DispatcherProvider
 import dagger.Lazy
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import javax.inject.Inject
 
@@ -21,7 +20,6 @@ class TabsDetailViewModel @Inject constructor(
 ) : ViewModel() {
     private val currentItem = MutableStateFlow<Item?>(null)
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     val item : Flow<TabDetailStatus> = currentItem.flatMapLatest { item ->
         when (item?.itemType) {
             ItemType.DEVICE -> deviceRepository.get()
