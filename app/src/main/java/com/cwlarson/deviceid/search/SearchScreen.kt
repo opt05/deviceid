@@ -121,7 +121,7 @@ private fun ResultsRow(count: Int) {
 
 @Composable
 private fun EmptySearchScreen(isVisible: Boolean, content: @Composable () -> Unit) {
-    Crossfade(targetState = isVisible) {
+    Crossfade(targetState = isVisible, label= "Search no results") {
         if (it)
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -145,7 +145,7 @@ private fun EmptySearchScreen(isVisible: Boolean, content: @Composable () -> Uni
 
 @Composable
 private fun LoadingScreen(isVisible: Boolean, content: @Composable () -> Unit) {
-    Crossfade(targetState = isVisible) {
+    Crossfade(targetState = isVisible, label="Search loading") {
         if (it)
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -170,7 +170,7 @@ private fun LoadingScreen(isVisible: Boolean, content: @Composable () -> Unit) {
 
 @Composable
 private fun ErrorScreen(isVisible: Boolean, content: @Composable () -> Unit) {
-    Crossfade(targetState = isVisible) {
+    Crossfade(targetState = isVisible, label="Search error") {
         if (it)
             Column(
                 modifier = Modifier.fillMaxSize(),

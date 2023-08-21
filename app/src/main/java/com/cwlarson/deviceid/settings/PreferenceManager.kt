@@ -83,6 +83,7 @@ class PreferenceManager @Inject constructor(
             it[PreferencesKeys.DAYNIGHT_MODE] ?: context.getString(R.string.pref_night_mode_system)
         }
 
+        @Suppress("KotlinConstantConditions")
         AppCompatDelegate.setDefaultNightMode(
             when (setValue) {
                 context.getString(R.string.pref_night_mode_off) -> AppCompatDelegate.MODE_NIGHT_NO

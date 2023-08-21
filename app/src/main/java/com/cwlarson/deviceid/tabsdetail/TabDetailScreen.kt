@@ -115,7 +115,7 @@ private fun ResultsScreen(item: Item) {
 
 @Composable
 private fun LoadingScreen(isVisible: Boolean, content: @Composable () -> Unit) {
-    Crossfade(targetState = isVisible) {
+    Crossfade(targetState = isVisible, label="Details loading") {
         if (it) Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -127,7 +127,7 @@ private fun LoadingScreen(isVisible: Boolean, content: @Composable () -> Unit) {
 
 @Composable
 private fun ErrorScreen(isVisible: Boolean, content: @Composable () -> Unit) {
-    Crossfade(targetState = isVisible) {
+    Crossfade(targetState = isVisible, label="Details error") {
         if (it) {
             Column(
                 modifier = Modifier.fillMaxWidth(),

@@ -41,9 +41,6 @@ class SearchScreenTest {
 
     @Inject
     lateinit var repository: AllRepository
-
-    @Inject
-    lateinit var preferenceManager: PreferenceManager
     private lateinit var data: MutableStateFlow<TabDataStatus>
     private var clickedItem: Item? = null
     private val dispatcher = UnconfinedTestDispatcher(TestCoroutineScheduler())

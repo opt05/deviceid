@@ -77,6 +77,7 @@ import com.cwlarson.deviceid.util.*
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.android.play.core.install.model.InstallStatus
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -134,20 +135,20 @@ const val MAIN_ACTIVITY_TEST_TAG_DUAL_PANE_NAV_HARDWARE = "main_activity_dual_pa
 private sealed class Screen(
     val route: String, @StringRes val stringRes: Int, val icon: ImageVector
 ) {
-    object Device :
+    data object Device :
         Screen("device", R.string.bottom_nav_title_device, Icons.Outlined.PermDeviceInformation)
 
-    object Network :
+    data object Network :
         Screen("network", R.string.bottom_nav_title_network, Icons.Outlined.SettingsEthernet)
 
-    object Software :
+    data object Software :
         Screen("software", R.string.bottom_nav_title_software, Icons.Outlined.Android)
 
-    object Hardware :
+    data object Hardware :
         Screen("hardware", R.string.bottom_nav_title_hardware, Icons.Outlined.DeveloperBoard)
 
-    object Settings : Screen("settings", R.string.menu_settings, Icons.Outlined.Settings)
-    object Search : Screen("search", R.string.menu_search, Icons.Outlined.Search)
+    data object Settings : Screen("settings", R.string.menu_settings, Icons.Outlined.Settings)
+    data object Search : Screen("search", R.string.menu_search, Icons.Outlined.Search)
 }
 
 @OptIn(
@@ -220,6 +221,9 @@ class MainActivity : ComponentActivity() {
                 var topSearchBarSize by remember { mutableStateOf(0) }
                 val snackbarHostState = remember { SnackbarHostState() }
                 val navController = rememberNavController()
+                val backStackSize by remember(navController.currentBackStack) {
+                    navController.currentBackStack.map { it.size }
+                }.collectAsStateWithLifecycle(initialValue = 0, context = dispatcherProvider.Main)
                 var bottomSheetItem by rememberSaveable { mutableStateOf<Item?>(null) }
                 Scaffold(
                     snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -236,7 +240,7 @@ class MainActivity : ComponentActivity() {
                                     )
                                 )
                             }, navigationIcon = {
-                                if (navController.backQueue.size > 1)
+                                if (backStackSize > 1)
                                     IconButton(
                                         modifier = Modifier.testTag(
                                             MAIN_ACTIVITY_TEST_TAG_TOOLBAR_BACK
@@ -401,7 +405,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                if(showBottomSheet) TabDetailScreen(
+                if (showBottomSheet) TabDetailScreen(
                     item = bottomSheetItem, dispatcherProvider = dispatcherProvider
                 ) { showBottomSheet = false }
 
@@ -415,8 +419,10 @@ class MainActivity : ComponentActivity() {
                         when (status) {
                             InstallStatus.DOWNLOADED ->
                                 FlexibleUpdateDownloadedSnackbar(snackbarHostState)
+
                             InstallStatus.FAILED ->
                                 FlexibleInstallFailedSnackbar(snackbarHostState)
+
                             else -> { /* Do nothing */
                             }
                         }
@@ -564,7 +570,7 @@ private fun SearchView(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                Crossfade(targetState = isSearchOpen) {
+                Crossfade(targetState = isSearchOpen, label = MAIN_ACTIVITY_TEST_TAG_SEARCH_CLEAR) {
                     if (it)
                         IconButton(modifier = Modifier.testTag(MAIN_ACTIVITY_TEST_TAG_SEARCH_CLEAR),
                             onClick = { onSearchQueryChange("") }) {
@@ -591,7 +597,7 @@ private fun SearchView(
                     focusManager.clearFocus(force = true)
                     forceCloseDropdown = true
                 }
-            Crossfade(targetState = titleVisibility.visible) {
+            Crossfade(targetState = titleVisibility.visible, label = "title") {
                 if (it) Text(
                     stringResource(id = R.string.app_name),
                     color = MaterialTheme.colorScheme.secondary,
@@ -659,7 +665,10 @@ private fun SearchbarMenu(navController: NavController, appBarSize: Float) {
 private fun BottomAppBar(
     appBarVisible: Boolean, isSearchOpen: Boolean, navController: NavController, items: List<Screen>
 ) {
-    Crossfade(targetState = !appBarVisible && !isSearchOpen) { targetState ->
+    Crossfade(
+        targetState = !appBarVisible && !isSearchOpen,
+        label = MAIN_ACTIVITY_TEST_TAG_BOTTOM_NAV
+    ) { targetState ->
         if (targetState)
             NavigationBar(
                 modifier = Modifier.testTag(MAIN_ACTIVITY_TEST_TAG_BOTTOM_NAV)

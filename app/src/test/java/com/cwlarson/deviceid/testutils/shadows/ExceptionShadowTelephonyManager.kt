@@ -29,7 +29,7 @@ class ExceptionShadowTelephonyManager: ShadowTelephonyManager() {
     }
 
     @Implementation
-    fun getActiveModemCount(): Int {
+    override fun getActiveModemCount(): Int {
         throw NullPointerException()
     }
 

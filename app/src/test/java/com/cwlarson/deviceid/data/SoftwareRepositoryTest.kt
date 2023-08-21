@@ -688,7 +688,6 @@ class SoftwareRepositoryTest {
         val packageInfo: PackageInfo = mockk()
         every { context.packageManager } returns packageManager
         every {
-            @Suppress("DEPRECATION")
             packageManager.getPackageInfo(any<String>(), any<PackageManager.PackageInfoFlags>())
         } returns packageInfo
         every { packageInfo.longVersionCode } throws NullPointerException("")

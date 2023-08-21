@@ -5,11 +5,11 @@ import org.robolectric.annotation.Implementation
 import org.robolectric.annotation.Implements
 import org.robolectric.shadows.ShadowSubscriptionManager
 
-@Suppress("unused", "UNUSED_PARAMETER")
+@Suppress("unused")
 @Implements(value = SubscriptionManager::class)
 class ExceptionShadowSubscriptionManager: ShadowSubscriptionManager() {
     @Implementation
-    fun getPhoneNumber(subscriptionId: Int): String {
+    override fun getPhoneNumber(subscriptionId: Int): String {
         throw NullPointerException()
     }
 }

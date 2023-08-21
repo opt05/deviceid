@@ -50,7 +50,7 @@ sealed class ItemSubtitle : Parcelable {
     data class Permission(val permission: AppPermission) : ItemSubtitle()
 
     @Parcelize
-    object Error : ItemSubtitle()
+    data object Error : ItemSubtitle()
 
     fun getSubTitleText(): String? =
         when (this) {
