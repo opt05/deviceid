@@ -3,7 +3,7 @@ import java.util.*
 plugins {
     id("com.android.application")
     kotlin("android")
-    kotlin("kapt")
+    id("com.google.devtools.ksp")
     id("kotlin-parcelize")
     id("dagger.hilt.android.plugin")
 }
@@ -48,7 +48,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions.jvmTarget = JavaVersion.VERSION_17.toString()
-    composeOptions.kotlinCompilerExtensionVersion = "1.5.1"
+    composeOptions.kotlinCompilerExtensionVersion = "1.5.3"
     testOptions {
         animationsDisabled = true
         unitTests.isIncludeAndroidResources = true
@@ -60,7 +60,6 @@ android {
         listOf("META-INF/LICENSE.md", "META-INF/LICENSE-notice.md")
     )
     testBuildType = "debug"
-    kapt.correctErrorTypes = true
 }
 
 
@@ -118,9 +117,9 @@ dependencies {
     // Hilt
     implementation("com.google.dagger:hilt-android:$hiltVersion")
     implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
-    kapt("com.google.dagger:hilt-android-compiler:$hiltVersion")
+    ksp("com.google.dagger:hilt-android-compiler:$hiltVersion")
     androidTestImplementation("com.google.dagger:hilt-android-testing:$hiltVersion")
-    kaptAndroidTest("com.google.dagger:hilt-android-compiler:$hiltVersion")
+    kspAndroidTest("com.google.dagger:hilt-android-compiler:$hiltVersion")
     // Instrumentation Testing
     androidTestImplementation("androidx.test:core-ktx:1.5.0")
     androidTestImplementation("androidx.test:runner:1.5.2")
