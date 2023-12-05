@@ -16,9 +16,9 @@ This is a repository for the Device Info Android app that displays specific info
 
 ## Build Tools
 
-* Android Studio Giraffe (Gradle 8.1)
+* Android Studio Hedgehog (Gradle 8.2)
 * AndroidX/Jetpack
-* Android 5.0 (API 21) or above (built against 13/API 33)
+* Android 5.0 (API 21) or above (built against 14/API 34)
 * Kotlin 1.9
 
 ## Android Permissions
