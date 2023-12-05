@@ -9,7 +9,6 @@ import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.androidtestutils.assertHasLongClickAction
 import com.cwlarson.deviceid.data.AllRepository
 import com.cwlarson.deviceid.data.TabDataStatus
-import com.cwlarson.deviceid.settings.PreferenceManager
 import com.cwlarson.deviceid.tabs.Item
 import com.cwlarson.deviceid.tabs.ItemSubtitle
 import com.cwlarson.deviceid.tabs.ItemType

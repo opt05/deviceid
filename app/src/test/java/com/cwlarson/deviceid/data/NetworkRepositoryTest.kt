@@ -2938,6 +2938,7 @@ class NetworkRepositoryTest {
     fun `Returns text when cell network type is iden and is android N+ with permissions`() =
         runTest {
             shadowOf(context).grantPermissions(Manifest.permission.READ_PHONE_STATE)
+            @Suppress("DEPRECATION")
             shadowOf(context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager)
                 .setDataNetworkType(TelephonyManager.NETWORK_TYPE_IDEN)
             repository.items().test {
@@ -3834,6 +3835,7 @@ class NetworkRepositoryTest {
     fun `Returns text when cell network class is iden and is android N+ with permissions`() =
         runTest {
             shadowOf(context).grantPermissions(Manifest.permission.READ_PHONE_STATE)
+            @Suppress("DEPRECATION")
             shadowOf(context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager)
                 .setDataNetworkType(TelephonyManager.NETWORK_TYPE_IDEN)
             repository.items().test {

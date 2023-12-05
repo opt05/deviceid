@@ -14,7 +14,7 @@ class ExceptionShadowTelephonyManager: ShadowTelephonyManager() {
     }
 
     @Implementation
-    fun getDeviceSoftwareVersion(): String {
+    override fun getDeviceSoftwareVersion(): String {
         throw NullPointerException()
     }
 

@@ -77,7 +77,6 @@ import com.cwlarson.deviceid.util.*
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.android.play.core.install.model.InstallStatus
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -182,9 +181,9 @@ class MainActivity : ComponentActivity() {
             viewModel.startTitleFade(isTwoPane, intent)
             var showBottomSheet by rememberSaveable { mutableStateOf(false) }
             var showUpdateDialog by rememberSaveable { mutableStateOf(false) }
-            var updateDialogTitle by rememberSaveable { mutableStateOf(0) }
-            var updateDialogMessage by rememberSaveable { mutableStateOf(0) }
-            var updateDialogButton by rememberSaveable { mutableStateOf(0) }
+            var updateDialogTitle by rememberSaveable { mutableIntStateOf(0) }
+            var updateDialogMessage by rememberSaveable { mutableIntStateOf(0) }
+            var updateDialogButton by rememberSaveable { mutableIntStateOf(0) }
             val installState by appUpdateUtils.installState.collectAsStateWithLifecycle(
                 initialValue = InstallState.Initial, context = dispatcherProvider.Main
             )
@@ -218,12 +217,9 @@ class MainActivity : ComponentActivity() {
                 var isSideNavVisible by rememberSaveable { mutableStateOf(true) }
                 var searchBarQuery by rememberSaveable { mutableStateOf("") }
                 var isSearchOpen by rememberSaveable { mutableStateOf(false) }
-                var topSearchBarSize by remember { mutableStateOf(0) }
+                var topSearchBarSize by remember { mutableIntStateOf(0) }
                 val snackbarHostState = remember { SnackbarHostState() }
                 val navController = rememberNavController()
-                val backStackSize by remember(navController.currentBackStack) {
-                    navController.currentBackStack.map { it.size }
-                }.collectAsStateWithLifecycle(initialValue = 0, context = dispatcherProvider.Main)
                 var bottomSheetItem by rememberSaveable { mutableStateOf<Item?>(null) }
                 Scaffold(
                     snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -240,7 +236,7 @@ class MainActivity : ComponentActivity() {
                                     )
                                 )
                             }, navigationIcon = {
-                                if (backStackSize > 1)
+                                if (navController.previousBackStackEntry != null)
                                     IconButton(
                                         modifier = Modifier.testTag(
                                             MAIN_ACTIVITY_TEST_TAG_TOOLBAR_BACK

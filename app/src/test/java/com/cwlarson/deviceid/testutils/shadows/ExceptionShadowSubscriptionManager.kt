@@ -5,7 +5,6 @@ import org.robolectric.annotation.Implementation
 import org.robolectric.annotation.Implements
 import org.robolectric.shadows.ShadowSubscriptionManager
 
-@Suppress("unused")
 @Implements(value = SubscriptionManager::class)
 class ExceptionShadowSubscriptionManager: ShadowSubscriptionManager() {
     @Implementation

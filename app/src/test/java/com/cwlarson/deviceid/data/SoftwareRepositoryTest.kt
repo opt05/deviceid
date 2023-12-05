@@ -124,7 +124,8 @@ class SoftwareRepositoryTest {
         assertEquals("12.0", 31.sdkToVersion())
         assertEquals("12.1", 32.sdkToVersion())
         assertEquals("13.0", 33.sdkToVersion())
-        assertEquals("", 34.sdkToVersion())
+        assertEquals("14.0", 34.sdkToVersion())
+        assertEquals("", 35.sdkToVersion())
     }
 
     @Test
@@ -711,10 +712,7 @@ class SoftwareRepositoryTest {
         val packageManager: PackageManager = mockk()
         val packageInfo: PackageInfo = mockk()
         every { context.packageManager } returns packageManager
-        every {
-            @Suppress("DEPRECATION")
-            packageManager.getPackageInfo(any<String>(), any<Int>())
-        } returns packageInfo
+        every { packageManager.getPackageInfo(any<String>(), any<Int>()) } returns packageInfo
         every { packageInfo.longVersionCode } throws NullPointerException("")
         val repository = SoftwareRepository(dispatcherProvider, context, preferencesManager)
         repository.items().test {
@@ -801,10 +799,7 @@ class SoftwareRepositoryTest {
             val packageManager: PackageManager = mockk()
             val packageInfo: PackageInfo = mockk()
             every { context.packageManager } returns packageManager
-            every {
-                @Suppress("DEPRECATION")
-                packageManager.getPackageInfo(any<String>(), any<Int>())
-            } returns packageInfo
+            every { packageManager.getPackageInfo(any<String>(), any<Int>()) } returns packageInfo
             val repository = SoftwareRepository(dispatcherProvider, context, preferencesManager)
             repository.items().test {
                 assertEquals(
@@ -890,10 +885,7 @@ class SoftwareRepositoryTest {
             val packageManager: PackageManager = mockk()
             val packageInfo: PackageInfo = mockk()
             every { context.packageManager } returns packageManager
-            every {
-                @Suppress("DEPRECATION")
-                packageManager.getPackageInfo(any<String>(), any<Int>())
-            } returns packageInfo
+            every { packageManager.getPackageInfo(any<String>(), any<Int>()) } returns packageInfo
             val repository = SoftwareRepository(dispatcherProvider, context, preferencesManager)
             repository.items().test {
                 assertEquals(

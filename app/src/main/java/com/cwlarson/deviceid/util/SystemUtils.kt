@@ -25,7 +25,7 @@ inline val Context.gmsPackageInfo: PackageInfo?
         when {
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU ->
                 packageManager.getPackageInfo(name, PackageManager.PackageInfoFlags.of(0))
-            else -> @Suppress("DEPRECATION") packageManager.getPackageInfo(name, 0)
+            else -> packageManager.getPackageInfo(name, 0)
         }
     } catch (e: Throwable) {
         null
