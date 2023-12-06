@@ -21,7 +21,8 @@ import kotlinx.coroutines.flow.flowOn
 import timber.log.Timber
 import java.text.ParseException
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 /**
@@ -62,6 +63,7 @@ fun Int.sdkToVersion(): String {
         Build.VERSION_CODES.S -> "12.0"
         Build.VERSION_CODES.S_V2 -> "12.1"
         Build.VERSION_CODES.TIRAMISU -> "13.0"
+        Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> "14.0"
         else -> ""
     }
 }

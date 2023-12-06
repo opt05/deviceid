@@ -10,18 +10,18 @@ import kotlinx.parcelize.Parcelize
 
 sealed class AppPermission(val permissionName: String) : Parcelable {
     @Parcelize
-    object ReadPhoneState : AppPermission(Manifest.permission.READ_PHONE_STATE)
+    data object ReadPhoneState : AppPermission(Manifest.permission.READ_PHONE_STATE)
 
     @RequiresApi(Build.VERSION_CODES.O)
     @Parcelize
-    object ReadPhoneNumbers : AppPermission(Manifest.permission.READ_PHONE_NUMBERS)
+    data object ReadPhoneNumbers : AppPermission(Manifest.permission.READ_PHONE_NUMBERS)
 
     @Parcelize
-    object AccessFineLocation : AppPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+    data object AccessFineLocation : AppPermission(Manifest.permission.ACCESS_FINE_LOCATION)
 
     @RequiresApi(Build.VERSION_CODES.S)
     @Parcelize
-    object AccessBluetoothConnect : AppPermission(Manifest.permission.BLUETOOTH_CONNECT)
+    data object AccessBluetoothConnect : AppPermission(Manifest.permission.BLUETOOTH_CONNECT)
 }
 
 /**

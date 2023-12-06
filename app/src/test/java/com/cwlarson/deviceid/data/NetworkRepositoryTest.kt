@@ -2080,13 +2080,12 @@ class NetworkRepositoryTest {
         }
     }
 
-    @Config(shadows = [MyShadowSubscriptionManager::class])
     @Test
     fun `Returns text when phone number is available with permissions granted on Android 13+`() =
         runTest {
             shadowOf(context).grantPermissions(Manifest.permission.READ_PHONE_NUMBERS)
-            extract<MyShadowSubscriptionManager>(context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager).apply {
-                setPhoneNumber("+1-800-867-5309")
+            shadowOf(context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager).apply {
+                setPhoneNumber(-1, "+1-800-867-5309")
             }
             repository.items().test {
                 performWifiInfoCallback()
@@ -2121,13 +2120,12 @@ class NetworkRepositoryTest {
             }
         }
 
-    @Config(shadows = [MyShadowSubscriptionManager::class])
     @Test
     fun `Returns permissions needed when phone number is available with permissions not granted on Android 13+`() =
         runTest {
             shadowOf(context).denyPermissions(Manifest.permission.READ_PHONE_NUMBERS)
-            extract<MyShadowSubscriptionManager>(context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager).apply {
-                setPhoneNumber("+1-800-867-5309")
+            shadowOf(context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager).apply {
+                setPhoneNumber(-1, "+1-800-867-5309")
             }
             repository.items().test {
                 performWifiInfoCallback()
@@ -2201,7 +2199,6 @@ class NetworkRepositoryTest {
         }
 
     @Test
-    @Config(shadows = [MyShadowSubscriptionManager::class])
     fun `Returns error when phone number with a null system service with permissions granted on Android 13+`() =
         runTest {
             shadowOf(context).removeSystemService(Context.TELEPHONY_SERVICE)
@@ -2220,7 +2217,6 @@ class NetworkRepositoryTest {
         }
 
     @Test
-    @Config(shadows = [MyShadowSubscriptionManager::class])
     fun `Returns error when phone number with a null system service 2 with permissions granted on Android 13+`() =
         runTest {
             shadowOf(context).removeSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE)
@@ -2942,6 +2938,7 @@ class NetworkRepositoryTest {
     fun `Returns text when cell network type is iden and is android N+ with permissions`() =
         runTest {
             shadowOf(context).grantPermissions(Manifest.permission.READ_PHONE_STATE)
+            @Suppress("DEPRECATION")
             shadowOf(context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager)
                 .setDataNetworkType(TelephonyManager.NETWORK_TYPE_IDEN)
             repository.items().test {
@@ -3838,6 +3835,7 @@ class NetworkRepositoryTest {
     fun `Returns text when cell network class is iden and is android N+ with permissions`() =
         runTest {
             shadowOf(context).grantPermissions(Manifest.permission.READ_PHONE_STATE)
+            @Suppress("DEPRECATION")
             shadowOf(context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager)
                 .setDataNetworkType(TelephonyManager.NETWORK_TYPE_IDEN)
             repository.items().test {

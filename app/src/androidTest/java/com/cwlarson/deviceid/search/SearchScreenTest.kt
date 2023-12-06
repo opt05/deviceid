@@ -9,7 +9,6 @@ import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.androidtestutils.assertHasLongClickAction
 import com.cwlarson.deviceid.data.AllRepository
 import com.cwlarson.deviceid.data.TabDataStatus
-import com.cwlarson.deviceid.settings.PreferenceManager
 import com.cwlarson.deviceid.tabs.Item
 import com.cwlarson.deviceid.tabs.ItemSubtitle
 import com.cwlarson.deviceid.tabs.ItemType
@@ -41,9 +40,6 @@ class SearchScreenTest {
 
     @Inject
     lateinit var repository: AllRepository
-
-    @Inject
-    lateinit var preferenceManager: PreferenceManager
     private lateinit var data: MutableStateFlow<TabDataStatus>
     private var clickedItem: Item? = null
     private val dispatcher = UnconfinedTestDispatcher(TestCoroutineScheduler())

@@ -6,7 +6,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
-private val LightColors = lightColorScheme(
+private val lightColors = lightColorScheme(
     primary = md_theme_light_primary,
     onPrimary = md_theme_light_onPrimary,
     primaryContainer = md_theme_light_primaryContainer,
@@ -36,7 +36,7 @@ private val LightColors = lightColorScheme(
     surfaceTint = md_theme_light_surfaceTint
 )
 
-private val DarkColors = darkColorScheme(
+private val darkColors = darkColorScheme(
     primary = md_theme_dark_primary,
     onPrimary = md_theme_dark_onPrimary,
     primaryContainer = md_theme_dark_primaryContainer,
@@ -77,8 +77,8 @@ fun AppTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable ()
         colorScheme = when {
             dynamicColor && darkTheme -> dynamicDarkColorScheme(LocalContext.current)
             dynamicColor && !darkTheme -> dynamicLightColorScheme(LocalContext.current)
-            darkTheme -> DarkColors
-            else -> LightColors
+            darkTheme -> darkColors
+            else -> lightColors
         }, typography = Typography, content = content
     )
 }

@@ -35,7 +35,6 @@ class SystemUtilsTest {
         val packageInfo: PackageInfo = mockk()
         every { context.packageManager } returns mockk {
             every {
-                @Suppress("DEPRECATION")
                 getPackageInfo("com.google.android.gms", 0)
             } returns packageInfo
         }
@@ -61,7 +60,6 @@ class SystemUtilsTest {
         val context: Context = mockk()
         every { context.packageManager } returns mockk {
             every {
-                @Suppress("DEPRECATION")
                 getPackageInfo("com.google.android.gms", 0)
             } throws PackageManager.NameNotFoundException()
         }
@@ -87,7 +85,6 @@ class SystemUtilsTest {
         val context: Context = mockk()
         every { context.packageManager } returns mockk {
             every {
-                @Suppress("DEPRECATION")
                 getPackageInfo("com.google.android.gms", 0)
             } throws NullPointerException()
         }

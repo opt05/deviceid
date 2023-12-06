@@ -152,7 +152,7 @@ fun TabScreenEmptyPreview() = AppTheme {
 
 @Composable
 private fun EmptyTabScreen(isVisible: Boolean, content: @Composable () -> Unit) {
-    Crossfade(targetState = isVisible) {
+    Crossfade(targetState = isVisible, label="Tab empty") {
         if (it)
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -182,7 +182,7 @@ fun TabScreenLoadingPreview() = AppTheme {
 
 @Composable
 private fun LoadingScreen(isVisible: Boolean, content: @Composable () -> Unit) {
-    Crossfade(targetState = isVisible) {
+    Crossfade(targetState = isVisible, label="Tab loading") {
         if (it)
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -213,7 +213,7 @@ fun TabScreenErrorPreview() = AppTheme {
 
 @Composable
 private fun ErrorScreen(isVisible: Boolean, content: @Composable () -> Unit) {
-    Crossfade(targetState = isVisible) {
+    Crossfade(targetState = isVisible, label="Tab error") {
         if (it)
             Column(
                 modifier = Modifier.fillMaxSize(),

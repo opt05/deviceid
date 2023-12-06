@@ -31,7 +31,7 @@ fun NoItemsPreviewDark() = AppTheme {
 @Composable
 fun noItemsIcon() = if (isLight) Icons.Default.NoItemsLight else Icons.Default.NoItemsDark
 
-@Suppress("unused")
+@Suppress("UnusedReceiverParameter")
 val Icons.Filled.NoItemsLight: ImageVector
     get() {
         if (_noItemsLight != null) return _noItemsLight!!
@@ -87,10 +87,9 @@ val Icons.Filled.NoItemsLight: ImageVector
         return _noItemsLight!!
     }
 
-@Suppress("ObjectPropertyName")
 private var _noItemsLight: ImageVector? = null
 
-@Suppress("unused")
+@Suppress("UnusedReceiverParameter")
 val Icons.Filled.NoItemsDark: ImageVector
     get() {
         if (_noItemsDark != null) return _noItemsDark!!
@@ -146,5 +145,4 @@ val Icons.Filled.NoItemsDark: ImageVector
         return _noItemsDark!!
     }
 
-@Suppress("ObjectPropertyName")
 private var _noItemsDark: ImageVector? = null

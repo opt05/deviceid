@@ -25,10 +25,10 @@ import timber.log.Timber
 import javax.inject.Inject
 
 sealed class UpdateState {
-    object Initial : UpdateState()
-    object Checking : UpdateState()
+    data object Initial : UpdateState()
+    data object Checking : UpdateState()
     data class Yes(val appUpdateInfo: AppUpdateInfo, val manual: Boolean) : UpdateState()
-    object YesButNotAllowed : UpdateState()
+    data object YesButNotAllowed : UpdateState()
     data class No(
         @UpdateAvailability val availability: Int, @StringRes val title: Int,
         @StringRes val message: Int, @StringRes val button: Int
@@ -36,7 +36,7 @@ sealed class UpdateState {
 }
 
 sealed class InstallState {
-    object Initial : InstallState()
+    data object Initial : InstallState()
     data class Failed(val message: String, val manual: Boolean) : InstallState()
     data class NoError(@InstallStatus val status: Int) : InstallState()
 }

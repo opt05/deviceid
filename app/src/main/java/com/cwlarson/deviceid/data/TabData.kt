@@ -7,15 +7,15 @@ import com.cwlarson.deviceid.util.DispatcherProvider
 import kotlinx.coroutines.flow.*
 
 sealed class TabDataStatus {
-    object Loading : TabDataStatus()
+    data object Loading : TabDataStatus()
     data class Success(val list: List<Item>) : TabDataStatus()
-    object Error : TabDataStatus()
+    data object Error : TabDataStatus()
 }
 
 sealed class TabDetailStatus {
-    object Loading : TabDetailStatus()
+    data object Loading : TabDetailStatus()
     data class Success(val item: Item) : TabDetailStatus()
-    object Error : TabDetailStatus()
+    data object Error : TabDetailStatus()
 }
 
 abstract class TabData(
