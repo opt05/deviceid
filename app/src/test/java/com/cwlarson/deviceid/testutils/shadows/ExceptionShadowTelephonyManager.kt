@@ -14,7 +14,7 @@ class ExceptionShadowTelephonyManager: ShadowTelephonyManager() {
     }
 
     @Implementation
-    fun getDeviceSoftwareVersion(): String {
+    override fun getDeviceSoftwareVersion(): String {
         throw NullPointerException()
     }
 
@@ -29,7 +29,7 @@ class ExceptionShadowTelephonyManager: ShadowTelephonyManager() {
     }
 
     @Implementation
-    fun getActiveModemCount(): Int {
+    override fun getActiveModemCount(): Int {
         throw NullPointerException()
     }
 

@@ -71,7 +71,6 @@ class PreferenceManagerTest {
         )
     }
 
-    @Suppress("BlockingMethodInNonBlockingContext")
     @Test
     fun userPreferencesFlow_HasInvalidData_EmitsDefaultPreferences() = runTest {
         tmp.newFile("test_file.preferences_pb").writeBytes(byteArrayOf(0))

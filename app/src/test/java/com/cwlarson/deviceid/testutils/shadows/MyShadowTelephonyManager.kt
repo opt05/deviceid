@@ -13,7 +13,6 @@ class MyShadowTelephonyManager : ShadowTelephonyManager() {
     private var isConcurrentVoiceAndDataSupported: Boolean = false
     private var isDataRoamingEnabled: Boolean = false
     private var isMultiSimSupported: Int = TelephonyManager.MULTISIM_NOT_SUPPORTED_BY_HARDWARE
-    private var activeModemCount: Int = 1
 
     fun setNai(value: String) {
         nai = value
@@ -49,11 +48,4 @@ class MyShadowTelephonyManager : ShadowTelephonyManager() {
 
     @Implementation
     fun getManufacturerCode(): String = manufacturerCode
-
-    fun setActiveModemCount(value: Int) {
-        activeModemCount = value
-    }
-
-    @Implementation
-    fun getActiveModemCount() = activeModemCount
 }

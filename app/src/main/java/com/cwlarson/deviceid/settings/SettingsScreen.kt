@@ -152,7 +152,7 @@ fun SettingsScreen(
                     UpdateState.YesButNotAllowed -> R.string.pref_check_for_update_title_yes
                     else -> R.string.pref_check_for_update_title_no
                 },
-                when (@Suppress("UnnecessaryVariable") val state = appInstallState) {
+                when (val state = appInstallState) {
                     is InstallState.Failed -> R.string.pref_check_for_update_summary_failed
                     InstallState.Initial -> R.string.pref_check_for_update_summary
                     is InstallState.NoError -> {

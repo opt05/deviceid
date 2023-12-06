@@ -16,22 +16,22 @@ This is a repository for the Device Info Android app that displays specific info
 
 ## Build Tools
 
-* Android Studio Electric Eel (Gradle 7.5)
+* Android Studio Hedgehog (Gradle 8.2)
 * AndroidX/Jetpack
-* Android 5.0 (API 21) or above (built against 13/API 33)
-* Kotlin 1.8
+* Android 5.0 (API 21) or above (built against 14/API 34)
+* Kotlin 1.9
 
 ## Android Permissions
 
 1. ACCESS_COARSE_LOCATION - to read Wi-Fi SSID and BSSID
-1. ACCESS_FINE_LOCATION - to read Wi-Fi SSID and BSSID
-1. ACCESS_NETWORK_STATE - to read SIM state
-1. ACCESS_WIFI_STATE - to read Wi-Fi MAC address
-1. BLUETOOTH - to read Bluetooth MAC address
-1. BLUETOOTH_CONNECT - to read Bluetooth Hostname
-1. READ_GSERVICES - to read Google Services Framework (GSF) ID
-1. READ_PHONE_STATE - to read IMEI/MEID and voicemail number
-1. READ_PHONE_NUMBER - to read Phone number
+2. ACCESS_FINE_LOCATION - to read Wi-Fi SSID and BSSID
+3. ACCESS_NETWORK_STATE - to read SIM state
+4. ACCESS_WIFI_STATE - to read Wi-Fi MAC address
+5. BLUETOOTH - to read Bluetooth MAC address
+6. BLUETOOTH_CONNECT - to read Bluetooth Hostname
+7. READ_GSERVICES - to read Google Services Framework (GSF) ID
+8. READ_PHONE_STATE - to read IMEI/MEID and voicemail number
+9. READ_PHONE_NUMBER - to read Phone number
 
 ## Bugs and Features
 

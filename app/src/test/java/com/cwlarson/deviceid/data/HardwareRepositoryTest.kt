@@ -1144,12 +1144,38 @@ class HardwareRepositoryTest {
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.R])
-    fun `Returns text numbered densities are available and return on new values on android R+`() =
+    fun `Returns text numbered densities are available and return on new values on android R`() =
+        runTest {
+            val displayContext: Activity = mockk()
+            @Suppress("DEPRECATION") val windowManager: WindowManager = mockk {
+                every { maximumWindowMetrics } returns WindowMetrics(
+                    Rect(0, 0, 100, 200), WindowInsets.CONSUMED
+                )
+            }
+            every { preferencesManager.autoRefreshRateMillis } returns flowOf(0)
+            every { context.createDisplayContext(any()) } returns displayContext
+            every { displayContext.createWindowContext(eq(TYPE_APPLICATION), any()) } returns displayContext
+            every { displayContext.getSystemService(eq(WindowManager::class.java)) } returns windowManager
+            repository.items().test {
+                assertEquals(
+                    Item(
+                        title = R.string.hardware_title_display_density,
+                        itemType = ItemType.HARDWARE,
+                        subtitle = ItemSubtitle.Text("MDPI (200x100 pixels)"),
+                        titleFormatArgs = listOf("0")
+                    ), awaitItemFromList(R.string.hardware_title_display_density)
+                )
+            }
+        }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.UPSIDE_DOWN_CAKE])
+    fun `Returns text numbered densities are available and return on new values on android U+`() =
         runTest {
             val displayContext: Activity = mockk()
             val windowManager: WindowManager = mockk {
                 every { maximumWindowMetrics } returns WindowMetrics(
-                    Rect(0, 0, 100, 200), WindowInsets.CONSUMED
+                    Rect(0, 0, 100, 200), WindowInsets.CONSUMED, 0f
                 )
             }
             every { preferencesManager.autoRefreshRateMillis } returns flowOf(0)

@@ -32,7 +32,7 @@ fun NoItemsSearchPreviewDark() = AppTheme {
 fun noItemsSearchIcon() = if (isLight)
     Icons.Default.NoItemsSearchLight else Icons.Default.NoItemsSearchDark
 
-@Suppress("unused")
+@Suppress("UnusedReceiverParameter")
 val Icons.Filled.NoItemsSearchLight: ImageVector
     get() {
         if (_noItemsSearchLight != null) return _noItemsSearchLight!!
@@ -192,10 +192,9 @@ val Icons.Filled.NoItemsSearchLight: ImageVector
         return _noItemsSearchLight!!
     }
 
-@Suppress("ObjectPropertyName")
 private var _noItemsSearchLight: ImageVector? = null
 
-@Suppress("unused")
+@Suppress("UnusedReceiverParameter")
 val Icons.Filled.NoItemsSearchDark: ImageVector
     get() {
         if (_noItemsSearchDark != null) return _noItemsSearchDark!!
@@ -355,5 +354,4 @@ val Icons.Filled.NoItemsSearchDark: ImageVector
         return _noItemsSearchDark!!
     }
 
-@Suppress("ObjectPropertyName")
 private var _noItemsSearchDark: ImageVector? = null
