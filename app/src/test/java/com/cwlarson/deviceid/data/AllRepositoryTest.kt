@@ -49,7 +49,7 @@ class AllRepositoryTest {
     fun `Verify item list is from all repositories`() = runTest {
         every { preferencesManager.autoRefreshRateMillis } returns flowOf(0)
         repository.items().test {
-            val item = awaitItem()
+            val item = expectMostRecentItem()
             assertNotNull(item.itemFromList(R.string.device_title_android_id))
             assertNotNull(item.itemFromList(R.string.network_title_phone_number))
             assertNotNull(item.itemFromList(R.string.software_title_android_version))
