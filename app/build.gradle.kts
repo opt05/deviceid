@@ -6,14 +6,15 @@ plugins {
     id("com.google.devtools.ksp")
     id("kotlin-parcelize")
     id("dagger.hilt.android.plugin")
+    alias(libs.plugins.compose.compiler)
 }
 
 android {
     namespace = "com.cwlarson.deviceid"
-    compileSdk = 34
+    compileSdk = 35
     defaultConfig {
         minSdk = 21
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 18
         versionName = "1.5.1"
         vectorDrawables.useSupportLibrary = true
@@ -51,7 +52,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions.jvmTarget = JavaVersion.VERSION_17.toString()
-    composeOptions.kotlinCompilerExtensionVersion = "1.5.12"
     testOptions {
         animationsDisabled = true
         unitTests.isIncludeAndroidResources = true
@@ -65,86 +65,79 @@ android {
     testBuildType = "debug"
 }
 
-val coroutinesBom: Dependency = dependencies.platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.8.0")
-val hiltVersion: String by rootProject.extra
-val lifecycleVersion = "2.7.0"
-val composeBom: Dependency = dependencies.platform("androidx.compose:compose-bom:2024.04.01")
-val composeAccompanistVersion = "0.34.0"
-val datastoreVersion = "1.1.0"
-val mockkVersion = "1.13.10"
 dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
-    implementation(coroutinesBom)
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android")
-    implementation("com.google.android.material:material:1.11.0")
-    implementation("androidx.webkit:webkit:1.10.0")
-    implementation("androidx.datastore:datastore:$datastoreVersion")
-    implementation("androidx.datastore:datastore-preferences:$datastoreVersion")
-    implementation("androidx.core:core-ktx:1.13.0")
-    implementation("androidx.core:core-splashscreen:1.0.1")
+    implementation(platform(libs.kotlinx.coroutines.bom))
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.material)
+    implementation(libs.androidx.webkit)
+    implementation(libs.androidx.datastore)
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.core.splashscreen)
     // Compose
-    implementation(composeBom)
-    implementation("androidx.activity:activity-compose:1.9.0")
-    implementation("androidx.compose.ui:ui")
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.ui)
     // Tooling support (Previews, etc.)
-    debugImplementation("androidx.compose.ui:ui-tooling")
-    implementation("androidx.compose.ui:ui-tooling-preview")
+    debugImplementation(libs.androidx.ui.tooling)
+    implementation(libs.androidx.ui.tooling.preview)
     // Foundation (Border, Background, Box, Image, Scroll, shapes, animations, etc.)
-    implementation("androidx.compose.foundation:foundation")
+    implementation(libs.androidx.foundation)
     // Material Design
-    implementation("androidx.compose.material:material")
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.material3:material3-window-size-class")
-    implementation("androidx.compose.ui:ui-text-google-fonts")
+    implementation(libs.androidx.material)
+    implementation(libs.androidx.material3)
+    implementation(libs.androidx.material3.window.size)
+    implementation(libs.androidx.ui.google.fonts)
     // Material design icons
-    implementation("androidx.compose.material:material-icons-core")
-    implementation("androidx.compose.material:material-icons-extended")
+    implementation(libs.androidx.material.icons.core)
+    implementation(libs.androidx.material.icons.extended)
     // Compose Accompanist
-    implementation("com.google.accompanist:accompanist-permissions:$composeAccompanistVersion")
+    implementation(libs.accompanist.permissions)
     // Lifecycle
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycleVersion")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:$lifecycleVersion")
-    implementation("androidx.lifecycle:lifecycle-process:$lifecycleVersion")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:$lifecycleVersion")
-    implementation("androidx.lifecycle:lifecycle-common-java8:$lifecycleVersion")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycleVersion")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:$lifecycleVersion")
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.process)
+    implementation(libs.androidx.lifecycle.viewmodel.savedstate)
+    implementation(libs.androidx.lifecycle.common.java8)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
     //Navigation
-    implementation("androidx.navigation:navigation-compose:2.7.7")
+    implementation(libs.androidx.navigation.compose)
     // Google Play App Updates
-    implementation("com.google.android.play:app-update-ktx:2.1.0")
+    implementation(libs.app.update.ktx)
     // Timber
-    implementation("com.jakewharton.timber:timber:5.0.1")
+    implementation(libs.timber)
     // Hilt
-    implementation("com.google.dagger:hilt-android:$hiltVersion")
-    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
-    ksp("com.google.dagger:hilt-android-compiler:$hiltVersion")
-    androidTestImplementation("com.google.dagger:hilt-android-testing:$hiltVersion")
-    kspAndroidTest("com.google.dagger:hilt-android-compiler:$hiltVersion")
+    implementation(libs.hilt.android)
+    implementation(libs.androidx.hilt.navigation.compose)
+    ksp(libs.hilt.compiler)
+    androidTestImplementation(libs.hilt.android.testing)
+    kspAndroidTest(libs.hilt.android.compiler)
     // Instrumentation Testing
-    androidTestImplementation("androidx.test:core-ktx:1.5.0")
-    androidTestImplementation("androidx.test:runner:1.5.2")
-    androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
-    androidTestImplementation(composeBom)
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
-    debugImplementation("androidx.compose.ui:ui-test-manifest")
-    androidTestImplementation("io.mockk:mockk-android:$mockkVersion")
-    androidTestImplementation("io.mockk:mockk-agent:$mockkVersion")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-    androidTestImplementation("androidx.test.espresso:espresso-intents:3.5.1")
-    androidTestImplementation("androidx.test.uiautomator:uiautomator:2.3.0")
+    androidTestImplementation(libs.core.ktx)
+    androidTestImplementation(libs.androidx.runner)
+    androidTestImplementation(libs.jetbrains.kotlinx.coroutines.test)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.ui.test.junit4)
+    debugImplementation(libs.androidx.ui.test.manifest)
+    androidTestImplementation(libs.mockk.android)
+    androidTestImplementation(libs.mockk.agent)
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.espresso.intents)
+    androidTestImplementation(libs.androidx.uiautomator)
     // Unit Testing
-    testImplementation("junit:junit:4.13.2")
-    testImplementation("io.mockk:mockk-android:$mockkVersion")
-    testImplementation("io.mockk:mockk-agent:$mockkVersion")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
-    testImplementation("app.cash.turbine:turbine:1.1.0")
-    testImplementation(composeBom)
-    testImplementation("androidx.compose.ui:ui-test-junit4")
+    testImplementation(libs.junit)
+    testImplementation(libs.mockk.android)
+    testImplementation(libs.mockk.agent)
+    testImplementation(libs.jetbrains.kotlinx.coroutines.test)
+    testImplementation(libs.turbine)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.ui.test.junit4)
     // Robolectric Testing
-    testImplementation("org.robolectric:robolectric:4.12.1")
-    testImplementation("androidx.test.ext:junit-ktx:1.1.5")
-    testImplementation("androidx.test:rules:1.5.0")
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.junit.ktx)
+    testImplementation(libs.androidx.rules)
     // LeakCanary
-    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.14")
+    debugImplementation(libs.leakcanary.android)
 }

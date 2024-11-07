@@ -89,7 +89,7 @@ class ExceptionShadowTelephonyManager: ShadowTelephonyManager() {
     }
 
     @Implementation
-    fun isDataRoamingEnabled(): Boolean {
+    override fun isDataRoamingEnabled(): Boolean {
         throw NullPointerException()
     }
 
