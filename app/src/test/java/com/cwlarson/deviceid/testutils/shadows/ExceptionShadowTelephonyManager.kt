@@ -117,4 +117,14 @@ class ExceptionShadowTelephonyManager: ShadowTelephonyManager() {
     override fun isVoiceCapable(): Boolean {
         throw NullPointerException()
     }
+
+    @Implementation
+    override fun isDeviceSmsCapable(): Boolean {
+        throw NullPointerException()
+    }
+
+    @Implementation
+    override fun isDeviceVoiceCapable(): Boolean {
+        throw NullPointerException()
+    }
 }

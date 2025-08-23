@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.Properties
 
 plugins {
@@ -11,10 +12,10 @@ plugins {
 
 android {
     namespace = "com.cwlarson.deviceid"
-    compileSdk = 35
+    compileSdk = 36
     defaultConfig {
-        minSdk = 21
-        targetSdk = 35
+        minSdk = 23
+        targetSdk = 36
         versionCode = 18
         versionName = "1.5.1"
         vectorDrawables.useSupportLibrary = true
@@ -51,13 +52,14 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions.jvmTarget = JavaVersion.VERSION_17.toString()
+    kotlin.compilerOptions {
+        jvmTarget = JvmTarget.fromTarget("17")
+        optIn.add("kotlinx.coroutines.ExperimentalCoroutinesApi")
+    }
     testOptions {
         animationsDisabled = true
         unitTests.isIncludeAndroidResources = true
         unitTests.all { it.jvmArgs("-Xmx2g") }
-        kotlinOptions.freeCompilerArgs +=
-            listOf("-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi")
     }
     packagingOptions.resources.merges.addAll(
         listOf("META-INF/LICENSE.md", "META-INF/LICENSE-notice.md")

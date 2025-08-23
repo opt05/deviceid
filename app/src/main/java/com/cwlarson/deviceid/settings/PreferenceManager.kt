@@ -4,10 +4,24 @@ import android.content.Context
 import android.os.Build
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.*
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import com.cwlarson.deviceid.R
 import com.cwlarson.deviceid.util.DispatcherProvider
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combineTransform
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
 import org.json.JSONArray
 import timber.log.Timber
 import java.io.IOException
@@ -142,7 +156,7 @@ class PreferenceManager @Inject constructor(
                 JSONArray(items ?: "[]").toList().filter { item ->
                     filter?.let { item.contains(it, ignoreCase = true) } ?: true
                 }
-            } catch (e: Throwable) {
+            } catch (_: Throwable) {
                 emptyList()
             }
         }.flowOn(dispatcherProvider.IO)

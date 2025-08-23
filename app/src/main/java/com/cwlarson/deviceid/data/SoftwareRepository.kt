@@ -64,6 +64,8 @@ fun Int.sdkToVersion(): String {
         Build.VERSION_CODES.S_V2 -> "12.1"
         Build.VERSION_CODES.TIRAMISU -> "13.0"
         Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> "14.0"
+        Build.VERSION_CODES.VANILLA_ICE_CREAM -> "15.0"
+        Build.VERSION_CODES.BAKLAVA -> "16.0"
         else -> ""
     }
 }
@@ -126,21 +128,19 @@ class SoftwareRepository @Inject constructor(
     private fun patchLevel() = Item(
         title = R.string.software_title_patch_level, itemType = ItemType.SOFTWARE,
         subtitle = try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
-                ItemSubtitle.Text(
-                    try {
-                        val patchDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).run {
-                            parse(Build.VERSION.SECURITY_PATCH)
-                        }
-                        DateFormat.getBestDateTimePattern(Locale.getDefault(), "MMMM d, yyyy").run {
-                            "${DateFormat.format(this, patchDate)}"
-                        }
-                    } catch (e: ParseException) {
-                        Timber.w(e)
-                        Build.VERSION.SECURITY_PATCH
+            ItemSubtitle.Text(
+                try {
+                    val patchDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).run {
+                        parse(Build.VERSION.SECURITY_PATCH)
                     }
-                )
-            else ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.M)
+                    DateFormat.getBestDateTimePattern(Locale.getDefault(), "MMMM d, yyyy").run {
+                        "${DateFormat.format(this, patchDate)}"
+                    }
+                } catch (e: ParseException) {
+                    Timber.w(e)
+                    Build.VERSION.SECURITY_PATCH
+                }
+            )
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error

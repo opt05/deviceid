@@ -4,7 +4,11 @@ import android.content.Context
 import com.cwlarson.deviceid.settings.PreferenceManager
 import com.cwlarson.deviceid.tabs.Item
 import com.cwlarson.deviceid.util.DispatcherProvider
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.flowOn
 
 sealed class TabDataStatus {
     data object Loading : TabDataStatus()
@@ -36,7 +40,7 @@ abstract class TabData(
                         else true
                     }.sortedBy { item -> item.getFormattedString(context) }
                     trySend(TabDataStatus.Success(result))
-                } catch (e: Throwable) {
+                } catch (_: Throwable) {
                     trySend(TabDataStatus.Error)
                 }
             }
@@ -54,7 +58,7 @@ abstract class TabData(
                             } ?: true
                 }
                 trySend(TabDetailStatus.Success(result))
-            } catch (e: Throwable) {
+            } catch (_: Throwable) {
                 trySend(TabDetailStatus.Error)
             }
         }
@@ -78,7 +82,7 @@ abstract class TabData(
                             } else false
                         }.sortedBy { item -> item.getFormattedString(context) }
                         trySend(TabDataStatus.Success(result))
-                    } catch (e: Throwable) {
+                    } catch (_: Throwable) {
                         trySend(TabDataStatus.Error)
                     }
                 }

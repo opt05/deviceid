@@ -1,6 +1,7 @@
 package com.cwlarson.deviceid.ui.util
 
 import android.annotation.SuppressLint
+import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -33,16 +34,17 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -72,7 +74,7 @@ fun AppPermission.loadPermissionLabel(context: Context = LocalContext.current): 
     try {
         context.packageManager.getPermissionInfo(permissionName, 0)
             .loadLabel(context.packageManager)
-    } catch (e: Throwable) {
+    } catch (_: Throwable) {
         stringResource(id = R.string.general_error)
     }
 
@@ -132,12 +134,15 @@ class IntentHandler(private val activity: ComponentActivity) : DefaultLifecycleO
 
 @Composable
 fun Item.copyItemToClipboard(): (() -> Unit)? {
+    val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    val clipboardManager = LocalClipboardManager.current
+    val clipboardManager = LocalClipboard.current
     val string = stringResource(R.string.copy_to_clipboard, getFormattedString())
     return subtitle.getSubTitleText()?.let {
         if (it.isBlank()) null else ({
-            clipboardManager.setText(AnnotatedString(it))
+            scope.launch {
+                clipboardManager.setClipEntry(ClipEntry(ClipData.newPlainText(it, it)))
+            }
             Toast.makeText(context, string, Toast.LENGTH_SHORT).show()
         })
     }
