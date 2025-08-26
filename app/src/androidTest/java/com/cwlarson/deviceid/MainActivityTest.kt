@@ -2,15 +2,41 @@ package com.cwlarson.deviceid
 
 import android.content.Intent
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.test.*
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.filterToOne
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasTextExactly
+import androidx.compose.ui.test.isDialog
+import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onChildren
+import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextClearance
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.unit.height
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import com.cwlarson.deviceid.androidtestutils.hasRole
-import com.cwlarson.deviceid.data.*
+import com.cwlarson.deviceid.data.AllRepository
+import com.cwlarson.deviceid.data.DeviceRepository
+import com.cwlarson.deviceid.data.HardwareRepository
+import com.cwlarson.deviceid.data.NetworkRepository
+import com.cwlarson.deviceid.data.SoftwareRepository
+import com.cwlarson.deviceid.data.TabDataStatus
 import com.cwlarson.deviceid.settings.PreferenceManager
 import com.cwlarson.deviceid.settings.UserPreferences
 import com.cwlarson.deviceid.tabs.Item
@@ -24,15 +50,23 @@ import com.google.android.play.core.install.model.InstallStatus
 import com.google.android.play.core.install.model.UpdateAvailability
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
-import io.mockk.*
+import io.mockk.coEvery
+import io.mockk.coJustRun
+import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.verify
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
-import org.junit.*
+import org.junit.After
 import org.junit.Assume.assumeFalse
 import org.junit.Assume.assumeTrue
+import org.junit.Before
+import org.junit.Ignore
+import org.junit.Rule
+import org.junit.Test
 import javax.inject.Inject
 
 @HiltAndroidTest
@@ -85,7 +119,12 @@ class MainActivityTest {
         every { appUpdateUtils.updateState } returns updateState
         coEvery { appUpdateUtils.awaitIsFlexibleUpdateDownloaded() } returns false
         every { preferenceManager.searchHistory } returns flowOf(false)
-        every { preferenceManager.getSearchHistoryItems(any()) } returns flowOf(listOf("history1", "history2"))
+        every { preferenceManager.getSearchHistoryItems(any()) } returns flowOf(
+            listOf(
+                "history1",
+                "history2"
+            )
+        )
         every { preferenceManager.darkTheme } returns flowOf(false)
         every { preferenceManager.autoRefreshRate } returns flowOf(0)
         every { preferenceManager.userPreferencesFlow } returns flowOf(UserPreferences())
@@ -100,9 +139,10 @@ class MainActivityTest {
 
     private fun launchScenario(hasSearchIntent: Boolean = false) {
         scenario = if (hasSearchIntent)
-            ActivityScenario.launch(Intent(
-                ApplicationProvider.getApplicationContext(), MainActivity::class.java
-            ).apply { action = Intent.ACTION_SEARCH })
+            ActivityScenario.launch(
+                Intent(
+                    ApplicationProvider.getApplicationContext(), MainActivity::class.java
+                ).apply { action = Intent.ACTION_SEARCH })
         else ActivityScenario.launch(MainActivity::class.java)
     }
 
@@ -169,13 +209,11 @@ class MainActivityTest {
     fun test_SearchView_nameFade_singlePane_initial() = runTest(dispatcher) {
         launchScenario()
         isScreenSw600dp(false)
-        composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH).onChildren()
-            .filterToOne(hasTextExactly("Device Info")).assertIsDisplayed()
+        composeTestRule.onNode(hasTextExactly("Device Info")).assertIsDisplayed()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH).onChildren()
             .filterToOne(hasTextExactly("Search all")).assertDoesNotExist()
         dispatcher.scheduler.advanceUntilIdle()
-        composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH).onChildren()
-            .filterToOne(hasTextExactly("Device Info")).assertDoesNotExist()
+        composeTestRule.onNode(hasTextExactly("Device Info")).assertDoesNotExist()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH).onChildren()
             .filterToOne(hasTextExactly("Search all")).assertIsDisplayed()
     }
@@ -184,14 +222,12 @@ class MainActivityTest {
     fun test_SearchView_nameFade_singlePane_recreate() = runTest(dispatcher) {
         launchScenario()
         isScreenSw600dp(false)
-        composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH).onChildren()
-            .filterToOne(hasTextExactly("Device Info")).assertIsDisplayed()
+        composeTestRule.onNode(hasTextExactly("Device Info")).assertIsDisplayed()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH).onChildren()
             .filterToOne(hasTextExactly("Search all")).assertDoesNotExist()
         dispatcher.scheduler.advanceUntilIdle()
         scenario.recreate()
-        composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH).onChildren()
-            .filterToOne(hasTextExactly("Device Info")).assertDoesNotExist()
+        composeTestRule.onNode(hasTextExactly("Device Info")).assertDoesNotExist()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH).onChildren()
             .filterToOne(hasTextExactly("Search all")).assertIsDisplayed()
     }
@@ -200,8 +236,7 @@ class MainActivityTest {
     fun test_SearchView_nameFade_dualPane() = runTest(dispatcher) {
         launchScenario()
         isScreenSw600dp()
-        composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH).onChildren()
-            .filterToOne(hasTextExactly("Device Info")).assertDoesNotExist()
+        composeTestRule.onNode(hasTextExactly("Device Info")).assertDoesNotExist()
         composeTestRule.onNodeWithTag(MAIN_ACTIVITY_TEST_TAG_SEARCH).onChildren()
             .filterToOne(hasTextExactly("Search all")).assertIsDisplayed()
         composeTestRule.onNode(
@@ -484,7 +519,8 @@ class MainActivityTest {
         launchScenario()
         val outsideX = 0
         val outsideY = with(composeTestRule.density) {
-            composeTestRule.onAllNodes(isRoot()).onFirst().getUnclippedBoundsInRoot().height.roundToPx() / 2
+            composeTestRule.onAllNodes(isRoot()).onFirst()
+                .getUnclippedBoundsInRoot().height.roundToPx() / 2
         }
         UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).click(outsideX, outsideY)
         composeTestRule.awaitIdle()

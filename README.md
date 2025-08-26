@@ -16,10 +16,10 @@ This is a repository for the Device Info Android app that displays specific info
 
 ## Build Tools
 
-* Android Studio Hedgehog (Gradle 8.2)
+* Android Studio Narwhal Feature Drop (Gradle 4.0-8.12)
 * AndroidX/Jetpack
-* Android 5.0 (API 21) or above (built against 14/API 34)
-* Kotlin 1.9
+* Android 6.0 (API 23) or above (built against 16/API 36)
+* Kotlin 2.2
 
 ## Android Permissions
 

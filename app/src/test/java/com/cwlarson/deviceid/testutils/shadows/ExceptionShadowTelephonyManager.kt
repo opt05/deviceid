@@ -89,7 +89,7 @@ class ExceptionShadowTelephonyManager: ShadowTelephonyManager() {
     }
 
     @Implementation
-    fun isDataRoamingEnabled(): Boolean {
+    override fun isDataRoamingEnabled(): Boolean {
         throw NullPointerException()
     }
 
@@ -115,6 +115,16 @@ class ExceptionShadowTelephonyManager: ShadowTelephonyManager() {
 
     @Implementation
     override fun isVoiceCapable(): Boolean {
+        throw NullPointerException()
+    }
+
+    @Implementation
+    override fun isDeviceSmsCapable(): Boolean {
+        throw NullPointerException()
+    }
+
+    @Implementation
+    override fun isDeviceVoiceCapable(): Boolean {
         throw NullPointerException()
     }
 }

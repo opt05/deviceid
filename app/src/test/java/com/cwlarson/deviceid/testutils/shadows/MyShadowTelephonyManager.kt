@@ -33,7 +33,7 @@ class MyShadowTelephonyManager : ShadowTelephonyManager() {
     }
 
     @Implementation
-    fun isDataRoamingEnabled() = isDataRoamingEnabled
+    override fun isDataRoamingEnabled() = isDataRoamingEnabled
 
     fun setIsMultiSimSupported(value: Int) {
         isMultiSimSupported = value

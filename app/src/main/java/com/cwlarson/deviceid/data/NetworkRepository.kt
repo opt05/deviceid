@@ -4,7 +4,11 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothManager
 import android.content.Context
-import android.net.*
+import android.net.ConnectivityManager
+import android.net.LinkProperties
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import android.net.wifi.WifiInfo
 import android.net.wifi.WifiManager
 import android.os.Build
@@ -23,7 +27,12 @@ import com.cwlarson.deviceid.util.AppPermission
 import com.cwlarson.deviceid.util.DispatcherProvider
 import com.cwlarson.deviceid.util.isGranted
 import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.combineTransform
+import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
 import timber.log.Timber
 import java.net.InetAddress
 import javax.inject.Inject
@@ -76,16 +85,9 @@ class NetworkRepository @Inject constructor(
      * http://developer.android.com/about/versions/marshmallow/android-6.0-changes.html#behavior-hardware-id
      */
     @SuppressLint("HardwareIds", "MissingPermission")
-    private fun wifiMac(wifiInfo: WifiInfo?) = Item(
+    private fun wifiMac() = Item(
         title = R.string.network_title_wifi_mac, itemType = ItemType.NETWORK,
-        subtitle = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            try {
-                wifiInfo?.let { ItemSubtitle.Text(it.macAddress) } ?: ItemSubtitle.Error
-            } catch (e: Throwable) {
-                Timber.w(e)
-                ItemSubtitle.Error
-            }
-        } else ItemSubtitle.NoLongerPossible(Build.VERSION_CODES.M)
+        subtitle = ItemSubtitle.NoLongerPossible(Build.VERSION_CODES.M)
     )
 
     private fun wifiBSSID(wifiInfo: WifiInfo?) = Item(
@@ -278,7 +280,7 @@ class NetworkRepository @Inject constructor(
             }
 
             override fun onUnavailable() {
-                map[0] = wifiMac(null)
+                map[0] = wifiMac()
                 map[1] = wifiBSSID(null)
                 map[2] = wifiSSID(null)
                 map[3] = wifiFrequency(null)
@@ -303,7 +305,7 @@ class NetworkRepository @Inject constructor(
                     val ipAddresses =
                         connectivityManager?.getLinkProperties(network)?.linkAddresses?.map { it.address }
                             ?: emptyList()
-                    map[0] = wifiMac(wifiInfo)
+                    map[0] = wifiMac()
                     map[1] = wifiBSSID(wifiInfo)
                     map[2] = wifiSSID(wifiInfo)
                     map[3] = wifiFrequency(wifiInfo)
@@ -342,7 +344,7 @@ class NetworkRepository @Inject constructor(
                 val wifiInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
                     networkCapabilities.transportInfo as? WifiInfo
                 else @Suppress("DEPRECATION") wifiManager?.connectionInfo
-                map[0] = wifiMac(wifiInfo)
+                map[0] = wifiMac()
                 map[1] = wifiBSSID(wifiInfo)
                 map[2] = wifiSSID(wifiInfo)
                 map[3] = wifiFrequency(wifiInfo)
@@ -373,13 +375,7 @@ class NetworkRepository @Inject constructor(
     private fun bluetoothMac() = flowOf(Item(title = R.string.network_title_bluetooth_mac,
         itemType = ItemType.NETWORK,
         subtitle = try {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-                bluetoothManager?.let {
-                    ItemSubtitle.Text(it.adapter.address)
-                } ?: ItemSubtitle.Error
-            } else {
-                ItemSubtitle.NoLongerPossible(Build.VERSION_CODES.M)
-            }
+            ItemSubtitle.NoLongerPossible(Build.VERSION_CODES.M)
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error
@@ -409,7 +405,10 @@ class NetworkRepository @Inject constructor(
     private fun manufacturerCode() = flowOf(Item(title = R.string.network_title_manufacturer_code,
         itemType = ItemType.NETWORK,
         subtitle = try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) telephonyManager?.let {
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+                ItemSubtitle.NoLongerPossible(Build.VERSION_CODES.BAKLAVA)
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) telephonyManager?.let {
+                @Suppress("DEPRECATION")
                 ItemSubtitle.Text(it.manufacturerCode)
             } ?: ItemSubtitle.Error
             else ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.Q)
@@ -447,10 +446,9 @@ class NetworkRepository @Inject constructor(
                         "${it.activeModemCount}"
                     )
                 } ?: ItemSubtitle.Error
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> telephonyManager?.let {
+                else -> telephonyManager?.let {
                     @Suppress("DEPRECATION") ItemSubtitle.Text("${it.phoneCount}")
                 } ?: ItemSubtitle.Error
-                else -> ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.M)
             }
         } catch (e: Throwable) {
             Timber.w(e)
@@ -661,10 +659,9 @@ class NetworkRepository @Inject constructor(
         flowOf(Item(title = R.string.network_title_hearing_aid_supported,
             itemType = ItemType.NETWORK,
             subtitle = try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) telephonyManager?.let {
+                telephonyManager?.let {
                     ItemSubtitle.Text("${it.isHearingAidCompatibilitySupported}")
                 } ?: ItemSubtitle.Error
-                else ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.M)
             } catch (e: Throwable) {
                 Timber.w(e)
                 ItemSubtitle.Error
@@ -710,7 +707,14 @@ class NetworkRepository @Inject constructor(
     private fun isSmsCapable() = flowOf(Item(title = R.string.network_title_sms_capable,
         itemType = ItemType.NETWORK,
         subtitle = try {
-            telephonyManager?.let { ItemSubtitle.Text("${it.isSmsCapable}") } ?: ItemSubtitle.Error
+            telephonyManager?.let {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM)
+                    ItemSubtitle.Text("${it.isDeviceSmsCapable}")
+                else {
+                    @Suppress("DEPRECATION")
+                    ItemSubtitle.Text("${it.isSmsCapable}")
+                }
+            } ?: ItemSubtitle.Error
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error
@@ -719,10 +723,14 @@ class NetworkRepository @Inject constructor(
     private fun isVoiceCapable() = flowOf(Item(title = R.string.network_title_voice_capable,
         itemType = ItemType.NETWORK,
         subtitle = try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) telephonyManager?.let {
-                ItemSubtitle.Text("${it.isVoiceCapable}")
+            telephonyManager?.let {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM)
+                    ItemSubtitle.Text("${it.isDeviceVoiceCapable}")
+                else {
+                    @Suppress("DEPRECATION")
+                    ItemSubtitle.Text("${it.isVoiceCapable}")
+                }
             } ?: ItemSubtitle.Error
-            else ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.LOLLIPOP_MR1)
         } catch (e: Throwable) {
             Timber.w(e)
             ItemSubtitle.Error
