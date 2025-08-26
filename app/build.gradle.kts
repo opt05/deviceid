@@ -16,8 +16,8 @@ android {
     defaultConfig {
         minSdk = 23
         targetSdk = 36
-        versionCode = 18
-        versionName = "1.5.1"
+        versionCode = 19
+        versionName = "1.6.0"
         vectorDrawables.useSupportLibrary = true
         testInstrumentationRunner = "com.cwlarson.deviceid.CustomTestRunner"
     }
