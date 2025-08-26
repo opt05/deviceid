@@ -6,7 +6,12 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.hardware.display.DisplayManager
-import android.os.*
+import android.os.BatteryManager
+import android.os.Build
+import android.os.Environment
+import android.os.Handler
+import android.os.Looper
+import android.os.StatFs
 import android.text.format.Formatter
 import android.util.DisplayMetrics
 import android.view.Display
@@ -17,7 +22,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.BatteryStd
 import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.Storage
-import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 import androidx.core.os.EnvironmentCompat
 import com.cwlarson.deviceid.R
@@ -29,9 +33,16 @@ import com.cwlarson.deviceid.tabs.ItemType
 import com.cwlarson.deviceid.util.DispatcherProvider
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.combineTransform
+import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
 import timber.log.Timber
-import java.util.*
+import java.util.StringJoiner
 import javax.inject.Inject
 
 class HardwareRepository @Inject constructor(
@@ -130,7 +141,7 @@ class HardwareRepository @Inject constructor(
                 title = R.string.hardware_title_external_storage, itemType = ItemType.HARDWARE,
                 subtitle = try {
                     // Mounted and not emulated, most likely a real SD Card
-                    val appsDir = ContextCompat.getExternalFilesDirs(context, null).filter {
+                    val appsDir = context.getExternalFilesDirs(null).filter {
                         it != null
                                 && EnvironmentCompat.getStorageState(it) == Environment.MEDIA_MOUNTED
                                 && !Environment.isExternalStorageEmulated(it)

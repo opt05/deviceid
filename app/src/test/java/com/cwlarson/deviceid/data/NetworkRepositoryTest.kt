@@ -21,7 +21,15 @@ import com.cwlarson.deviceid.tabs.ItemSubtitle
 import com.cwlarson.deviceid.tabs.ItemType
 import com.cwlarson.deviceid.testutils.CoroutineTestRule
 import com.cwlarson.deviceid.testutils.awaitItemFromList
-import com.cwlarson.deviceid.testutils.shadows.*
+import com.cwlarson.deviceid.testutils.shadows.ExceptionShadowBluetoothAdapter
+import com.cwlarson.deviceid.testutils.shadows.ExceptionShadowContextImpl
+import com.cwlarson.deviceid.testutils.shadows.ExceptionShadowEuiccManager
+import com.cwlarson.deviceid.testutils.shadows.ExceptionShadowSubscriptionManager
+import com.cwlarson.deviceid.testutils.shadows.ExceptionShadowTelephonyManager
+import com.cwlarson.deviceid.testutils.shadows.ExceptionShadowWifiInfo
+import com.cwlarson.deviceid.testutils.shadows.MyShadowEuiccManager
+import com.cwlarson.deviceid.testutils.shadows.MyShadowTelephonyManager
+import com.cwlarson.deviceid.testutils.shadows.MyShadowWifiInfo
 import com.cwlarson.deviceid.util.AppPermission
 import com.cwlarson.deviceid.util.DispatcherProvider
 import io.mockk.mockk
@@ -1234,26 +1242,7 @@ class NetworkRepositoryTest {
     }
 
     @Test
-    @Config(sdk = [Build.VERSION_CODES.LOLLIPOP_MR1])
-    fun `Returns text when bluetooth mac is below android M`() = runTest {
-        shadowOf((context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter)
-            .setAddress("00:00:00:00:00:00")
-        repository.items().test {
-            performWifiInfoCallback()
-            assertEquals(
-                Item(
-                    title = R.string.network_title_bluetooth_mac,
-                    itemType = ItemType.NETWORK,
-                    subtitle = ItemSubtitle.Text("00:00:00:00:00:00")
-                ), awaitItemFromList(R.string.network_title_bluetooth_mac)
-            )
-            cancelAndConsumeRemainingEvents()
-        }
-    }
-
-    @Test
-    @Config(sdk = [Build.VERSION_CODES.O])
-    fun `Returns not possible when bluetooth mac is above android N`() = runTest {
+    fun `Returns not possible when bluetooth mac`() = runTest {
         shadowOf((context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter)
             .setAddress("00:00:00:00:00:00")
         repository.items().test {
@@ -1268,44 +1257,6 @@ class NetworkRepositoryTest {
             cancelAndConsumeRemainingEvents()
         }
     }
-
-    @Test
-    @Config(
-        sdk = [Build.VERSION_CODES.LOLLIPOP_MR1], shadows = [ExceptionShadowBluetoothAdapter::class]
-    )
-    fun `Returns error when bluetooth mac with an exception and is below M`() = runTest {
-        shadowOf((context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter)
-            .setAddress("00:00:00:00:00:00")
-        repository.items().test {
-            performWifiInfoCallback()
-            assertEquals(
-                Item(
-                    title = R.string.network_title_bluetooth_mac,
-                    itemType = ItemType.NETWORK,
-                    subtitle = ItemSubtitle.Error
-                ), awaitItemFromList(R.string.network_title_bluetooth_mac)
-            )
-            cancelAndConsumeRemainingEvents()
-        }
-    }
-
-    @Test
-    @Config(sdk = [Build.VERSION_CODES.LOLLIPOP_MR1])
-    fun `Returns error when bluetooth mac with a null system service and is below M`() =
-        runTest {
-            shadowOf(context).removeSystemService(Context.BLUETOOTH_SERVICE)
-            repository.items().test {
-                performWifiInfoCallback()
-                assertEquals(
-                    Item(
-                        title = R.string.network_title_bluetooth_mac,
-                        itemType = ItemType.NETWORK,
-                        subtitle = ItemSubtitle.Error
-                    ), awaitItemFromList(R.string.network_title_bluetooth_mac)
-                )
-                cancelAndConsumeRemainingEvents()
-            }
-        }
 
     @Test
     fun `Returns text when bluetooth hostname is available with permission granted and above Android S`() =
@@ -1386,6 +1337,22 @@ class NetworkRepositoryTest {
                     itemType = ItemType.NETWORK,
                     subtitle = ItemSubtitle.Error
                 ), awaitItemFromList(R.string.network_title_bluetooth_hostname)
+            )
+            cancelAndConsumeRemainingEvents()
+        }
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.BAKLAVA])
+    fun `Returns not possible when manufacturer code is above VIC`() = runTest {
+        repository.items().test {
+            performWifiInfoCallback()
+            assertEquals(
+                Item(
+                    title = R.string.network_title_manufacturer_code,
+                    itemType = ItemType.NETWORK,
+                    subtitle = ItemSubtitle.NoLongerPossible(Build.VERSION_CODES.BAKLAVA)
+                ), awaitItemFromList(R.string.network_title_manufacturer_code)
             )
             cancelAndConsumeRemainingEvents()
         }
@@ -1499,7 +1466,7 @@ class NetworkRepositoryTest {
         }
 
     @Test
-    @Config(sdk = [Build.VERSION_CODES.LOLLIPOP_MR1])
+    @Config(sdk = [Build.VERSION_CODES.O])
     fun `Returns not possible when nai is below android P`() = runTest {
         repository.items().test {
             performWifiInfoCallback()
@@ -1621,7 +1588,7 @@ class NetworkRepositoryTest {
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.O])
-    fun `Returns text when phone count is available and is above android N`() = runTest {
+    fun `Returns text when phone count is available and is below R`() = runTest {
         shadowOf(context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager)
             .setPhoneCount(5)
         repository.items().test {
@@ -1639,7 +1606,7 @@ class NetworkRepositoryTest {
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.O], shadows = [ExceptionShadowTelephonyManager::class])
-    fun `Returns error when phone count with exception and is above android N`() = runTest {
+    fun `Returns error when phone count with exception and is below R`() = runTest {
         repository.items().test {
             performWifiInfoCallback()
             assertEquals(
@@ -1655,7 +1622,7 @@ class NetworkRepositoryTest {
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.O])
-    fun `Returns error when phone count with a null system service and is above android N`() =
+    fun `Returns error when phone count with a null system service and is below R`() =
         runTest {
             shadowOf(context).removeSystemService(Context.TELEPHONY_SERVICE)
             repository.items().test {
@@ -1670,22 +1637,6 @@ class NetworkRepositoryTest {
                 cancelAndConsumeRemainingEvents()
             }
         }
-
-    @Test
-    @Config(sdk = [Build.VERSION_CODES.LOLLIPOP_MR1])
-    fun `Returns not possible when phone count is below android M`() = runTest {
-        repository.items().test {
-            performWifiInfoCallback()
-            assertEquals(
-                Item(
-                    title = R.string.network_title_phone_count,
-                    itemType = ItemType.NETWORK,
-                    subtitle = ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.M)
-                ), awaitItemFromList(R.string.network_title_phone_count)
-            )
-            cancelAndConsumeRemainingEvents()
-        }
-    }
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.P])
@@ -4335,8 +4286,7 @@ class NetworkRepositoryTest {
         }
 
     @Test
-    @Config(sdk = [Build.VERSION_CODES.M])
-    fun `Returns text when hearing aid supported is available and is android M+`() = runTest {
+    fun `Returns text when hearing aid supported is available`() = runTest {
         shadowOf(context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager)
             .setHearingAidCompatibilitySupported(true)
         repository.items().test {
@@ -4353,26 +4303,8 @@ class NetworkRepositoryTest {
     }
 
     @Test
-    @Config(sdk = [Build.VERSION_CODES.LOLLIPOP_MR1])
-    fun `Returns not available when hearing aid supported is below android M`() = runTest {
-        shadowOf(context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager)
-            .setHearingAidCompatibilitySupported(true)
-        repository.items().test {
-            performWifiInfoCallback()
-            assertEquals(
-                Item(
-                    title = R.string.network_title_hearing_aid_supported,
-                    itemType = ItemType.NETWORK,
-                    subtitle = ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.M)
-                ), awaitItemFromList(R.string.network_title_hearing_aid_supported)
-            )
-            cancelAndConsumeRemainingEvents()
-        }
-    }
-
-    @Test
-    @Config(sdk = [Build.VERSION_CODES.M], shadows = [ExceptionShadowTelephonyManager::class])
-    fun `Returns error when hearing aid supported with exception and is android M+`() =
+    @Config(shadows = [ExceptionShadowTelephonyManager::class])
+    fun `Returns error when hearing aid supported with exception`() =
         runTest {
             repository.items().test {
                 performWifiInfoCallback()
@@ -4388,8 +4320,7 @@ class NetworkRepositoryTest {
         }
 
     @Test
-    @Config(sdk = [Build.VERSION_CODES.M])
-    fun `Returns error when hearing aid supported with a null system service and is android M+`() =
+    fun `Returns error when hearing aid supported with a null system service`() =
         runTest {
             shadowOf(context).removeSystemService(Context.TELEPHONY_SERVICE)
             repository.items().test {
@@ -4503,7 +4434,7 @@ class NetworkRepositoryTest {
         }
 
     @Test
-    @Config(sdk = [Build.VERSION_CODES.LOLLIPOP_MR1], shadows = [MyShadowTelephonyManager::class])
+    @Config(sdk = [Build.VERSION_CODES.P], shadows = [MyShadowTelephonyManager::class])
     fun `Returns not available when multi sim supported is below android Q`() = runTest {
         extract<MyShadowTelephonyManager>(context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager)
             .setIsMultiSimSupported(TelephonyManager.MULTISIM_ALLOWED)
@@ -4576,7 +4507,7 @@ class NetworkRepositoryTest {
     }
 
     @Test
-    @Config(sdk = [Build.VERSION_CODES.LOLLIPOP_MR1])
+    @Config(sdk = [Build.VERSION_CODES.P])
     fun `Returns not possible when rtt supported is available and is below android Q`() =
         runTest {
             shadowOf(context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager)
@@ -4629,7 +4560,8 @@ class NetworkRepositoryTest {
         }
 
     @Test
-    fun `Returns text when sms supported is available`() = runTest {
+    @Config(sdk = [Build.VERSION_CODES.UPSIDE_DOWN_CAKE])
+    fun `Returns text when sms capable is available and is below VIC`() = runTest {
         shadowOf(context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager)
             .setIsSmsCapable(true)
         repository.items().test {
@@ -4646,8 +4578,29 @@ class NetworkRepositoryTest {
     }
 
     @Test
-    @Config(shadows = [ExceptionShadowTelephonyManager::class])
-    fun `Returns error when sms supported with exception`() = runTest {
+    @Config(sdk = [Build.VERSION_CODES.BAKLAVA])
+    fun `Returns text when sms capable is available and is Baklava+`() = runTest {
+        shadowOf(context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager)
+            .setDeviceSmsCapable(true)
+        repository.items().test {
+            performWifiInfoCallback()
+            assertEquals(
+                Item(
+                    title = R.string.network_title_sms_capable,
+                    itemType = ItemType.NETWORK,
+                    subtitle = ItemSubtitle.Text("true")
+                ), awaitItemFromList(R.string.network_title_sms_capable)
+            )
+            cancelAndConsumeRemainingEvents()
+        }
+    }
+
+    @Test
+    @Config(
+        sdk = [Build.VERSION_CODES.UPSIDE_DOWN_CAKE],
+        shadows = [ExceptionShadowTelephonyManager::class]
+    )
+    fun `Returns error when sms capable with exception and is below VIC`() = runTest {
         repository.items().test {
             performWifiInfoCallback()
             assertEquals(
@@ -4662,7 +4615,27 @@ class NetworkRepositoryTest {
     }
 
     @Test
-    fun `Returns error when sms supported with a null system service`() = runTest {
+    @Config(
+        sdk = [Build.VERSION_CODES.BAKLAVA],
+        shadows = [ExceptionShadowTelephonyManager::class]
+    )
+    fun `Returns error when sms capable with exception and is Baklava+`() = runTest {
+        repository.items().test {
+            performWifiInfoCallback()
+            assertEquals(
+                Item(
+                    title = R.string.network_title_sms_capable,
+                    itemType = ItemType.NETWORK,
+                    subtitle = ItemSubtitle.Error
+                ), awaitItemFromList(R.string.network_title_sms_capable)
+            )
+            cancelAndConsumeRemainingEvents()
+        }
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.UPSIDE_DOWN_CAKE])
+    fun `Returns error when sms capable with a null system service and is below VIC`() = runTest {
         shadowOf(context).removeSystemService(Context.TELEPHONY_SERVICE)
         repository.items().test {
             performWifiInfoCallback()
@@ -4678,8 +4651,25 @@ class NetworkRepositoryTest {
     }
 
     @Test
-    @Config(sdk = [Build.VERSION_CODES.LOLLIPOP_MR1])
-    fun `Returns text when voice capable is available and is android L_MR1+`() = runTest {
+    @Config(sdk = [Build.VERSION_CODES.BAKLAVA])
+    fun `Returns error when sms capable with a null system service and is Baklava+`() = runTest {
+        shadowOf(context).removeSystemService(Context.TELEPHONY_SERVICE)
+        repository.items().test {
+            performWifiInfoCallback()
+            assertEquals(
+                Item(
+                    title = R.string.network_title_sms_capable,
+                    itemType = ItemType.NETWORK,
+                    subtitle = ItemSubtitle.Error
+                ), awaitItemFromList(R.string.network_title_sms_capable)
+            )
+            cancelAndConsumeRemainingEvents()
+        }
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.UPSIDE_DOWN_CAKE])
+    fun `Returns text when voice capable is available and is below VIC`() = runTest {
         shadowOf(context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager)
             .setVoiceCapable(true)
         repository.items().test {
@@ -4696,18 +4686,18 @@ class NetworkRepositoryTest {
     }
 
     @Test
-    @Config(sdk = [Build.VERSION_CODES.LOLLIPOP])
-    fun `Returns not possible when voice capable is available and is below android L_MR1`() =
+    @Config(sdk = [Build.VERSION_CODES.BAKLAVA])
+    fun `Returns not possible when voice capable is available and is Baklava+`() =
         runTest {
             shadowOf(context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager)
-                .setVoiceCapable(true)
+                .setDeviceVoiceCapable(true)
             repository.items().test {
                 performWifiInfoCallback()
                 assertEquals(
                     Item(
                         title = R.string.network_title_voice_capable,
                         itemType = ItemType.NETWORK,
-                        subtitle = ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.LOLLIPOP_MR1)
+                        subtitle = ItemSubtitle.Text("true")
                     ), awaitItemFromList(R.string.network_title_voice_capable)
                 )
                 cancelAndConsumeRemainingEvents()
@@ -4716,10 +4706,10 @@ class NetworkRepositoryTest {
 
     @Test
     @Config(
-        sdk = [Build.VERSION_CODES.LOLLIPOP_MR1],
+        sdk = [Build.VERSION_CODES.UPSIDE_DOWN_CAKE],
         shadows = [ExceptionShadowTelephonyManager::class]
     )
-    fun `Returns error when sms supported with exception and is android L_MR1+`() = runTest {
+    fun `Returns error when voice capable with exception and is below VIC`() = runTest {
         repository.items().test {
             performWifiInfoCallback()
             assertEquals(
@@ -4734,8 +4724,45 @@ class NetworkRepositoryTest {
     }
 
     @Test
-    @Config(sdk = [Build.VERSION_CODES.LOLLIPOP_MR1])
-    fun `Returns error when sms supported with a null system service and is android L_MR1+`() =
+    @Config(
+        sdk = [Build.VERSION_CODES.BAKLAVA],
+        shadows = [ExceptionShadowTelephonyManager::class]
+    )
+    fun `Returns error when voice capable with exception and is Baklava+`() = runTest {
+        repository.items().test {
+            performWifiInfoCallback()
+            assertEquals(
+                Item(
+                    title = R.string.network_title_voice_capable,
+                    itemType = ItemType.NETWORK,
+                    subtitle = ItemSubtitle.Error
+                ), awaitItemFromList(R.string.network_title_voice_capable)
+            )
+            cancelAndConsumeRemainingEvents()
+        }
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.UPSIDE_DOWN_CAKE])
+    fun `Returns error when voice capable with a null system service and is below VIC`() =
+        runTest {
+            shadowOf(context).removeSystemService(Context.TELEPHONY_SERVICE)
+            repository.items().test {
+                performWifiInfoCallback()
+                assertEquals(
+                    Item(
+                        title = R.string.network_title_voice_capable,
+                        itemType = ItemType.NETWORK,
+                        subtitle = ItemSubtitle.Error
+                    ), awaitItemFromList(R.string.network_title_voice_capable)
+                )
+                cancelAndConsumeRemainingEvents()
+            }
+        }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.BAKLAVA])
+    fun `Returns error when voice capable with a null system service and is Baklava+`() =
         runTest {
             shadowOf(context).removeSystemService(Context.TELEPHONY_SERVICE)
             repository.items().test {
@@ -4770,7 +4797,7 @@ class NetworkRepositoryTest {
     }
 
     @Test
-    @Config(sdk = [Build.VERSION_CODES.LOLLIPOP_MR1])
+    @Config(sdk = [Build.VERSION_CODES.O])
     fun `Returns not possible when esim id available and is below android P`() = runTest {
         repository.items().test {
             performWifiInfoCallback()
@@ -4838,7 +4865,7 @@ class NetworkRepositoryTest {
     }
 
     @Test
-    @Config(sdk = [Build.VERSION_CODES.LOLLIPOP_MR1])
+    @Config(sdk = [Build.VERSION_CODES.O])
     fun `Returns not possible when esim enabled available and is below android P`() = runTest {
         repository.items().test {
             performWifiInfoCallback()
@@ -4924,7 +4951,7 @@ class NetworkRepositoryTest {
     }
 
     @Test
-    @Config(sdk = [Build.VERSION_CODES.LOLLIPOP_MR1])
+    @Config(sdk = [Build.VERSION_CODES.O])
     fun `Returns not possible when esim os version available and is below android P`() =
         runTest {
             repository.items().test {

@@ -48,6 +48,10 @@ captures/
 .idea/androidTestResultsUserPreferences.xml
 .idea/migrations.xml
 .idea/runConfigurations/
+.idea/deploymentTargetSelector.xml
+.idea/AndroidProjectSystem.xml
+.idea/deviceManager.xml
+.kotlin/
 *.iml
 .run/
  

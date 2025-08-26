@@ -36,7 +36,8 @@ import org.robolectric.shadows.ShadowBuild
 import org.robolectric.shadows.ShadowSystemProperties
 import org.robolectric.shadows.ShadowWebView
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Calendar
+import java.util.TimeZone
 
 @RunWith(AndroidJUnit4::class)
 class SoftwareRepositoryTest {
@@ -125,7 +126,9 @@ class SoftwareRepositoryTest {
         assertEquals("12.1", 32.sdkToVersion())
         assertEquals("13.0", 33.sdkToVersion())
         assertEquals("14.0", 34.sdkToVersion())
-        assertEquals("", 35.sdkToVersion())
+        assertEquals("15.0", 35.sdkToVersion())
+        assertEquals("16.0", 36.sdkToVersion())
+        assertEquals("", 37.sdkToVersion())
     }
 
     @Test
@@ -162,6 +165,12 @@ class SoftwareRepositoryTest {
         assertEquals("", 29.getCodename())
         assertEquals("", 30.getCodename())
         assertEquals("", 31.getCodename())
+        assertEquals("", 32.getCodename())
+        assertEquals("", 33.getCodename())
+        assertEquals("", 34.getCodename())
+        assertEquals("", 35.getCodename())
+        assertEquals("", 36.getCodename())
+        assertEquals("", 37.getCodename())
     }
 
     @Test
@@ -216,21 +225,6 @@ class SoftwareRepositoryTest {
         }
     }
 
-    @Test
-    @Config(sdk = [Build.VERSION_CODES.LOLLIPOP_MR1])
-    fun `Returns not possible when patch level is below android M`() = runTest {
-        repository.items().test {
-            assertEquals(
-                Item(
-                    title = R.string.software_title_patch_level,
-                    itemType = ItemType.SOFTWARE,
-                    subtitle = ItemSubtitle.NotPossibleYet(Build.VERSION_CODES.M)
-                ), awaitItemFromList(R.string.software_title_patch_level)
-            )
-            awaitComplete()
-        }
-    }
-
     @Ignore("Not possible?")
     @Test
     fun `Returns error when patch level with an exception`() = runTest { }
@@ -252,7 +246,7 @@ class SoftwareRepositoryTest {
     }
 
     @Test
-    @Config(sdk = [Build.VERSION_CODES.LOLLIPOP_MR1])
+    @Config(sdk = [Build.VERSION_CODES.M])
     fun `Returns not possible when preview sdk int is below android N`() = runTest {
         repository.items().test {
             assertEquals(

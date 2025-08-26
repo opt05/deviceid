@@ -14,7 +14,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -27,10 +27,26 @@ import com.cwlarson.deviceid.tabs.Item
 import com.cwlarson.deviceid.tabs.ItemSubtitle
 import com.cwlarson.deviceid.tabs.ItemType
 import com.cwlarson.deviceid.testutils.CoroutineTestRule
-import com.cwlarson.deviceid.ui.util.*
-import io.mockk.*
+import com.cwlarson.deviceid.ui.util.IntentHandler
+import com.cwlarson.deviceid.ui.util.click
+import com.cwlarson.deviceid.ui.util.copyItemToClipboard
+import com.cwlarson.deviceid.ui.util.loadPermissionLabel
+import com.cwlarson.deviceid.ui.util.share
+import io.mockk.Called
+import io.mockk.EqMatcher
+import io.mockk.every
+import io.mockk.justRun
+import io.mockk.mockk
+import io.mockk.mockkConstructor
+import io.mockk.mockkStatic
+import io.mockk.spyk
+import io.mockk.verify
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -157,10 +173,10 @@ class ComposeUtilsTest {
     @Test
     fun test_copyItemToClipboard_click_null() {
         composeTestRule.setContent {
-            val clipboardManager = LocalClipboardManager.current
+            val clipboardManager = LocalClipboard.current
             Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Error)
                 .copyItemToClipboard()?.invoke()
-            assertNull(clipboardManager.getText()?.text)
+            runTest { assertNull(clipboardManager.getClipEntry()) }
         }
         assertTrue(ShadowToast.shownToastCount() == 0)
     }
@@ -168,10 +184,10 @@ class ComposeUtilsTest {
     @Test
     fun test_copyItemToClipboard_click_blank() {
         composeTestRule.setContent {
-            val clipboardManager = LocalClipboardManager.current
+            val clipboardManager = LocalClipboard.current
             Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text(""))
                 .copyItemToClipboard()?.invoke()
-            assertNull(clipboardManager.getText()?.text)
+            runTest { assertNull(clipboardManager.getClipEntry()) }
         }
         assertTrue(ShadowToast.shownToastCount() == 0)
     }
@@ -179,10 +195,10 @@ class ComposeUtilsTest {
     @Test
     fun test_copyItemToClipboard_click_nonnull() {
         composeTestRule.setContent {
-            val clipboardManager = LocalClipboardManager.current
+            val clipboardManager = LocalClipboard.current
             Item(R.string.app_name, ItemType.DEVICE, ItemSubtitle.Text("Name"))
                 .copyItemToClipboard()?.invoke()
-            assertEquals("Name", clipboardManager.getText()?.text)
+            runTest { assertEquals("Name", clipboardManager.getClipEntry()?.clipData?.getItemAt(0)?.text) }
         }
         assertTrue(ShadowToast.showedToast("Copied Device Info to clipboard!"))
     }
@@ -381,7 +397,6 @@ class ComposeUtilsTest {
         verify { clickedDetails(item) }
     }
 
-    @Suppress("TestFunctionName")
     @Composable
     private fun ComposableUnderTest(
         item: Item, clickedRefresh: (() -> Unit), clickedDetails: ((Item) -> Unit)

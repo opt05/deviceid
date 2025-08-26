@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
-import androidx.compose.runtime.*
 import timber.log.Timber
 
 /**
@@ -27,7 +26,7 @@ inline val Context.gmsPackageInfo: PackageInfo?
                 packageManager.getPackageInfo(name, PackageManager.PackageInfoFlags.of(0))
             else -> packageManager.getPackageInfo(name, 0)
         }
-    } catch (e: Throwable) {
+    } catch (_: Throwable) {
         null
     }
 
@@ -39,6 +38,6 @@ fun Context.systemProperty(key: String): String? = try {
     val systemProperties = classLoader.loadClass("android.os.SystemProperties")
     val methodGet = systemProperties.getMethod("get", String::class.java)
     methodGet(systemProperties, key) as String
-} catch (e: Throwable) {
+} catch (_: Throwable) {
     null
 }
